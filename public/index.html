@@ -1,0 +1,1952 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdForge</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f4f2ed;
+  --surface: #ffffff;
+  --surface2: #eeebe4;
+  --ink: #16150f;
+  --ink2: #6b6860;
+  --ink3: #a8a59e;
+  --accent: #e5470d;
+  --accent2: #f59e0b;
+  --blue: #2563eb;
+  --green: #16a34a;
+  --border: rgba(22,21,15,0.1);
+  --border2: rgba(22,21,15,0.06);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 14px;
+}
+
+/* ── LAYOUT ── */
+.shell { display: flex; min-height: 100vh; }
+
+/* ── SIDEBAR NAV ── */
+.sidenav {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidenav-logo {
+  padding: 22px 20px 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.logo-mark {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: #fff;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logo-dot {
+  width: 8px; height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.nav-section {
+  padding: 14px 12px 6px;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: rgba(255,255,255,0.55);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.85); }
+.nav-item.active { background: rgba(255,255,255,0.12); color: #fff; }
+
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+
+.sidenav-footer {
+  margin-top: auto;
+  padding: 14px 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.user-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+
+.user-name { font-size: 12px; color: rgba(255,255,255,0.7); font-weight: 500; }
+.user-role { font-size: 10px; color: rgba(255,255,255,0.35); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+/* ── TOPBAR ── */
+.topbar {
+  height: 56px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.3px;
+}
+
+.topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+/* ── PAGES ── */
+.page { display: none; flex: 1; padding: 28px; }
+.page.active { display: block; }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+
+.btn-primary { background: var(--ink); color: #fff; }
+.btn-primary:hover { background: #2d2c24; transform: translateY(-1px); }
+
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: #c93a08; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(229,71,13,0.3); }
+
+.btn-ghost { background: transparent; color: var(--ink2); border: 1px solid var(--border); }
+.btn-ghost:hover { border-color: var(--ink); color: var(--ink); }
+
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-icon { padding: 7px; border-radius: var(--radius-sm); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* ── CLIENTS PAGE ── */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.page-sub { font-size: 13px; color: var(--ink2); margin-top: 3px; }
+
+.clients-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.client-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.client-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(22,21,15,0.08);
+}
+
+.client-card-top {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.client-logo-preview {
+  width: 56px; height: 56px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: white;
+  overflow: hidden;
+}
+
+.client-logo-preview img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  background: white;
+}
+
+.client-colors {
+  position: absolute;
+  bottom: 10px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+}
+
+.color-pip {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.6);
+}
+
+.client-card-body { padding: 14px 16px; }
+
+.client-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.2px;
+  margin-bottom: 3px;
+}
+
+.client-segment {
+  font-size: 11px;
+  color: var(--ink2);
+  margin-bottom: 10px;
+}
+
+.client-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.client-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 100px;
+  background: var(--surface2);
+  color: var(--ink2);
+}
+
+.client-count { font-size: 11px; color: var(--ink3); }
+
+/* ADD CLIENT CARD */
+.add-client-card {
+  background: transparent;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  min-height: 158px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--ink3);
+}
+
+.add-client-card:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--surface2);
+}
+
+.add-client-card .add-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(22,21,15,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(22,21,15,0.2);
+}
+
+.modal-header {
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.3px;
+}
+
+.modal-close {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  color: var(--ink2);
+  transition: all 0.15s;
+}
+
+.modal-close:hover { background: var(--surface2); color: var(--ink); }
+
+.modal-body { padding: 22px 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* ── FORM ── */
+.form-group { margin-bottom: 18px; }
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+
+.form-label span { color: var(--ink3); font-weight: 400; }
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 13px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+  resize: none;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+
+.form-textarea { height: 72px; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* COLOR PICKER ROW */
+.color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-swatch-input {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 2px;
+  background: var(--bg);
+}
+
+.color-swatch-input input[type=color] {
+  width: 100%; height: 100%;
+  border: none; outline: none;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+}
+
+/* LOGO UPLOAD */
+.logo-upload-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  background: var(--bg);
+}
+
+.logo-upload-zone:hover { border-color: var(--ink); }
+.logo-upload-zone.has-logo { border-style: solid; border-color: var(--green); }
+.logo-upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.logo-preview { max-height: 60px; max-width: 160px; object-fit: contain; }
+.logo-upload-label { font-size: 12px; color: var(--ink2); }
+.logo-upload-hint { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+
+/* COLORS GRID */
+.colors-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.color-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-circle {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.color-circle input[type=color] {
+  position: absolute;
+  inset: -4px;
+  opacity: 0;
+  cursor: pointer;
+  width: 120%;
+  height: 120%;
+}
+
+.color-hex { font-size: 10px; color: var(--ink3); font-family: monospace; }
+
+/* FONT PILLS */
+.font-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.font-pill {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg);
+}
+
+.font-pill:hover { border-color: var(--ink); }
+.font-pill.selected { background: var(--ink); color: white; border-color: var(--ink); }
+
+/* ── CLIENT DETAIL PAGE ── */
+.client-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.client-detail-logo {
+  width: 64px; height: 64px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.client-detail-logo img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  background: white;
+}
+
+.client-detail-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.client-detail-sub { font-size: 13px; color: var(--ink2); margin-top: 3px; }
+
+.detail-grid { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+
+/* BRAND PANEL */
+.brand-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.brand-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.brand-section-header {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--ink2);
+  background: var(--bg);
+}
+
+.brand-section-body { padding: 14px 16px; }
+
+.brand-colors { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.brand-color-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.brand-color-circle {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.brand-color-hex { font-size: 9px; color: var(--ink3); font-family: monospace; }
+
+.brand-font-sample {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.brand-font-label { font-size: 11px; color: var(--ink2); }
+
+.tone-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+.tone-tag {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  background: var(--surface2);
+  color: var(--ink2);
+}
+
+/* ── GENERATE PANEL ── */
+.generate-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.gen-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.gen-section-header {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gen-section-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.gen-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: #e8f4ff;
+  color: #1a5ce8;
+}
+
+.gen-section-body { padding: 16px 18px; }
+
+/* OUTPUT AREA */
+.prompt-code {
+  font-family: 'Courier New', monospace;
+  font-size: 11.5px;
+  line-height: 1.8;
+  background: #13131a;
+  color: #e8e0d0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  min-height: 80px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cursor-blink {
+  display: inline-block;
+  width: 2px; height: 13px;
+  background: var(--accent);
+  animation: blink .8s infinite;
+  vertical-align: middle;
+}
+
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+
+/* RESULTS */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.result-card {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.result-card:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+
+.result-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(229,71,13,0.12);
+}
+
+.result-img {
+  width: 100%; aspect-ratio: 1;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: var(--ink3);
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-footer {
+  padding: 8px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.result-label { font-weight: 600; }
+.result-score { color: var(--green); font-weight: 600; }
+
+/* SPIN */
+.spin {
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+/* FADE UP */
+@keyframes fadeUp {
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.fadein { animation: fadeUp .35s ease both; }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--ink3);
+}
+.empty-icon { font-size: 36px; margin-bottom: 12px; }
+.empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; color: var(--ink); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; max-width: 280px; margin: 0 auto; line-height: 1.6; }
+
+/* STATUS BADGE */
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* BACK BTN */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink2);
+  cursor: pointer;
+  padding: 5px 0;
+  border: none;
+  background: none;
+  margin-bottom: 18px;
+  transition: color 0.15s;
+}
+.back-btn:hover { color: var(--ink); }
+
+/* BRAND INJECTED NOTICE */
+.brand-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: #edf9f0;
+  border: 1px solid #b6e9c9;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 500;
+  margin-bottom: 14px;
+}
+
+/* BRIEFING FORM */
+.briefing-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-hint {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink3);
+  margin-left: 4px;
+}
+
+.field-hint-inline {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.art-direction-wrapper {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg);
+  transition: border-color 0.15s;
+}
+
+.art-direction-wrapper:focus-within {
+  border-color: var(--ink);
+  background: var(--surface);
+}
+
+.art-direction-field {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  resize: none;
+}
+
+.art-direction-field:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.art-direction-footer {
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.art-ai-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.3px;
+  transition: opacity 0.2s;
+}
+
+.art-ai-badge.hidden { opacity: 0; }
+
+/* LOADING OVERLAY */
+.gen-loading {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+  text-align: center;
+}
+.gen-loading.show { display: flex; }
+
+.gen-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+.gen-step {
+  font-size: 13px;
+  color: var(--ink2);
+  font-weight: 500;
+}
+
+.gen-step-label {
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+/* MOCK AD STYLES */
+.mock-dark {
+  background: #0d0d12;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px;
+  position: relative;
+}
+
+.mock-clean {
+  background: #f8f7f3;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+.mock-split {
+  width: 100%; height: 100%;
+  display: grid; grid-template-columns: 1fr 1fr;
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ── SIDENAV ── -->
+  <nav class="sidenav">
+    <div class="sidenav-logo">
+      <div class="logo-mark">
+        <span class="logo-dot"></span>
+        AdForge
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-label">Workspace</div>
+      <button class="nav-item active" onclick="showPage('clients')">
+        <span class="nav-icon">◈</span> Clientes
+      </button>
+      <button class="nav-item" onclick="showPage('gerar')">
+        <span class="nav-icon">✦</span> Gerar criativo
+      </button>
+      <button class="nav-item" onclick="showPage('historico')">
+        <span class="nav-icon">◷</span> Histórico
+      </button>
+    </div>
+
+    <div class="nav-section" style="margin-top:8px">
+      <div class="nav-section-label">Config</div>
+      <button class="nav-item">
+        <span class="nav-icon">⚙</span> Configurações
+      </button>
+    </div>
+
+    <div class="sidenav-footer">
+      <div class="user-chip">
+        <div class="user-avatar">G</div>
+        <div>
+          <div class="user-name">Gestora</div>
+          <div class="user-role">Gestor de Tráfego</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Clientes</div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost btn-sm">📋 Ajuda</button>
+        <button class="btn btn-primary btn-sm" id="topbarBtn" onclick="openAddClient()">+ Novo cliente</button>
+      </div>
+    </div>
+
+    <!-- ── PAGE: CLIENTES ── -->
+    <div class="page active" id="page-clients">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Seus clientes</div>
+          <div class="page-sub">Gerencie identidades visuais e gere criativos por cliente</div>
+        </div>
+      </div>
+
+      <div class="clients-grid" id="clientsGrid">
+        <!-- Cards populated by JS -->
+        <div class="add-client-card" onclick="openAddClient()">
+          <div class="add-icon">+</div>
+          <div style="font-size:13px;font-weight:600">Novo cliente</div>
+          <div style="font-size:11px;color:var(--ink3)">Cadastrar identidade visual</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: DETAIL ── -->
+    <div class="page" id="page-detail">
+      <button class="back-btn" onclick="showPage('clients')">← Voltar para clientes</button>
+
+      <div class="client-detail-header" id="detailHeader"></div>
+
+      <div class="detail-grid">
+
+        <!-- Brand Panel -->
+        <div class="brand-panel" id="brandPanel"></div>
+
+        <!-- Generate Panel -->
+        <div class="generate-panel">
+          <div class="gen-section">
+            <div class="gen-section-header">
+              <div class="gen-section-title">Gerar criativo</div>
+              <span class="gen-badge" id="genBadge">● Marca ativa</span>
+            </div>
+            <div class="gen-section-body">
+              <div class="brand-notice" id="brandNotice">
+                ✓ Identidade visual do cliente aplicada automaticamente
+              </div>
+
+              <!-- COPY SECTION -->
+              <div class="briefing-section-label">Copy do anúncio</div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Headline
+                  <span class="field-hint">Frase principal — impacto imediato</span>
+                </label>
+                <input class="form-input" type="text" id="genHeadline"
+                  placeholder="Ex: Esperar pelo laudo pode custar mais do que você imagina.">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">
+                  Subheadline
+                  <span class="field-hint">Complemento ou reforço da headline</span>
+                </label>
+                <input class="form-input" type="text" id="genSubheadline"
+                  placeholder="Ex: Agilidade também salva decisões.">
+              </div>
+
+              <div class="form-row" style="margin-bottom:14px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">CTA</label>
+                  <input class="form-input" type="text" id="genCta"
+                    placeholder="Ex: Veja como funciona">
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Gatilho mental</label>
+                  <select class="form-select" id="genGatilho">
+                    <option value="">— Selecionar —</option>
+                    <option>Urgência racional</option>
+                    <option>Urgência emocional</option>
+                    <option>Escassez</option>
+                    <option>Prova social</option>
+                    <option>Autoridade</option>
+                    <option>Curiosidade</option>
+                    <option>Transformação</option>
+                    <option>Medo da perda</option>
+                    <option>Novidade</option>
+                    <option>Exclusividade</option>
+                    <option>Reciprocidade</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- TECHNICAL SECTION -->
+              <div class="briefing-section-label" style="margin-top:6px">Especificações técnicas</div>
+
+              <div class="form-row" style="margin-bottom:14px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Formato</label>
+                  <select class="form-select" id="genFormat">
+                    <option>Feed Instagram (1:1)</option>
+                    <option>Story (9:16)</option>
+                    <option>Banner Web (1.91:1)</option>
+                    <option>Carrossel</option>
+                    <option>YouTube Thumbnail</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Objetivo</label>
+                  <select class="form-select" id="genObj">
+                    <option>Conversão / Venda</option>
+                    <option>Geração de leads</option>
+                    <option>Awareness / Marca</option>
+                    <option>Remarketing</option>
+                    <option>Engajamento</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- ART DIRECTION -->
+              <div class="briefing-section-label" style="margin-top:6px">
+                Direção de arte
+                <span class="field-hint-inline">deixe vazio → Claude cria baseado na identidade</span>
+              </div>
+
+              <div class="form-group">
+                <div class="art-direction-wrapper">
+                  <textarea class="form-textarea art-direction-field" id="genArtDirection"
+                    placeholder="Descreva a cena, composição, iluminação, elementos visuais, posição dos textos...&#10;&#10;Ex: Fundo branco clínico. Mãos de médico segurando resultado impresso de ressonância. Iluminação lateral dramática suave. Linha vermelha fina vertical à esquerda. Headline em preto bold superior esquerdo. Subtexto em cinza. Logo inferior direito."
+                    style="height:100px"></textarea>
+                  <div class="art-direction-footer">
+                    <span class="art-ai-badge" id="artAiBadge">✦ Claude vai criar a direção de arte</span>
+                  </div>
+                </div>
+              </div>
+
+              <button class="btn btn-accent" style="width:100%;justify-content:center;padding:11px;margin-top:4px" id="genBtn" onclick="generateAd()">
+                <span id="genBtnIcon">✦</span>
+                <span id="genBtnText">Gerar criativo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Output block -->
+          <div class="gen-section" id="outputSection" style="display:none">
+            <div class="gen-section-header">
+              <div class="gen-section-title">Prompt gerado pelo Claude</div>
+              <button class="btn btn-ghost btn-sm" id="copyPromptBtn" onclick="copyPrompt()">📋 Copiar</button>
+            </div>
+            <div class="gen-section-body">
+              <div class="prompt-code" id="promptOutput"></div>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="gen-section" id="resultsSection" style="display:none">
+            <div class="gen-section-header">
+              <div class="gen-section-title">Variações geradas</div>
+              <button class="btn btn-primary btn-sm">↓ Exportar</button>
+            </div>
+            <div class="gen-section-body">
+              <div class="results-grid" id="resultsGrid"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: GERAR (standalone) ── -->
+    <div class="page" id="page-gerar">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Gerar criativo</div>
+          <div class="page-sub">Selecione um cliente para aplicar a identidade automaticamente</div>
+        </div>
+      </div>
+
+      <div style="max-width:580px">
+        <div class="form-group">
+          <label class="form-label">Cliente</label>
+          <select class="form-select" id="quickClientSelect" onchange="quickClientSelected()">
+            <option value="">— Selecione um cliente —</option>
+          </select>
+        </div>
+        <div id="quickClientPreview" style="display:none;margin-bottom:18px"></div>
+        <p style="font-size:13px;color:var(--ink2)">Ou acesse a página do cliente para gerar com o padrão aplicado.</p>
+      </div>
+    </div>
+
+    <!-- ── PAGE: HISTORICO ── -->
+    <div class="page" id="page-historico">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Histórico</div>
+          <div class="page-sub">Todos os criativos gerados</div>
+        </div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">◷</div>
+        <div class="empty-title">Nenhum criativo gerado ainda</div>
+        <div class="empty-sub">Acesse um cliente e gere o primeiro criativo para ele aparecer aqui.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── MODAL: ADD CLIENT ── -->
+<div class="modal-overlay" id="addClientModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Novo cliente</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- STEP 1: Info básica -->
+      <div id="step1">
+        <div class="form-group">
+          <label class="form-label">Nome do cliente / empresa</label>
+          <input class="form-input" type="text" id="clientName" placeholder="Ex: Studio Vivas, Clínica Saúde+" >
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Segmento</label>
+            <select class="form-select" id="clientSegment">
+              <option>Infoproduto / Curso</option>
+              <option>E-commerce</option>
+              <option>Serviço local</option>
+              <option>SaaS / Tech</option>
+              <option>Saúde / Bem-estar</option>
+              <option>Moda / Beleza</option>
+              <option>Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tom de voz</label>
+            <select class="form-select" id="clientTone">
+              <option>Profissional</option>
+              <option>Descontraído</option>
+              <option>Urgente / Agressivo</option>
+              <option>Inspiracional</option>
+              <option>Luxo / Premium</option>
+              <option>Educativo</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Público-alvo</label>
+          <input class="form-input" type="text" id="clientAudience" placeholder="Ex: Mulheres 25–40 que querem emagrecer">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Proposta de valor principal</label>
+          <textarea class="form-textarea" id="clientValue" placeholder="O que torna esse cliente único? Qual resultado principal entrega?"></textarea>
+        </div>
+      </div>
+
+      <!-- STEP 2: Identidade Visual -->
+      <div id="step2" style="display:none">
+
+        <div class="form-group">
+          <label class="form-label">Logo <span>(PNG ou SVG, fundo transparente)</span></label>
+          <div class="logo-upload-zone" id="logoZone" onclick="document.getElementById('logoInput').click()">
+            <input type="file" id="logoInput" accept="image/*" onchange="handleLogoUpload(event)">
+            <div id="logoPreviewWrap">
+              <div style="font-size:28px;margin-bottom:6px">🖼</div>
+              <div class="logo-upload-label">Clique para fazer upload do logo</div>
+              <div class="logo-upload-hint">PNG, SVG · Recomendado fundo transparente</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cores da marca</label>
+          <div class="colors-grid" id="colorsGrid">
+            <!-- populated by JS -->
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="addColorField()">+ Adicionar cor</button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Fonte principal</label>
+          <div class="font-pills" id="fontPills">
+            <span class="font-pill" onclick="selectFont(this)">Montserrat</span>
+            <span class="font-pill" onclick="selectFont(this)">Playfair Display</span>
+            <span class="font-pill selected" onclick="selectFont(this)">Syne</span>
+            <span class="font-pill" onclick="selectFont(this)">DM Sans</span>
+            <span class="font-pill" onclick="selectFont(this)">Bebas Neue</span>
+            <span class="font-pill" onclick="selectFont(this)">Nunito</span>
+            <span class="font-pill" onclick="selectFont(this)">Raleway</span>
+            <span class="font-pill" onclick="selectFont(this)">Outra</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estilo visual</label>
+          <div class="font-pills" id="stylePills">
+            <span class="font-pill selected" onclick="toggleStylePill(this)">Bold / Impactante</span>
+            <span class="font-pill" onclick="toggleStylePill(this)">Minimalista</span>
+            <span class="font-pill" onclick="toggleStylePill(this)">Colorido</span>
+            <span class="font-pill" onclick="toggleStylePill(this)">Elegante</span>
+            <span class="font-pill" onclick="toggleStylePill(this)">Editorial</span>
+            <span class="font-pill" onclick="toggleStylePill(this)">Orgânico / Natural</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Diretrizes adicionais <span>(opcional)</span></label>
+          <textarea class="form-textarea" id="clientGuidelines" placeholder="Ex: Nunca usar fundo branco puro. Sempre mostrar o produto em uso. Tons terrosos no background..."></textarea>
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="modalBack" style="display:none" onclick="modalBack()">← Voltar</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="modalNext" onclick="modalNext()">Próximo →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let clients = [];
+let currentClient = null;
+let generatedPrompt = '';
+let modalStep = 1;
+let logoData = null;
+let selectedFont = 'Syne';
+let selectedStyles = new Set(['Bold / Impactante']);
+let colors = ['#e5470d', '#16150f'];
+
+// ─── SEED DATA ───────────────────────────────────────────
+clients = [
+  {
+    id: 1,
+    name: 'Studio Vivas',
+    segment: 'Infoproduto / Curso',
+    tone: 'Inspiracional',
+    audience: 'Mulheres 30–45 que querem transformar vida pessoal',
+    value: 'Metodologia exclusiva de autoconhecimento com resultados em 30 dias',
+    colors: ['#c84b8e', '#1a0a2e', '#f7c5e0'],
+    font: 'Playfair Display',
+    styles: ['Elegante', 'Inspiracional'],
+    guidelines: 'Tons rosados e roxo escuro. Sempre transmitir leveza e sofisticação.',
+    logo: null,
+    initials: 'SV',
+    creatives: 4
+  },
+  {
+    id: 2,
+    name: 'FitMax Academy',
+    segment: 'Infoproduto / Curso',
+    tone: 'Urgente / Agressivo',
+    audience: 'Homens 20–35 que querem ganhar massa muscular',
+    value: 'Protocolo de 12 semanas com ganho garantido de 5kg de massa',
+    colors: ['#e53e00', '#0a0a0a', '#ff8c00'],
+    font: 'Bebas Neue',
+    styles: ['Bold / Impactante', 'Colorido'],
+    guidelines: 'Muito contraste. Fundo escuro sempre. CTAs grandes e agressivos.',
+    logo: null,
+    initials: 'FM',
+    creatives: 7
+  },
+  {
+    id: 3,
+    name: 'Clínica Bem Viver',
+    segment: 'Saúde / Bem-estar',
+    tone: 'Profissional',
+    audience: 'Adultos 35–55 que buscam qualidade de vida',
+    value: 'Tratamentos integrativas com abordagem personalizada',
+    colors: ['#2d7a4f', '#f0f7f3', '#1a4a32'],
+    font: 'DM Sans',
+    styles: ['Minimalista', 'Elegante'],
+    guidelines: 'Verde como cor dominante. Clean. Transmitir confiança e cuidado.',
+    logo: null,
+    initials: 'CB',
+    creatives: 2
+  }
+];
+
+// ─── NAVIGATION ──────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+
+  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', historico: 'Histórico' };
+  document.getElementById('topbarTitle').textContent = labels[id] || id;
+
+  const btnLabels = { clients: '+ Novo cliente', gerar: '', historico: '' };
+  const topBtn = document.getElementById('topbarBtn');
+  topBtn.textContent = btnLabels[id] || '';
+  topBtn.style.display = btnLabels[id] ? 'inline-flex' : 'none';
+
+  if (id === 'clients') renderClientsGrid();
+  if (id === 'gerar') populateQuickSelect();
+
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    if (btn.getAttribute('onclick')?.includes(id)) btn.classList.add('active');
+  });
+}
+
+// ─── CLIENTS GRID ────────────────────────────────────────
+function renderClientsGrid() {
+  const grid = document.getElementById('clientsGrid');
+  grid.innerHTML = '';
+
+  clients.forEach(c => {
+    const bgColor = c.colors[0];
+    const card = document.createElement('div');
+    card.className = 'client-card fadein';
+    card.onclick = () => openClientDetail(c.id);
+
+    const colorPips = c.colors.slice(0,3).map(col =>
+      `<div class="color-pip" style="background:${col}"></div>`
+    ).join('');
+
+    const logoContent = c.logo
+      ? `<img src="${c.logo}" alt="${c.name}">`
+      : `<span>${c.initials}</span>`;
+
+    card.innerHTML = `
+      <div class="client-card-top" style="background:${bgColor}18">
+        <div class="client-logo-preview" style="background:${bgColor}">${logoContent}</div>
+        <div class="client-colors">${colorPips}</div>
+      </div>
+      <div class="client-card-body">
+        <div class="client-name">${c.name}</div>
+        <div class="client-segment">${c.segment}</div>
+        <div class="client-meta">
+          <span class="client-tag">${c.tone}</span>
+          <span class="client-count">${c.creatives || 0} criativos</span>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Add card
+  const addCard = document.createElement('div');
+  addCard.className = 'add-client-card';
+  addCard.onclick = openAddClient;
+  addCard.innerHTML = `
+    <div class="add-icon">+</div>
+    <div style="font-size:13px;font-weight:600">Novo cliente</div>
+    <div style="font-size:11px">Cadastrar identidade visual</div>
+  `;
+  grid.appendChild(addCard);
+}
+
+// ─── CLIENT DETAIL ───────────────────────────────────────
+function openClientDetail(id) {
+  currentClient = clients.find(c => c.id === id);
+  if (!currentClient) return;
+
+  // Header
+  const logoContent = currentClient.logo
+    ? `<img src="${currentClient.logo}" alt="">`
+    : `<span>${currentClient.initials}</span>`;
+
+  document.getElementById('detailHeader').innerHTML = `
+    <div class="client-detail-logo" style="background:${currentClient.colors[0]}">${logoContent}</div>
+    <div>
+      <div class="client-detail-name">${currentClient.name}</div>
+      <div class="client-detail-sub">${currentClient.segment} · ${currentClient.audience}</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="openEditClient(${id})">✏ Editar marca</button>
+    </div>
+  `;
+
+  // Brand panel
+  const swatches = currentClient.colors.map(c => `
+    <div class="brand-color-swatch">
+      <div class="brand-color-circle" style="background:${c}"></div>
+      <div class="brand-color-hex">${c}</div>
+    </div>
+  `).join('');
+
+  const styleTags = (currentClient.styles || []).map(s =>
+    `<span class="tone-tag">${s}</span>`
+  ).join('');
+
+  document.getElementById('brandPanel').innerHTML = `
+    <div class="brand-section">
+      <div class="brand-section-header">Identidade Visual</div>
+      <div class="brand-section-body">
+        <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Cores</div>
+        <div class="brand-colors">${swatches}</div>
+      </div>
+    </div>
+
+    <div class="brand-section">
+      <div class="brand-section-header">Tipografia</div>
+      <div class="brand-section-body">
+        <div class="brand-font-sample" style="font-family:'${currentClient.font}',sans-serif">${currentClient.name}</div>
+        <div class="brand-font-label">${currentClient.font}</div>
+      </div>
+    </div>
+
+    <div class="brand-section">
+      <div class="brand-section-header">Tom e Estilo</div>
+      <div class="brand-section-body">
+        <div style="font-size:11px;color:var(--ink2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Tom de voz</div>
+        <div class="tone-tags" style="margin-bottom:12px"><span class="tone-tag">${currentClient.tone}</span></div>
+        <div style="font-size:11px;color:var(--ink2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.8px;font-weight:600">Estilo visual</div>
+        <div class="tone-tags">${styleTags}</div>
+      </div>
+    </div>
+
+    ${currentClient.guidelines ? `
+    <div class="brand-section">
+      <div class="brand-section-header">Diretrizes</div>
+      <div class="brand-section-body">
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">${currentClient.guidelines}</p>
+      </div>
+    </div>` : ''}
+
+    <div class="brand-section">
+      <div class="brand-section-header">Proposta de valor</div>
+      <div class="brand-section-body">
+        <p style="font-size:12px;color:var(--ink2);line-height:1.6">${currentClient.value}</p>
+        <div style="margin-top:8px;font-size:11px;color:var(--ink3)">Público: ${currentClient.audience}</div>
+      </div>
+    </div>
+  `;
+
+  // Brand notice
+  document.getElementById('brandNotice').innerHTML =
+    `✓ Identidade de <strong>${currentClient.name}</strong> aplicada automaticamente`;
+
+  // Reset generate
+  document.getElementById('genHeadline').value = '';
+  document.getElementById('genSubheadline').value = '';
+  document.getElementById('genCta').value = '';
+  document.getElementById('genGatilho').value = '';
+  document.getElementById('genArtDirection').value = '';
+  document.getElementById('artAiBadge').classList.remove('hidden');
+  document.getElementById('outputSection').style.display = 'none';
+  document.getElementById('resultsSection').style.display = 'none';
+  generatedPrompt = '';
+
+  showPage('detail');
+  document.getElementById('topbarTitle').textContent = currentClient.name;
+  document.getElementById('topbarBtn').style.display = 'none';
+}
+
+// ─── GENERATE AD ─────────────────────────────────────────
+// Toggle art direction badge visibility
+document.addEventListener('DOMContentLoaded', () => {
+  const artField = document.getElementById('genArtDirection');
+  if (artField) {
+    artField.addEventListener('input', () => {
+      const badge = document.getElementById('artAiBadge');
+      if (badge) badge.classList.toggle('hidden', artField.value.trim().length > 0);
+    });
+  }
+});
+
+async function generateAd() {
+  const headline    = document.getElementById('genHeadline').value.trim();
+  const subheadline = document.getElementById('genSubheadline').value.trim();
+  const cta         = document.getElementById('genCta').value.trim();
+  const gatilho     = document.getElementById('genGatilho').value;
+  const format      = document.getElementById('genFormat').value;
+  const objective   = document.getElementById('genObj').value;
+  const artDir      = document.getElementById('genArtDirection').value.trim();
+
+  if (!headline) { alert('A Headline é obrigatória.'); return; }
+
+  const btn     = document.getElementById('genBtn');
+  const btnIcon = document.getElementById('genBtnIcon');
+  const btnText = document.getElementById('genBtnText');
+
+  btn.disabled = true;
+  btnIcon.innerHTML = '<div class="spin"></div>';
+  btnText.textContent = 'Claude analisando briefing...';
+
+  document.getElementById('outputSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+
+  const out = document.getElementById('promptOutput');
+  out.innerHTML = '<span class="cursor-blink"></span>';
+
+  const c = currentClient;
+  const hasArtDir = artDir.length > 0;
+
+  const systemPrompt = `Você é um diretor de arte e especialista em prompt engineering para geração de imagens publicitárias com IA (GPT Image 1.5, Midjourney, Stable Diffusion).
+
+Você recebe um briefing estruturado de uma gestora de tráfego profissional e gera um prompt técnico de imagem de alta qualidade.
+
+REGRAS ABSOLUTAS:
+1. Incorpore o copy fornecido (headline, subheadline, CTA) como texto renderizado na imagem — especifique posição exata, peso, cor e tamanho
+2. Use SEMPRE as cores exatas da identidade visual (hex codes)
+3. Respeite a direção de arte fornecida ao pé da letra quando presente
+4. Quando a direção de arte estiver ausente, crie uma composição original coerente com a identidade visual e o gatilho mental
+5. O prompt deve ter 200-280 palavras, ser técnico e detalhado
+6. Especifique: composição, iluminação, paleta, tipografia, hierarquia visual, mood fotográfico
+7. Inclua no final: "--ar [ratio] --style raw" adequado ao formato
+8. Responda SOMENTE com o prompt. Zero introdução, zero explicação.`;
+
+  const userMsg = `CLIENTE: ${c.name} | ${c.segment}
+PROPOSTA DE VALOR: ${c.value}
+PÚBLICO: ${c.audience}
+
+--- COPY DO ANÚNCIO ---
+Headline: ${headline}${subheadline ? `\nSubheadline: ${subheadline}` : ''}${cta ? `\nCTA: ${cta}` : ''}${gatilho ? `\nGatilho mental: ${gatilho}` : ''}
+
+--- ESPECIFICAÇÕES ---
+Formato: ${format}
+Objetivo: ${objective}
+
+--- IDENTIDADE VISUAL (OBRIGATÓRIO) ---
+Cores primárias: ${c.colors.join(' · ')}
+Fonte: ${c.font}
+Tom de voz: ${c.tone}
+Estilo visual: ${(c.styles||[]).join(', ')}${c.guidelines ? `\nDiretrizes: ${c.guidelines}` : ''}
+
+--- DIREÇÃO DE ARTE ---
+${hasArtDir
+  ? artDir
+  : `[NÃO FORNECIDA — crie uma direção de arte original que maximize o gatilho "${gatilho || 'conversão'}" e seja fiel à identidade visual do cliente]`}`;
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    generatedPrompt = data.content?.[0]?.text || '';
+
+    // Stream output
+    out.innerHTML = '';
+    let displayed = '';
+    for (let i = 0; i < generatedPrompt.length; i++) {
+      await new Promise(r => setTimeout(r, 6));
+      displayed += generatedPrompt[i];
+      out.innerHTML = displayed + '<span class="cursor-blink"></span>';
+    }
+    out.innerHTML = displayed;
+
+    // Show source badge
+    const sourceLabel = hasArtDir ? '✏ Direção de arte sua' : '✦ Direção de arte criada pelo Claude';
+    document.querySelector('#outputSection .gen-section-header').innerHTML = `
+      <div class="gen-section-title">Prompt gerado</div>
+      <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:${hasArtDir ? '#edf9f0' : '#fff5f2'};color:${hasArtDir ? '#16a34a' : '#e5470d'}">${sourceLabel}</span>
+      <button class="btn btn-ghost btn-sm" id="copyPromptBtn" onclick="copyPrompt()" style="margin-left:auto">📋 Copiar</button>
+    `;
+
+    btnText.textContent = 'Gerando imagens reais...';
+
+    // Call real image generation API
+    try {
+      const imgRes = await fetch('/api/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: generatedPrompt, n: 3, size: '1024x1024', quality: 'high' })
+      });
+      const imgData = await imgRes.json();
+
+      if (imgData.data && imgData.data.length > 0) {
+        renderRealImages(imgData.data, headline);
+      } else {
+        renderResults(headline); // fallback to mock if image API fails
+      }
+    } catch (imgErr) {
+      console.warn('Image API error, using mock:', imgErr.message);
+      renderResults(headline);
+    }
+
+    currentClient.creatives = (currentClient.creatives || 0) + 3;
+
+  } catch (err) {
+    out.innerHTML = `<span style="color:#ff6b6b">Erro: ${err.message}</span>`;
+  }
+
+  btn.disabled = false;
+  btnIcon.textContent = '✦';
+  btnText.textContent = 'Gerar criativo';
+}
+
+function renderRealImages(images, headline) {
+  document.getElementById('resultsSection').style.display = 'block';
+  const grid = document.getElementById('resultsGrid');
+  const labels = ['A', 'B', 'C'];
+  const scores = ['94', '91', '89'];
+
+  grid.innerHTML = images.slice(0, 3).map((img, i) => {
+    const src = img.url || (img.b64_json ? `data:image/png;base64,${img.b64_json}` : '');
+    return `
+      <div class="result-card ${i===0?'selected':''} fadein" style="animation-delay:${i*0.1}s" onclick="selectResult(this)">
+        <div class="result-img" style="background:#000">
+          ${src ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover" alt="Variação ${labels[i]}">` : '<div style="color:#666;font-size:11px;padding:16px;text-align:center">Imagem indisponível</div>'}
+        </div>
+        <div class="result-footer">
+          <span class="result-label">Variação ${labels[i]}</span>
+          <span class="result-score">★ ${scores[i]}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  currentClient.creatives = (currentClient.creatives || 0) + images.length;
+}
+
+function renderResults(headline) {
+  document.getElementById('resultsSection').style.display = 'block';
+  const grid = document.getElementById('resultsGrid');
+  const c = currentClient;
+  const hl = headline || 'Seu headline aqui';
+  const hl_short = hl.split(' ').slice(0,5).join(' ') + (hl.split(' ').length > 5 ? '...' : '');
+
+  grid.innerHTML = `
+    <div class="result-card selected fadein" onclick="selectResult(this)">
+      <div class="result-img">
+        <div class="mock-dark">
+          <div style="font-size:7px;letter-spacing:2px;color:${c.colors[0]};font-weight:700;text-transform:uppercase;margin-bottom:5px">✦ ${c.name}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:white;line-height:1.2;margin-bottom:8px">${hl_short}</div>
+          <div style="font-size:8px;font-weight:700;padding:5px 10px;background:${c.colors[0]};color:white;border-radius:4px;width:fit-content">Ver agora →</div>
+        </div>
+      </div>
+      <div class="result-footer">
+        <span class="result-label">A · Bold</span>
+        <span class="result-score">★ 94</span>
+      </div>
+    </div>
+
+    <div class="result-card fadein" style="animation-delay:.1s" onclick="selectResult(this)">
+      <div class="result-img">
+        <div class="mock-clean">
+          <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999">${c.name}</div>
+          <div style="text-align:center">
+            <div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:${c.colors[0]};letter-spacing:-2px;line-height:1">50%</div>
+            <div style="font-size:9px;color:#999">de desconto</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-end">
+            <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:${c.colors[1] || c.colors[0]};max-width:100px;line-height:1.2">${hl_short}</div>
+            <div style="width:28px;height:28px;background:${c.colors[0]};border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:12px">→</div>
+          </div>
+        </div>
+      </div>
+      <div class="result-footer">
+        <span class="result-label">B · Clean</span>
+        <span class="result-score">★ 91</span>
+      </div>
+    </div>
+
+    <div class="result-card fadein" style="animation-delay:.2s" onclick="selectResult(this)">
+      <div class="result-img">
+        <div class="mock-split">
+          <div style="background:${c.colors[0]};padding:12px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,.6);text-transform:uppercase">Para você</div>
+            <div style="font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:white;line-height:1.2">${hl_short}</div>
+            <div style="font-size:8px;color:rgba(255,255,255,.7)">Ver →</div>
+          </div>
+          <div style="background:${c.colors[1] || '#16150f'};padding:12px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:7px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px">Resultado</div>
+            <div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:white">8×</div>
+            <div style="font-size:8px;color:rgba(255,255,255,.4)">comprovado</div>
+          </div>
+        </div>
+      </div>
+      <div class="result-footer">
+        <span class="result-label">C · Split</span>
+        <span class="result-score">★ 89</span>
+      </div>
+    </div>
+  `;
+}
+
+function selectResult(card) {
+  document.querySelectorAll('.result-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(generatedPrompt).then(() => {
+    const btn = document.getElementById('copyPromptBtn');
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = '📋 Copiar', 2000);
+  });
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+function openAddClient() {
+  modalStep = 1;
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('modalBack').style.display = 'none';
+  document.getElementById('modalNext').textContent = 'Próximo →';
+  document.getElementById('modalTitle').textContent = 'Novo cliente — Informações';
+  resetModalForm();
+  initColorFields();
+  document.getElementById('addClientModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('addClientModal').classList.remove('open');
+}
+
+function modalNext() {
+  if (modalStep === 1) {
+    const name = document.getElementById('clientName').value.trim();
+    if (!name) { alert('Digite o nome do cliente.'); return; }
+    modalStep = 2;
+    document.getElementById('step1').style.display = 'none';
+    document.getElementById('step2').style.display = 'block';
+    document.getElementById('modalBack').style.display = 'inline-flex';
+    document.getElementById('modalNext').textContent = '✓ Salvar cliente';
+    document.getElementById('modalTitle').textContent = 'Novo cliente — Identidade Visual';
+  } else {
+    saveClient();
+  }
+}
+
+function modalBack() {
+  modalStep = 1;
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display = 'none';
+  document.getElementById('modalBack').style.display = 'none';
+  document.getElementById('modalNext').textContent = 'Próximo →';
+  document.getElementById('modalTitle').textContent = 'Novo cliente — Informações';
+}
+
+function resetModalForm() {
+  document.getElementById('clientName').value = '';
+  document.getElementById('clientAudience').value = '';
+  document.getElementById('clientValue').value = '';
+  document.getElementById('clientGuidelines').value = '';
+  logoData = null;
+  selectedFont = 'Syne';
+  selectedStyles = new Set(['Bold / Impactante']);
+  colors = ['#e5470d', '#16150f'];
+  document.getElementById('logoPreviewWrap').innerHTML = `
+    <div style="font-size:28px;margin-bottom:6px">🖼</div>
+    <div class="logo-upload-label">Clique para fazer upload do logo</div>
+    <div class="logo-upload-hint">PNG, SVG · Recomendado fundo transparente</div>
+  `;
+  document.getElementById('logoZone').classList.remove('has-logo');
+  document.querySelectorAll('#fontPills .font-pill').forEach(p => {
+    p.classList.toggle('selected', p.textContent === 'Syne');
+  });
+  document.querySelectorAll('#stylePills .font-pill').forEach(p => {
+    p.classList.toggle('selected', p.textContent === 'Bold / Impactante');
+  });
+}
+
+function initColorFields() {
+  const grid = document.getElementById('colorsGrid');
+  grid.innerHTML = '';
+  colors.forEach((c, i) => addColorField(c));
+}
+
+function addColorField(initialColor) {
+  const color = initialColor || '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+  const grid = document.getElementById('colorsGrid');
+  const item = document.createElement('div');
+  item.className = 'color-item';
+  item.innerHTML = `
+    <div class="color-circle" style="background:${color}">
+      <input type="color" value="${color}" oninput="updateColorCircle(this)">
+    </div>
+    <div class="color-hex">${color}</div>
+  `;
+  grid.appendChild(item);
+}
+
+function updateColorCircle(input) {
+  const circle = input.parentElement;
+  circle.style.background = input.value;
+  circle.nextElementSibling.textContent = input.value;
+}
+
+function handleLogoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    logoData = e.target.result;
+    document.getElementById('logoZone').classList.add('has-logo');
+    document.getElementById('logoPreviewWrap').innerHTML =
+      `<img src="${logoData}" class="logo-preview" alt="Logo">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function selectFont(el) {
+  document.querySelectorAll('#fontPills .font-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedFont = el.textContent;
+}
+
+function toggleStylePill(el) {
+  el.classList.toggle('selected');
+  if (el.classList.contains('selected')) selectedStyles.add(el.textContent);
+  else selectedStyles.delete(el.textContent);
+}
+
+function saveClient() {
+  const name = document.getElementById('clientName').value.trim();
+  const colorInputs = document.querySelectorAll('#colorsGrid input[type=color]');
+  const savedColors = Array.from(colorInputs).map(i => i.value);
+
+  const newClient = {
+    id: Date.now(),
+    name,
+    segment: document.getElementById('clientSegment').value,
+    tone: document.getElementById('clientTone').value,
+    audience: document.getElementById('clientAudience').value,
+    value: document.getElementById('clientValue').value,
+    colors: savedColors.length ? savedColors : ['#e5470d', '#16150f'],
+    font: selectedFont,
+    styles: [...selectedStyles],
+    guidelines: document.getElementById('clientGuidelines').value,
+    logo: logoData,
+    initials: name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase(),
+    creatives: 0
+  };
+
+  clients.unshift(newClient);
+  closeModal();
+  renderClientsGrid();
+
+  // Open detail immediately
+  setTimeout(() => openClientDetail(newClient.id), 150);
+}
+
+function openEditClient(id) {
+  alert('Em breve: edição de identidade visual do cliente.');
+}
+
+// ─── QUICK GENERATE ──────────────────────────────────────
+function populateQuickSelect() {
+  const sel = document.getElementById('quickClientSelect');
+  sel.innerHTML = '<option value="">— Selecione um cliente —</option>';
+  clients.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = c.name;
+    sel.appendChild(opt);
+  });
+}
+
+function quickClientSelected() {
+  const id = parseInt(document.getElementById('quickClientSelect').value);
+  if (!id) return;
+  openClientDetail(id);
+}
+
+// ─── INIT ────────────────────────────────────────────────
+renderClientsGrid();
+</script>
+</body>
+</html>
