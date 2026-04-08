@@ -72,6 +72,12 @@ body {
   border-radius: 50%;
 }
 
+.logo-mark img {
+  max-height: 36px;
+  width: auto;
+  display: block;
+}
+
 .nav-section {
   padding: 14px 12px 6px;
 }
@@ -1989,7 +1995,7 @@ ${hasArtDir
   : `[NÃO FORNECIDA — crie uma direção de arte original que maximize o gatilho "${gatilho || 'conversão'}" e seja fiel à identidade visual do cliente]`}${refsText}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
