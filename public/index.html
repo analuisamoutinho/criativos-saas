@@ -878,6 +878,148 @@ body {
 
 .art-ai-badge.hidden { opacity: 0; }
 
+/* COMPOSE PREVIEW MODAL */
+.compose-modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(22,21,15,.75); z-index:300;
+  align-items:center; justify-content:center; padding:20px;
+}
+.compose-modal-overlay.open { display:flex; }
+.compose-modal {
+  background:var(--surface); border-radius:16px;
+  width:100%; max-width:960px; max-height:92vh;
+  overflow-y:auto; display:grid;
+  grid-template-columns:1fr 400px;
+  box-shadow:0 24px 64px rgba(22,21,15,.25);
+}
+.compose-preview-side {
+  background:#111; border-radius:16px 0 0 16px;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; min-height:500px;
+}
+.compose-canvas-wrap {
+  position:relative; display:inline-block;
+  max-width:100%; max-height:calc(92vh - 48px);
+}
+.compose-canvas-wrap canvas {
+  max-width:100%; max-height:calc(92vh - 48px);
+  display:block; border-radius:8px;
+}
+.compose-controls-side {
+  padding:24px; display:flex; flex-direction:column; gap:16px;
+  border-left:1px solid var(--border);
+}
+.compose-ctrl-title {
+  font-family:'Syne',sans-serif; font-weight:700;
+  font-size:16px; letter-spacing:-.3px;
+}
+.compose-ctrl-section {
+  background:var(--bg); border-radius:var(--radius-sm); padding:12px 14px;
+}
+.compose-ctrl-label {
+  font-size:10px; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; color:var(--ink2); margin-bottom:8px;
+}
+.compose-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.compose-row:last-child { margin-bottom:0; }
+.compose-row label { font-size:12px; color:var(--ink2); min-width:70px; }
+.compose-row input[type=text], .compose-row input[type=number], .compose-row select {
+  font-family:'Instrument Sans',sans-serif; font-size:12px;
+  padding:6px 10px; border:1px solid var(--border); border-radius:6px;
+  background:var(--surface); color:var(--ink); outline:none; flex:1;
+}
+.compose-row input[type=color] {
+  width:32px; height:32px; border-radius:6px; border:1px solid var(--border);
+  cursor:pointer; padding:2px; background:var(--surface);
+}
+.compose-actions {
+  margin-top:auto; display:flex; flex-direction:column; gap:8px;
+}
+
+/* MODEL SELECTOR */
+.model-pills { display: flex; flex-direction: column; gap: 7px; }
+.model-pill {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); background: var(--surface);
+  cursor: pointer; transition: all .15s; position: relative;
+}
+.model-pill:hover { border-color: var(--ink); }
+.model-pill.active { border-color: var(--ink); background: var(--surface2); }
+.model-pill-icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+.model-pill-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.model-pill-sub { font-size: 11px; color: var(--ink2); margin-top: 1px; }
+.model-pill-badge {
+  margin-left: auto; font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 100px;
+  background: #edf9f0; color: var(--green);
+}
+.model-pill.active .model-pill-icon { color: var(--accent); }
+
+/* REFERENCES */
+.ref-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+}
+.ref-tab {
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 12px; font-weight: 600;
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent; cursor: pointer;
+  color: var(--ink2); transition: all .15s;
+}
+.ref-tab:hover { border-color: var(--ink); color: var(--ink); }
+.ref-tab.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+.ref-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
+}
+.ref-card {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  transition: all .2s;
+  cursor: pointer;
+  position: relative;
+}
+.ref-card:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22,21,15,.08); }
+.ref-card-img {
+  width: 100%; aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+  background: var(--surface2);
+}
+.ref-card-body { padding: 10px 12px; }
+.ref-card-type {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 100px;
+  background: var(--surface2); color: var(--ink2);
+  display: inline-block; margin-bottom: 4px;
+}
+.ref-card-note { font-size: 11px; color: var(--ink2); line-height: 1.4; }
+.ref-card-delete {
+  position: absolute; top: 7px; right: 7px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: rgba(22,21,15,.6); color: white;
+  border: none; cursor: pointer; font-size: 11px;
+  display: none; align-items: center; justify-content: center;
+}
+.ref-card:hover .ref-card-delete { display: flex; }
+.ref-active-badge {
+  font-size: 10px; font-weight: 600; padding: 2px 8px;
+  border-radius: 100px; background: #edf9f0; color: var(--green);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
 /* MODE TOGGLE */
 .mode-toggle { display:flex; gap:4px; }
 .mode-btn {
@@ -1022,6 +1164,9 @@ body {
       </button>
       <button class="nav-item" onclick="showPage('historico')">
         <span class="nav-icon">◷</span> Histórico
+      </button>
+      <button class="nav-item" onclick="showPage('referencias')">
+        <span class="nav-icon">◉</span> Referências
       </button>
     </div>
 
@@ -1230,6 +1375,28 @@ body {
                 </div>
               </div>
 
+              <!-- MODEL SELECTOR -->
+              <div class="model-selector" style="margin-bottom:10px;margin-top:6px">
+                <div class="briefing-section-label" style="margin-bottom:8px">Modelo de imagem</div>
+                <div class="model-pills" id="modelPills">
+                  <div class="model-pill active" onclick="selectModel(this,'gemini')" data-model="gemini">
+                    <div class="model-pill-icon">✦</div>
+                    <div>
+                      <div class="model-pill-name">Gemini Imagen 4</div>
+                      <div class="model-pill-sub">Google · Qualidade superior</div>
+                    </div>
+                    <div class="model-pill-badge">Recomendado</div>
+                  </div>
+                  <div class="model-pill" onclick="selectModel(this,'openai')" data-model="openai">
+                    <div class="model-pill-icon">◈</div>
+                    <div>
+                      <div class="model-pill-name">GPT Image 1.5</div>
+                      <div class="model-pill-sub">OpenAI · Boa aderência ao prompt</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <button class="btn btn-accent" style="width:100%;justify-content:center;padding:11px;margin-top:4px" id="genBtn" onclick="generateAd()">
                 <span id="genBtnIcon">✦</span>
                 <span id="genBtnText">Gerar criativo</span>
@@ -1253,7 +1420,7 @@ body {
           <div class="gen-section" id="resultsSection" style="display:none">
             <div class="gen-section-header">
               <div class="gen-section-title">Variações geradas</div>
-              <button class="btn btn-primary btn-sm">↓ Exportar</button>
+              <button class="btn btn-primary btn-sm" onclick="exportSelectedImage()">↓ Exportar PNG</button>
             </div>
             <div class="gen-section-body">
               <div class="results-grid" id="resultsGrid"></div>
@@ -1300,6 +1467,80 @@ body {
       </div>
     </div>
 
+    <!-- ── PAGE: REFERÊNCIAS ── -->
+    <div class="page" id="page-referencias">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Banco de Referências</div>
+          <div class="page-sub">Imagens que guiam a qualidade visual dos criativos gerados</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddRef()">+ Adicionar referência</button>
+      </div>
+
+      <!-- TABS -->
+      <div class="ref-tabs" id="refTabs">
+        <button class="ref-tab active" onclick="switchRefTab('geral', this)">◈ Gerais</button>
+        <div id="clientRefTabs"></div>
+      </div>
+
+      <!-- GRID -->
+      <div id="refGridWrap">
+        <div class="ref-grid" id="refGrid"></div>
+        <div class="empty-state" id="refEmpty" style="display:none">
+          <div class="empty-icon">◉</div>
+          <div class="empty-title">Nenhuma referência ainda</div>
+          <div class="empty-sub">Adicione imagens de anúncios que converteram bem ou estilos visuais que admira. O Claude vai usá-las para gerar criativos melhores.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── MODAL: ADD REFERENCE ── -->
+<div class="modal-overlay" id="addRefModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Adicionar referência</div>
+      <button class="modal-close" onclick="closeRefModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Imagem de referência</label>
+        <div class="logo-upload-zone" id="refImgZone" onclick="document.getElementById('refImgInput').click()">
+          <input type="file" id="refImgInput" accept="image/*" onchange="handleRefImg(event)">
+          <div id="refImgLabel">
+            <div style="font-size:24px;margin-bottom:6px">🖼</div>
+            <div class="logo-upload-label">Clique para subir a imagem</div>
+            <div class="logo-upload-hint">JPG, PNG, WebP</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo de referência</label>
+        <select class="form-select" id="refType">
+          <option value="ad">Anúncio que converte bem</option>
+          <option value="visual">Estética / estilo visual</option>
+          <option value="layout">Layout / composição</option>
+          <option value="typography">Tipografia</option>
+          <option value="color">Paleta / uso de cor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Onde aplicar</label>
+        <select class="form-select" id="refScope">
+          <option value="geral">Geral — vale para todos os clientes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nota <span style="color:var(--ink3);font-weight:400">(opcional)</span></label>
+        <input class="form-input" type="text" id="refNote" placeholder="Ex: Iluminação dramática lateral que funciona muito bem">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRefModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRef()">Salvar referência</button>
+    </div>
   </div>
 </div>
 
@@ -1486,16 +1727,17 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
 
-  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', historico: 'Histórico' };
+  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', historico: 'Histórico', referencias: 'Banco de Referências' };
   document.getElementById('topbarTitle').textContent = labels[id] || id;
 
-  const btnLabels = { clients: '+ Novo cliente', gerar: '', historico: '' };
+  const btnLabels = { clients: '+ Novo cliente', gerar: '', historico: '', referencias: '' };
   const topBtn = document.getElementById('topbarBtn');
   topBtn.textContent = btnLabels[id] || '';
   topBtn.style.display = btnLabels[id] ? 'inline-flex' : 'none';
 
   if (id === 'clients') renderClientsGrid();
   if (id === 'gerar') populateQuickSelect();
+  if (id === 'referencias') renderRefsPage();
 
   document.querySelectorAll('.nav-item').forEach(btn => {
     if (btn.getAttribute('onclick')?.includes(id)) btn.classList.add('active');
@@ -1628,8 +1870,14 @@ function openClientDetail(id) {
   `;
 
   // Brand notice
+  const clientRefs = (references[String(currentClient.id)] || []).length;
+  const geralRefs  = (references['geral'] || []).length;
+  const totalRefs  = clientRefs + geralRefs;
+  const refsBadge  = totalRefs > 0
+    ? ` <span class="ref-active-badge">◉ ${totalRefs} referência${totalRefs > 1 ? 's' : ''} ativa${totalRefs > 1 ? 's' : ''}</span>`
+    : ` <span style="font-size:10px;color:var(--ink3);margin-left:4px">— <a href="#" onclick="showPage('referencias')" style="color:var(--accent);text-decoration:none">adicionar referências</a></span>`;
   document.getElementById('brandNotice').innerHTML =
-    `✓ Identidade de <strong>${currentClient.name}</strong> aplicada automaticamente`;
+    `✓ Identidade de <strong>${currentClient.name}</strong> aplicada automaticamente${refsBadge}`;
 
   // Reset generate
   document.getElementById('genHeadline').value = '';
@@ -1687,19 +1935,36 @@ async function generateAd() {
   const c = currentClient;
   const hasArtDir = artDir.length > 0;
 
-  const systemPrompt = `Você é um diretor de arte e especialista em prompt engineering para geração de imagens publicitárias com IA (GPT Image 1.5, Midjourney, Stable Diffusion).
+  const systemPrompt = `Você é um diretor de arte sênior especialista em publicidade de alta conversão e em prompt engineering para geração de imagens com IA (Gemini Imagen, GPT Image).
 
-Você recebe um briefing estruturado de uma gestora de tráfego profissional e gera um prompt técnico de imagem de alta qualidade.
+Você recebe um briefing completo e deve retornar SOMENTE um JSON válido com dois campos: "visual_prompt" e "composition".
 
-REGRAS ABSOLUTAS:
-1. Incorpore o copy fornecido (headline, subheadline, CTA) como texto renderizado na imagem — especifique posição exata, peso, cor e tamanho
-2. Use SEMPRE as cores exatas da identidade visual (hex codes)
-3. Respeite a direção de arte fornecida ao pé da letra quando presente
-4. Quando a direção de arte estiver ausente, crie uma composição original coerente com a identidade visual e o gatilho mental
-5. O prompt deve ter 200-280 palavras, ser técnico e detalhado
-6. Especifique: composição, iluminação, paleta, tipografia, hierarquia visual, mood fotográfico
-7. Inclua no final: "--ar [ratio] --style raw" adequado ao formato
-8. Responda SOMENTE com o prompt. Zero introdução, zero explicação.`;
+REGRAS DO VISUAL_PROMPT:
+- Descreve APENAS o cenário visual, sem nenhum texto, sem logo, sem tipografia
+- Fotografia ou render 3D ultra-realista, qualidade de produção publicitária profissional
+- Especifica: cena, iluminação, paleta de cores, enquadramento, mood, profundidade de campo
+- 150-200 palavras
+- NÃO inclua nenhum texto, letras, palavras ou logotipos na imagem
+
+REGRAS DO COMPOSITION (instrui como compor o texto e logo POR CIMA da imagem):
+{
+  "headline": { "text": "...", "position": "top|bottom|middle", "align": "left|center|right", "color": "#hex", "size": "xl|lg|md", "weight": "black|bold|regular", "margin_top": 60, "margin_side": 60 },
+  "subheadline": { "text": "...", "position": "top|bottom|middle", "align": "left|center|right", "color": "#hex", "size": "md|sm", "weight": "regular|bold", "margin_top": 20 } ou null,
+  "cta": { "text": "...", "style": "button|text", "color": "#hex", "bg": "#hex ou transparent", "position": "bottom", "margin_bottom": 80 } ou null,
+  "logo": { "position": "bottom-right|bottom-left|top-right|top-left", "margin": 50, "max_height": 80 },
+  "overlay": { "type": "none|gradient-top|gradient-bottom|vignette", "color": "#hex", "opacity": 0.0 },
+  "accent_line": { "show": false } 
+}
+
+Responda SOMENTE com o JSON. Sem markdown, sem explicação.`;
+
+  // Inject references context
+  const refsCtx = getRefsContext(c.id);
+  const refsText = refsCtx ? `
+
+--- REFERÊNCIAS VISUAIS (use como base de qualidade) ---
+${refsCtx.text}
+Estas são referências reais selecionadas pela gestora. O criativo deve atingir este nível de qualidade visual e conversão.` : '';
 
   const userMsg = `CLIENTE: ${c.name} | ${c.segment}
 PROPOSTA DE VALOR: ${c.value}
@@ -1721,7 +1986,7 @@ Estilo visual: ${(c.styles||[]).join(', ')}${c.guidelines ? `\nDiretrizes: ${c.g
 --- DIREÇÃO DE ARTE ---
 ${hasArtDir
   ? artDir
-  : `[NÃO FORNECIDA — crie uma direção de arte original que maximize o gatilho "${gatilho || 'conversão'}" e seja fiel à identidade visual do cliente]`}`;
+  : `[NÃO FORNECIDA — crie uma direção de arte original que maximize o gatilho "${gatilho || 'conversão'}" e seja fiel à identidade visual do cliente]`}${refsText}`;
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -1737,31 +2002,69 @@ ${hasArtDir
 
     if (!res.ok) throw new Error('API error ' + res.status);
     const data = await res.json();
-    generatedPrompt = data.content?.[0]?.text || '';
+    const rawJson = data.content?.[0]?.text || '{}';
 
-    // Stream output
+    // Parse Claude's dual output
+    let claudeOut = {};
+    try {
+      claudeOut = JSON.parse(rawJson.replace(/```json|```/g, '').trim());
+    } catch(e) {
+      console.warn('JSON parse failed, raw:', rawJson);
+      throw new Error('Claude não retornou JSON válido. Tente novamente.');
+    }
+
+    generatedPrompt = claudeOut.visual_prompt || rawJson;
+    const composition = claudeOut.composition || null;
+
+    // Show prompt output
     out.innerHTML = '';
     let displayed = '';
     for (let i = 0; i < generatedPrompt.length; i++) {
-      await new Promise(r => setTimeout(r, 6));
+      await new Promise(r => setTimeout(r, 5));
       displayed += generatedPrompt[i];
       out.innerHTML = displayed + '<span class="cursor-blink"></span>';
     }
     out.innerHTML = displayed;
 
-    // Show source badge
-    const sourceLabel = hasArtDir ? '✏ Direção de arte sua' : '✦ Direção de arte criada pelo Claude';
+    const sourceLabel = hasArtDir ? '✏ Direção de arte sua' : '✦ Direção de arte pelo Claude';
     document.querySelector('#outputSection .gen-section-header').innerHTML = `
-      <div class="gen-section-title">Prompt gerado</div>
-      <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:${hasArtDir ? '#edf9f0' : '#fff5f2'};color:${hasArtDir ? '#16a34a' : '#e5470d'}">${sourceLabel}</span>
+      <div class="gen-section-title">Prompt visual gerado</div>
+      <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:${hasArtDir?'#edf9f0':'#fff5f2'};color:${hasArtDir?'#16a34a':'#e5470d'}">${sourceLabel}</span>
       <button class="btn btn-ghost btn-sm" id="copyPromptBtn" onclick="copyPrompt()" style="margin-left:auto">📋 Copiar</button>
     `;
 
-    btnText.textContent = 'Renderizando variações...';
-    await new Promise(r => setTimeout(r, 1600));
-    renderResults(headline);
+    // Step 2: Generate background image (no text, no logo)
+    try {
+      const isGemini = selectedModel === 'gemini';
+      const formatMap = {'Story (9:16)':'9:16','Feed Instagram (1:1)':'1:1','Banner Web (1.91:1)':'16:9','Carrossel':'1:1','YouTube Thumbnail':'16:9'};
+      const aspectRatio = formatMap[format] || '1:1';
+      const endpoint = isGemini ? '/api/gemini-image' : '/api/image';
+      const body = isGemini
+        ? { prompt: generatedPrompt, n: 1, aspectRatio }
+        : { prompt: generatedPrompt, n: 1, size: aspectRatio === '9:16' ? '1024x1792' : '1024x1024', quality: 'high' };
 
-    currentClient.creatives = (currentClient.creatives || 0) + 3;
+      btnText.textContent = isGemini ? '✦ Gemini gerando visual...' : '◈ GPT Image gerando...';
+
+      const imgRes = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const imgData = await imgRes.json();
+
+      if (imgData.data && imgData.data.length > 0) {
+        btnText.textContent = 'Compondo texto e logo...';
+        const bgSrc = imgData.data[0].url || (imgData.data[0].b64_json ? `data:image/png;base64,${imgData.data[0].b64_json}` : null);
+        if (bgSrc && composition) {
+          await composeAndPreview(bgSrc, composition, format);
+        } else if (bgSrc) {
+          renderRealImages(imgData.data, headline);
+        }
+        currentClient.creatives = (currentClient.creatives || 0) + 1;
+      } else {
+        console.warn('Image API sem dados:', imgData);
+        renderResults(headline);
+      }
+    } catch (imgErr) {
+      console.warn('Erro imagem:', imgErr.message);
+      renderResults(headline);
+    }
 
   } catch (err) {
     out.innerHTML = `<span style="color:#ff6b6b">Erro: ${err.message}</span>`;
@@ -2288,6 +2591,545 @@ function copyAllPrompts() {
   navigator.clipboard.writeText(prompts.join('\n\n')).then(() => alert(`${prompts.length} prompts copiados!`));
 }
 
+
+// ─── REFERENCES SYSTEM ───────────────────────────────────
+let references = { geral: [] }; // { geral: [...], clientId: [...] }
+let currentRefTab = 'geral';
+let pendingRefImg = null;
+
+function openAddRef() {
+  // Populate scope select with clients
+  const sel = document.getElementById('refScope');
+  sel.innerHTML = '<option value="geral">Geral — vale para todos os clientes</option>';
+  clients.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = String(c.id);
+    opt.textContent = `Apenas para ${c.name}`;
+    sel.appendChild(opt);
+  });
+  pendingRefImg = null;
+  document.getElementById('refImgLabel').innerHTML = `
+    <div style="font-size:24px;margin-bottom:6px">🖼</div>
+    <div class="logo-upload-label">Clique para subir a imagem</div>
+    <div class="logo-upload-hint">JPG, PNG, WebP</div>
+  `;
+  document.getElementById('refImgZone').classList.remove('has-logo');
+  document.getElementById('refNote').value = '';
+  document.getElementById('addRefModal').classList.add('open');
+}
+
+function closeRefModal() {
+  document.getElementById('addRefModal').classList.remove('open');
+}
+
+function handleRefImg(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    pendingRefImg = e.target.result;
+    document.getElementById('refImgZone').classList.add('has-logo');
+    document.getElementById('refImgLabel').innerHTML = `
+      <img src="${pendingRefImg}" style="max-height:80px;max-width:200px;object-fit:contain;border-radius:6px">
+    `;
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveRef() {
+  if (!pendingRefImg) { alert('Selecione uma imagem.'); return; }
+  const type  = document.getElementById('refType').value;
+  const scope = document.getElementById('refScope').value;
+  const note  = document.getElementById('refNote').value.trim();
+
+  const ref = { id: Date.now(), img: pendingRefImg, type, note, scope, createdAt: new Date().toLocaleDateString('pt-BR') };
+
+  if (!references[scope]) references[scope] = [];
+  references[scope].unshift(ref);
+
+  closeRefModal();
+  renderRefsPage();
+}
+
+function deleteRef(scope, id) {
+  if (!references[scope]) return;
+  references[scope] = references[scope].filter(r => r.id !== id);
+  renderRefsPage();
+}
+
+const refTypeLabels = {
+  ad: 'Anúncio conversor', visual: 'Estética visual',
+  layout: 'Layout / composição', typography: 'Tipografia', color: 'Paleta de cores'
+};
+
+function switchRefTab(scope, btn) {
+  currentRefTab = scope;
+  document.querySelectorAll('.ref-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderRefGrid(scope);
+}
+
+function renderRefsPage() {
+  // Build client tabs
+  const clientTabsEl = document.getElementById('clientRefTabs');
+  if (clientTabsEl) {
+    clientTabsEl.innerHTML = clients.map(c =>
+      `<button class="ref-tab${currentRefTab === String(c.id) ? ' active' : ''}" onclick="switchRefTab('${c.id}', this)">
+        ${c.name}
+        ${references[String(c.id)]?.length ? `<span style="margin-left:4px;background:var(--accent);color:white;font-size:9px;padding:1px 6px;border-radius:100px">${references[String(c.id)].length}</span>` : ''}
+      </button>`
+    ).join('');
+  }
+  renderRefGrid(currentRefTab);
+}
+
+function renderRefGrid(scope) {
+  const refs = references[scope] || [];
+  const grid = document.getElementById('refGrid');
+  const empty = document.getElementById('refEmpty');
+  if (!grid) return;
+
+  if (refs.length === 0) {
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  grid.innerHTML = refs.map(r => `
+    <div class="ref-card fadein">
+      <img class="ref-card-img" src="${r.img}" alt="Referência">
+      <button class="ref-card-delete" onclick="deleteRef('${scope}', ${r.id})">✕</button>
+      <div class="ref-card-body">
+        <span class="ref-card-type">${refTypeLabels[r.type] || r.type}</span>
+        ${r.note ? `<div class="ref-card-note">${r.note}</div>` : ''}
+        <div style="font-size:10px;color:var(--ink3);margin-top:4px">${r.createdAt}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Get references context for Claude prompt injection
+function getRefsContext(clientId) {
+  const geral = references['geral'] || [];
+  const specific = references[String(clientId)] || [];
+  const all = [...geral, ...specific];
+  if (all.length === 0) return null;
+
+  const summary = all.map((r, i) =>
+    `Referência ${i+1} (${refTypeLabels[r.type]})${r.note ? ': ' + r.note : ''}`
+  ).join('
+');
+
+  return {
+    text: summary,
+    images: all.slice(0, 4).map(r => r.img) // max 4 reference images
+  };
+}
+
+// ─── EXPORT PNG ──────────────────────────────────────────
+function exportSelectedImage() {
+  // Find selected result card
+  const selected = document.querySelector('.result-card.selected');
+  if (!selected) { alert('Selecione uma variação primeiro.'); return; }
+
+  const img = selected.querySelector('img');
+  if (img && img.src) {
+    // Real image from API
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = `criativo-${currentClient?.name?.replace(/\s+/g,'-')}-${Date.now()}.png`;
+    a.click();
+    return;
+  }
+
+  // Mock preview — export via canvas
+  const mockEl = selected.querySelector('.result-img > div');
+  if (!mockEl) { alert('Nenhuma imagem para exportar.'); return; }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080; canvas.height = 1080;
+  const ctx = canvas.getContext('2d');
+
+  // Draw background
+  const c = currentClient;
+  ctx.fillStyle = mockEl.classList.contains('mock-dark') ? '#0d0d12' : (c?.colors?.[0] || '#333');
+  ctx.fillRect(0, 0, 1080, 1080);
+
+  // Draw headline text
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 64px sans-serif';
+  ctx.textAlign = 'left';
+  const headline = document.getElementById('genHeadline')?.value || 'Headline';
+  wrapText(ctx, headline, 80, 480, 920, 80);
+
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `criativo-${currentClient?.name?.replace(/\s+/g,'-')}-${Date.now()}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + ' ';
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + ' ';
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
+
+// ─── MODEL SELECTOR ──────────────────────────────────────
+let selectedModel = 'gemini';
+
+function selectModel(el, model) {
+  document.querySelectorAll('.model-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  selectedModel = model;
+}
+
+
+// ─── CANVAS COMPOSER ─────────────────────────────────────
+let composeState = {
+  bgSrc: null, composition: null, format: null,
+  bgImage: null, logoImage: null
+};
+
+const FONT_SIZES = {
+  xl: { base: 72, lineH: 1.15 },
+  lg: { base: 52, lineH: 1.2  },
+  md: { base: 38, lineH: 1.25 },
+  sm: { base: 28, lineH: 1.3  }
+};
+
+function canvasSize(format) {
+  if (format === 'Story (9:16)') return { w: 1080, h: 1920 };
+  if (format === 'Banner Web (1.91:1)') return { w: 1200, h: 628 };
+  return { w: 1080, h: 1080 };
+}
+
+async function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function composeAndPreview(bgSrc, composition, format) {
+  composeState.bgSrc = bgSrc;
+  composeState.composition = JSON.parse(JSON.stringify(composition));
+  composeState.format = format;
+
+  // Populate controls from composition
+  const hl = composition.headline || {};
+  const sub = composition.subheadline || {};
+  const cta = composition.cta || {};
+  const logo = composition.logo || {};
+
+  setValue('ctrl_hl_text',  hl.text || '');
+  setValue('ctrl_hl_color', hl.color || '#ffffff');
+  setValue('ctrl_hl_size',  hl.size || 'xl');
+  setValue('ctrl_hl_pos',   hl.position || 'top');
+  setValue('ctrl_hl_align', hl.align || 'left');
+  setValue('ctrl_sub_text',  sub.text || '');
+  setValue('ctrl_sub_color', sub.color || '#cccccc');
+  setValue('ctrl_cta_text', cta.text || '');
+  setValue('ctrl_cta_bg',   cta.bg && cta.bg !== 'transparent' ? cta.bg : '#e5470d');
+  setValue('ctrl_logo_pos', logo.position || 'bottom-right');
+  document.getElementById('ctrl_logo_size').value = logo.max_height || 80;
+
+  // Load images
+  try { composeState.bgImage = await loadImage(bgSrc); } catch(e) { composeState.bgImage = null; }
+  if (currentClient?.logo) {
+    try { composeState.logoImage = await loadImage(currentClient.logo); } catch(e) { composeState.logoImage = null; }
+  }
+
+  document.getElementById('composeModal').classList.add('open');
+  drawCanvas();
+}
+
+function setValue(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+function recompose() { drawCanvas(); }
+
+function drawCanvas() {
+  const canvas = document.getElementById('composeCanvas');
+  const { w, h } = canvasSize(composeState.format);
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Background image
+  if (composeState.bgImage) {
+    ctx.drawImage(composeState.bgImage, 0, 0, w, h);
+  } else {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // 2. Overlay
+  const comp = composeState.composition || {};
+  const overlay = comp.overlay || {};
+  if (overlay.type && overlay.type !== 'none') {
+    const grad = overlay.type === 'gradient-top'
+      ? ctx.createLinearGradient(0, 0, 0, h * 0.5)
+      : ctx.createLinearGradient(0, h * 0.5, 0, h);
+    const col = overlay.color || '#000000';
+    const op  = overlay.opacity ?? 0.5;
+    grad.addColorStop(0, hexToRgba(col, overlay.type === 'gradient-top' ? op : 0));
+    grad.addColorStop(1, hexToRgba(col, overlay.type === 'gradient-top' ? 0 : op));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // Helper to get Y for position
+  const margin = 60;
+  function getBaseY(position, blockH) {
+    if (position === 'top')    return margin;
+    if (position === 'bottom') return h - blockH - margin;
+    return (h - blockH) / 2;
+  }
+
+  // 3. Headline
+  const hlText  = document.getElementById('ctrl_hl_text').value;
+  const hlColor = document.getElementById('ctrl_hl_color').value;
+  const hlSize  = document.getElementById('ctrl_hl_size').value;
+  const hlPos   = document.getElementById('ctrl_hl_pos').value;
+  const hlAlign = document.getElementById('ctrl_hl_align').value;
+  const { base: hlFs, lineH: hlLH } = FONT_SIZES[hlSize] || FONT_SIZES.xl;
+
+  ctx.fillStyle = hlColor;
+  ctx.font = `900 ${hlFs}px 'Syne', sans-serif`;
+  ctx.textAlign = hlAlign;
+  const hlX = hlAlign === 'center' ? w/2 : (hlAlign === 'left' ? margin : w - margin);
+  const maxW = w - margin * 2;
+  const hlLines = wrapTextLines(ctx, hlText, maxW);
+  const hlBlockH = hlLines.length * hlFs * hlLH;
+  const hlY = getBaseY(hlPos, hlBlockH);
+
+  hlLines.forEach((line, i) => {
+    ctx.fillText(line, hlX, hlY + i * hlFs * hlLH + hlFs);
+  });
+
+  // 4. Subheadline
+  const subText  = document.getElementById('ctrl_sub_text').value;
+  const subColor = document.getElementById('ctrl_sub_color').value;
+  if (subText) {
+    const subFs = FONT_SIZES.sm.base;
+    ctx.fillStyle = subColor;
+    ctx.font = `400 ${subFs}px 'Instrument Sans', sans-serif`;
+    ctx.textAlign = hlAlign;
+    const subLines = wrapTextLines(ctx, subText, maxW);
+    const subY = hlY + hlBlockH + 24;
+    subLines.forEach((line, i) => {
+      ctx.fillText(line, hlX, subY + i * subFs * 1.4 + subFs);
+    });
+  }
+
+  // 5. CTA button
+  const ctaText = document.getElementById('ctrl_cta_text').value;
+  const ctaBg   = document.getElementById('ctrl_cta_bg').value;
+  if (ctaText) {
+    const ctaFs = 34;
+    const ctaPadH = 28, ctaPadV = 18;
+    ctx.font = `700 ${ctaFs}px 'Instrument Sans', sans-serif`;
+    const ctaW = ctx.measureText(ctaText).width + ctaPadH * 2;
+    const ctaH = ctaFs + ctaPadV * 2;
+    const ctaX = margin;
+    const ctaY = h - ctaH - 100;
+    ctx.fillStyle = ctaBg;
+    roundRect(ctx, ctaX, ctaY, ctaW, ctaH, 12);
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(ctaText, ctaX + ctaPadH, ctaY + ctaPadV + ctaFs * 0.85);
+  }
+
+  // 6. Logo
+  if (composeState.logoImage) {
+    const logoMaxH = parseInt(document.getElementById('ctrl_logo_size').value) || 80;
+    const logoPos  = document.getElementById('ctrl_logo_pos').value;
+    const logoMargin = comp.logo?.margin || 50;
+    const ratio = composeState.logoImage.width / composeState.logoImage.height;
+    const logoH = logoMaxH;
+    const logoW = logoH * ratio;
+
+    let lx, ly;
+    if (logoPos === 'bottom-right') { lx = w - logoW - logoMargin; ly = h - logoH - logoMargin; }
+    else if (logoPos === 'bottom-left') { lx = logoMargin; ly = h - logoH - logoMargin; }
+    else if (logoPos === 'top-right') { lx = w - logoW - logoMargin; ly = logoMargin; }
+    else { lx = logoMargin; ly = logoMargin; }
+
+    ctx.drawImage(composeState.logoImage, lx, ly, logoW, logoH);
+  }
+}
+
+function wrapTextLines(ctx, text, maxWidth) {
+  if (!text) return [];
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line + (line ? ' ' : '') + word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function closeComposeModal() {
+  document.getElementById('composeModal').classList.remove('open');
+}
+
+function downloadComposed() {
+  const canvas = document.getElementById('composeCanvas');
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${currentClient?.name?.replace(/\s+/g,'-') || 'criativo'}-${Date.now()}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, 'image/png');
+}
+
 </script>
+
+<!-- ── COMPOSE PREVIEW MODAL ── -->
+<div class="compose-modal-overlay" id="composeModal">
+  <div class="compose-modal">
+    <div class="compose-preview-side">
+      <div class="compose-canvas-wrap">
+        <canvas id="composeCanvas"></canvas>
+      </div>
+    </div>
+    <div class="compose-controls-side">
+      <div class="compose-ctrl-title">Preview do criativo</div>
+      <p style="font-size:12px;color:var(--ink2);line-height:1.5;margin-top:-8px">Ajuste os elementos antes de baixar.</p>
+
+      <div class="compose-ctrl-section">
+        <div class="compose-ctrl-label">Headline</div>
+        <div class="compose-row">
+          <label>Texto</label>
+          <input type="text" id="ctrl_hl_text" oninput="recompose()">
+        </div>
+        <div class="compose-row">
+          <label>Cor</label>
+          <input type="color" id="ctrl_hl_color" oninput="recompose()">
+          <label>Tamanho</label>
+          <select id="ctrl_hl_size" onchange="recompose()">
+            <option value="xl">XL</option>
+            <option value="lg">Grande</option>
+            <option value="md">Médio</option>
+          </select>
+        </div>
+        <div class="compose-row">
+          <label>Posição</label>
+          <select id="ctrl_hl_pos" onchange="recompose()">
+            <option value="top">Topo</option>
+            <option value="middle">Meio</option>
+            <option value="bottom">Baixo</option>
+          </select>
+          <label>Alinhamento</label>
+          <select id="ctrl_hl_align" onchange="recompose()">
+            <option value="left">Esquerda</option>
+            <option value="center">Centro</option>
+            <option value="right">Direita</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="compose-ctrl-section">
+        <div class="compose-ctrl-label">Subheadline</div>
+        <div class="compose-row">
+          <label>Texto</label>
+          <input type="text" id="ctrl_sub_text" oninput="recompose()">
+        </div>
+        <div class="compose-row">
+          <label>Cor</label>
+          <input type="color" id="ctrl_sub_color" oninput="recompose()">
+        </div>
+      </div>
+
+      <div class="compose-ctrl-section">
+        <div class="compose-ctrl-label">CTA</div>
+        <div class="compose-row">
+          <label>Texto</label>
+          <input type="text" id="ctrl_cta_text" oninput="recompose()">
+          <label>Cor</label>
+          <input type="color" id="ctrl_cta_bg" oninput="recompose()">
+        </div>
+      </div>
+
+      <div class="compose-ctrl-section">
+        <div class="compose-ctrl-label">Logo</div>
+        <div class="compose-row">
+          <label>Posição</label>
+          <select id="ctrl_logo_pos" onchange="recompose()">
+            <option value="bottom-right">Inferior direito</option>
+            <option value="bottom-left">Inferior esquerdo</option>
+            <option value="top-right">Superior direito</option>
+            <option value="top-left">Superior esquerdo</option>
+          </select>
+        </div>
+        <div class="compose-row">
+          <label>Tamanho</label>
+          <input type="number" id="ctrl_logo_size" value="80" min="30" max="200" oninput="recompose()" style="width:70px">
+          <span style="font-size:11px;color:var(--ink3)">px altura</span>
+        </div>
+      </div>
+
+      <div class="compose-actions">
+        <button class="btn btn-accent" style="justify-content:center;padding:12px" onclick="downloadComposed()">↓ Baixar PNG finalizado</button>
+        <button class="btn btn-ghost" style="justify-content:center" onclick="closeComposeModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
