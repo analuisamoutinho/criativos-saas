@@ -1146,6 +1146,27 @@ body {
   width: 100%; height: 100%;
   display: grid; grid-template-columns: 1fr 1fr;
 }
+
+/* ── ALTERAR MODE ── */
+.alterar-base-options { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.alterar-base-opt {
+  display:flex; align-items:flex-start; gap:10px; padding:10px 13px;
+  border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  cursor:pointer; background:var(--surface); transition:all .15s;
+}
+.alterar-base-opt:hover { border-color:var(--ink); }
+.alterar-base-opt.selected { border-color:var(--accent); background:#fff5f2; }
+.alterar-base-opt input[type=radio] { margin-top:2px; accent-color:var(--accent); flex-shrink:0; }
+.alterar-base-opt-title { font-size:13px; font-weight:600; color:var(--ink); }
+.alterar-base-opt-sub { font-size:11px; color:var(--ink2); margin-top:1px; }
+.alterar-checks { display:flex; flex-direction:column; gap:10px; }
+.alterar-check-row { display:flex; flex-direction:column; gap:6px; }
+.alterar-check-label { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); }
+.alterar-check-label input[type=checkbox] { accent-color:var(--accent); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
+.alterar-check-field { display:none; margin-left:23px; }
+.alterar-check-field.visible { display:block; }
+.alterar-base-preview { display:none; padding:10px 13px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; color:var(--ink2); line-height:1.6; margin-top:6px; max-height:80px; overflow-y:auto; }
+.alterar-base-preview.visible { display:block; }
 </style>
 </head>
 <body>
@@ -1245,6 +1266,7 @@ body {
               <div class="mode-toggle" style="margin-left:auto">
                 <button class="mode-btn active" id="modeSingle" onclick="setMode('single')">Único</button>
                 <button class="mode-btn" id="modePacote" onclick="setMode('pacote')">📋 Pacote PDF</button>
+                <button class="mode-btn" id="modeAlterar" onclick="setMode('alterar')">✏ Alterar</button>
               </div>
             </div>
             <div class="gen-section-body">
@@ -1408,6 +1430,97 @@ body {
                 <span id="genBtnText">Gerar criativo</span>
               </button>
               </div><!-- end singleMode -->
+              <!-- ALTERAR MODE -->
+              <div id="alterarMode" style="display:none">
+                <div class="brand-notice" style="margin-bottom:14px">
+                  ✏ Use este modo para ajustar <strong>um elemento específico</strong> de um criativo já gerado — mantendo todo o resto intacto.
+                </div>
+                <div class="briefing-section-label">Base do criativo</div>
+                <div class="alterar-base-options">
+                  <label class="alterar-base-opt selected" id="alterarOptSession" onclick="selectAlterarBase('session')">
+                    <input type="radio" name="alterarBase" value="session" checked>
+                    <div>
+                      <div class="alterar-base-opt-title">Último gerado nesta sessão</div>
+                      <div class="alterar-base-opt-sub" id="alterarSessionSub">Usa o prompt e composição do criativo mais recente</div>
+                    </div>
+                  </label>
+                  <label class="alterar-base-opt" id="alterarOptDescrever" onclick="selectAlterarBase('descrever')">
+                    <input type="radio" name="alterarBase" value="descrever">
+                    <div>
+                      <div class="alterar-base-opt-title">Descrever o criativo base</div>
+                      <div class="alterar-base-opt-sub">Descreva o visual e copy do criativo existente</div>
+                    </div>
+                  </label>
+                </div>
+                <div class="alterar-base-preview" id="alterarSessionPreview"></div>
+                <div class="form-group" id="alterarDescreverGroup" style="display:none">
+                  <textarea class="form-textarea" id="alterarDescricaoBase" style="height:80px"
+                    placeholder="Ex: Fundo escuro com luz lateral. Headline branca em cima. CTA laranja no rodapé. Logo inferior direito."></textarea>
+                </div>
+                <div class="briefing-section-label" style="margin-top:6px">O que alterar</div>
+                <div class="alterar-checks">
+                  <div class="alterar-check-row">
+                    <label class="alterar-check-label">
+                      <input type="checkbox" id="chkHeadline" onchange="toggleAlterarField('fieldHeadline', this)">
+                      Headline
+                    </label>
+                    <div class="alterar-check-field" id="fieldHeadline">
+                      <input class="form-input" type="text" id="altHeadline" placeholder="Novo texto da headline">
+                    </div>
+                  </div>
+                  <div class="alterar-check-row">
+                    <label class="alterar-check-label">
+                      <input type="checkbox" id="chkSub" onchange="toggleAlterarField('fieldSub', this)">
+                      Subheadline
+                    </label>
+                    <div class="alterar-check-field" id="fieldSub">
+                      <input class="form-input" type="text" id="altSub" placeholder="Novo texto da subheadline">
+                    </div>
+                  </div>
+                  <div class="alterar-check-row">
+                    <label class="alterar-check-label">
+                      <input type="checkbox" id="chkCta" onchange="toggleAlterarField('fieldCta', this)">
+                      CTA
+                    </label>
+                    <div class="alterar-check-field" id="fieldCta">
+                      <input class="form-input" type="text" id="altCta" placeholder="Novo texto do botão CTA">
+                    </div>
+                  </div>
+                  <div class="alterar-check-row">
+                    <label class="alterar-check-label">
+                      <input type="checkbox" id="chkCenario" onchange="toggleAlterarField('fieldCenario', this)">
+                      Cenário / fundo visual
+                    </label>
+                    <div class="alterar-check-field" id="fieldCenario">
+                      <textarea class="form-textarea" id="altCenario" style="height:72px"
+                        placeholder="Ex: Trocar para ambiente externo ao ar livre, luz natural de manhã."></textarea>
+                    </div>
+                  </div>
+                  <div class="alterar-check-row">
+                    <label class="alterar-check-label">
+                      <input type="checkbox" id="chkCores" onchange="toggleAlterarField('fieldCores', this)">
+                      Cores do texto / overlay
+                    </label>
+                    <div class="alterar-check-field" id="fieldCores">
+                      <input class="form-input" type="text" id="altCores" placeholder="Ex: Headline em azul #1a3cff, CTA fundo verde #16a34a">
+                    </div>
+                  </div>
+                  <div class="alterar-check-row">
+                    <label class="alterar-check-label">
+                      <input type="checkbox" id="chkOutro" onchange="toggleAlterarField('fieldOutro', this)">
+                      Outra instrução
+                    </label>
+                    <div class="alterar-check-field" id="fieldOutro">
+                      <textarea class="form-textarea" id="altOutro" style="height:64px"
+                        placeholder="Qualquer outro ajuste. Ex: Remover overlay, adicionar urgência, etc."></textarea>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-accent" style="width:100%;justify-content:center;padding:11px;margin-top:16px" id="alterarBtn" onclick="generateAlterar()">
+                  <span id="alterarBtnIcon">✏</span>
+                  <span id="alterarBtnText">Gerar versão alterada</span>
+                </button>
+              </div><!-- end alterarMode -->
             </div>
           </div>
 
@@ -2336,12 +2449,26 @@ function setMode(mode) {
   currentMode = mode;
   document.getElementById('singleMode').style.display = mode === 'single' ? 'block' : 'none';
   document.getElementById('pacoteMode').style.display = mode === 'pacote' ? 'block' : 'none';
+  document.getElementById('alterarMode').style.display = mode === 'alterar' ? 'block' : 'none';
   document.getElementById('modeSingle').classList.toggle('active', mode === 'single');
   document.getElementById('modePacote').classList.toggle('active', mode === 'pacote');
+  document.getElementById('modeAlterar').classList.toggle('active', mode === 'alterar');
   document.getElementById('outputSection').style.display = 'none';
   document.getElementById('resultsSection').style.display = 'none';
   if (document.getElementById('pacoteResultsSection')) {
     document.getElementById('pacoteResultsSection').style.display = 'none';
+  }
+  if (mode === 'alterar') {
+    const preview = document.getElementById('alterarSessionPreview');
+    const sub = document.getElementById('alterarSessionSub');
+    if (generatedPrompt) {
+      preview.textContent = generatedPrompt.slice(0, 260) + (generatedPrompt.length > 260 ? '...' : '');
+      preview.classList.add('visible');
+      if (sub) sub.textContent = 'Prompt desta sessao disponivel';
+    } else {
+      preview.classList.remove('visible');
+      if (sub) sub.textContent = 'Nenhum criativo gerado ainda nesta sessao';
+    }
   }
 }
 
@@ -2456,18 +2583,15 @@ PROPOSTA DE VALOR: ${c.value}
 PÚBLICO: ${c.audience}
 
 CRIATIVO ${cr.numero} — ${cr.objetivo}
-Headline: ${cr.headline}${cr.subheadline ? '
-Subheadline: ' + cr.subheadline : ''}
-CTA: ${cr.cta}${cr.gatilho ? '
-Gatilho: ' + cr.gatilho : ''}
+Headline: ${cr.headline}${cr.subheadline ? '\nSubheadline: ' + cr.subheadline : ''}
+CTA: ${cr.cta}${cr.gatilho ? '\nGatilho: ' + cr.gatilho : ''}
 
 FORMATO: ${format}
 IDENTIDADE VISUAL:
 Cores: ${c.colors.join(' · ')}
 Fonte: ${c.font}
 Tom: ${c.tone}
-Estilo: ${(c.styles||[]).join(', ')}${c.guidelines ? '
-Diretrizes: ' + c.guidelines : ''}
+Estilo: ${(c.styles||[]).join(', ')}${c.guidelines ? '\nDiretrizes: ' + c.guidelines : ''}
 
 DIREÇÃO DE ARTE:
 ${useArtDir && cr.direcao_arte ? cr.direcao_arte : '[Crie uma direção de arte original e sofisticada coerente com a identidade visual e o objetivo: ' + cr.objetivo + ']'}`;
@@ -2724,8 +2848,7 @@ function getRefsContext(clientId) {
 
   const summary = all.map((r, i) =>
     `Referência ${i+1} (${refTypeLabels[r.type]})${r.note ? ': ' + r.note : ''}`
-  ).join('
-');
+  ).join('\n');
 
   return {
     text: summary,
@@ -3041,6 +3164,190 @@ function downloadComposed() {
     a.click();
     URL.revokeObjectURL(url);
   }, 'image/png');
+}
+
+
+// ── ALTERAR MODE HELPERS ──────────────────────────────────────────────────
+function selectAlterarBase(val) {
+  document.querySelectorAll('.alterar-base-opt').forEach(function(el) { el.classList.remove('selected'); });
+  var key = val.charAt(0).toUpperCase() + val.slice(1);
+  document.getElementById('alterarOpt' + key).classList.add('selected');
+  document.getElementById('alterarDescreverGroup').style.display = val === 'descrever' ? 'block' : 'none';
+  var preview = document.getElementById('alterarSessionPreview');
+  if (val === 'session' && generatedPrompt) {
+    preview.classList.add('visible');
+  } else {
+    preview.classList.remove('visible');
+  }
+}
+
+function toggleAlterarField(fieldId, checkbox) {
+  var field = document.getElementById(fieldId);
+  if (checkbox.checked) {
+    field.classList.add('visible');
+    var inp = field.querySelector('input,textarea');
+    if (inp) inp.focus();
+  } else {
+    field.classList.remove('visible');
+    var inp2 = field.querySelector('input,textarea');
+    if (inp2) inp2.value = '';
+  }
+}
+
+// ── GENERATE ALTERAR ─────────────────────────────────────────────────────
+async function generateAlterar() {
+  var radioEl = document.querySelector('input[name="alterarBase"]:checked');
+  var baseMode = radioEl ? radioEl.value : 'session';
+
+  var changes = [];
+  if (document.getElementById('chkHeadline').checked) {
+    var v = document.getElementById('altHeadline').value.trim();
+    if (v) changes.push({ campo: 'headline', valor: v });
+  }
+  if (document.getElementById('chkSub').checked) {
+    var v2 = document.getElementById('altSub').value.trim();
+    if (v2) changes.push({ campo: 'subheadline', valor: v2 });
+  }
+  if (document.getElementById('chkCta').checked) {
+    var v3 = document.getElementById('altCta').value.trim();
+    if (v3) changes.push({ campo: 'cta', valor: v3 });
+  }
+  if (document.getElementById('chkCenario').checked) {
+    var v4 = document.getElementById('altCenario').value.trim();
+    if (v4) changes.push({ campo: 'cenario_visual', valor: v4 });
+  }
+  if (document.getElementById('chkCores').checked) {
+    var v5 = document.getElementById('altCores').value.trim();
+    if (v5) changes.push({ campo: 'cores_texto', valor: v5 });
+  }
+  if (document.getElementById('chkOutro').checked) {
+    var v6 = document.getElementById('altOutro').value.trim();
+    if (v6) changes.push({ campo: 'outro', valor: v6 });
+  }
+
+  if (changes.length === 0) {
+    alert('Marque pelo menos um elemento para alterar e preencha o novo valor.');
+    return;
+  }
+
+  var btn = document.getElementById('alterarBtn');
+  var btnIcon = document.getElementById('alterarBtnIcon');
+  var btnText = document.getElementById('alterarBtnText');
+  btn.disabled = true;
+  btnIcon.innerHTML = '<div class="spin"></div>';
+  btnText.textContent = 'Claude ajustando criativo...';
+
+  document.getElementById('outputSection').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  var out = document.getElementById('promptOutput');
+  out.innerHTML = '<span class="cursor-blink"></span>';
+
+  var c = currentClient;
+
+  var baseDesc = '';
+  if (baseMode === 'session' && generatedPrompt) {
+    baseDesc = 'PROMPT VISUAL ORIGINAL:\n' + generatedPrompt;
+  } else {
+    var descricao = document.getElementById('alterarDescricaoBase').value.trim();
+    if (!descricao) {
+      alert('Descreva o criativo base no campo de texto.');
+      btn.disabled = false;
+      btnIcon.textContent = '\u270F';
+      btnText.textContent = 'Gerar versao alterada';
+      return;
+    }
+    baseDesc = 'DESCRICAO DO CRIATIVO ORIGINAL:\n' + descricao;
+  }
+
+  var changesList = changes.map(function(ch) { return '- ' + ch.campo + ': "' + ch.valor + '"'; }).join('\n');
+
+  var systemPrompt = 'Voce e um diretor de arte especialista em publicidade de alta conversao.\n\nVoce recebera: (1) a descricao de um criativo existente e (2) uma lista de alteracoes especificas.\n\nSua tarefa: retornar SOMENTE um JSON valido com dois campos "visual_prompt" e "composition" aplicando EXATAMENTE as alteracoes solicitadas e mantendo TUDO O MAIS identico ao original.\n\nRegras:\n- Altere somente o que foi explicitamente pedido\n- Mantenha identidade visual, paleta e tom do cliente\n- visual_prompt descreve APENAS cenario visual sem texto sem logo\n- composition instrui posicao e estilo dos textos por cima da imagem\n- Responda SOMENTE com o JSON. Sem markdown, sem explicacao.\n\nEstrutura da composition:\n{\n  "headline": { "text": "...", "position": "top|bottom|middle", "align": "left|center|right", "color": "#hex", "size": "xl|lg|md", "weight": "black|bold|regular", "margin_top": 60, "margin_side": 60 },\n  "subheadline": { "text": "...", "position": "top|bottom|middle", "align": "left|center|right", "color": "#hex", "size": "md|sm", "weight": "regular|bold", "margin_top": 20 },\n  "cta": { "text": "...", "style": "button|text", "color": "#hex", "bg": "#hex", "position": "bottom", "margin_bottom": 80 },\n  "logo": { "position": "bottom-right", "margin": 50, "max_height": 80 },\n  "overlay": { "type": "none", "opacity": 0.0 },\n  "accent_line": { "show": false }\n}';
+
+  var userMsg = 'CLIENTE: ' + c.name + ' | ' + c.segment + '\nIDENTIDADE VISUAL:\nCores: ' + c.colors.join(' . ') + '\nFonte: ' + c.font + '\nTom: ' + c.tone + '\n\n' + baseDesc + '\n\nALTERACAO SOLICITADA:\n' + changesList + '\n\nGere o JSON aplicando apenas estas alteracoes. Mantenha todo o resto exatamente como no original.';
+
+  try {
+    var res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    if (!res.ok) throw new Error('API error ' + res.status);
+    var data = await res.json();
+    var rawJson = data.content && data.content[0] ? data.content[0].text : '{}';
+
+    var claudeOut = {};
+    try {
+      claudeOut = JSON.parse(rawJson.replace(/```json|```/g, '').trim());
+    } catch(e2) {
+      throw new Error('Claude nao retornou JSON valido. Tente novamente.');
+    }
+
+    var newPrompt = claudeOut.visual_prompt || rawJson;
+    var composition = claudeOut.composition || null;
+    generatedPrompt = newPrompt;
+
+    out.innerHTML = '';
+    var displayed = '';
+    for (var i = 0; i < newPrompt.length; i++) {
+      await new Promise(function(r) { setTimeout(r, 5); });
+      displayed += newPrompt[i];
+      out.innerHTML = displayed + '<span class="cursor-blink"></span>';
+    }
+    out.innerHTML = displayed;
+
+    var changeLabels = changes.map(function(ch) { return ch.campo; }).join(', ');
+    document.querySelector('#outputSection .gen-section-header').innerHTML =
+      '<div class="gen-section-title">Prompt ajustado</div>' +
+      '<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:#fff8e6;color:#b45309">' +
+      '\u270F Alterado: ' + changeLabels + '</span>' +
+      '<button class="btn btn-ghost btn-sm" id="copyPromptBtn" onclick="copyPrompt()" style="margin-left:auto">\uD83D\uDCCB Copiar</button>';
+
+    try {
+      var isGemini = selectedModel === 'gemini';
+      var formatEl = document.getElementById('genFormat');
+      var format = formatEl ? formatEl.value : 'Feed Instagram (1:1)';
+      var formatMap = { 'Story (9:16)': '9:16', 'Feed Instagram (1:1)': '1:1', 'Banner Web (1.91:1)': '16:9', 'Carrossel': '1:1', 'YouTube Thumbnail': '16:9' };
+      var aspectRatio = formatMap[format] || '1:1';
+      var endpoint = isGemini ? '/api/gemini-image' : '/api/image';
+      var body = isGemini
+        ? { prompt: newPrompt, n: 1, aspectRatio: aspectRatio }
+        : { prompt: newPrompt, n: 1, size: aspectRatio === '9:16' ? '1024x1792' : '1024x1024', quality: 'high' };
+
+      btnText.textContent = isGemini ? 'Gemini gerando visual...' : 'GPT Image gerando...';
+      var imgRes = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var imgData = await imgRes.json();
+
+      if (imgData.data && imgData.data.length > 0) {
+        btnText.textContent = 'Compondo...';
+        var bgSrc = imgData.data[0].url || (imgData.data[0].b64_json ? 'data:image/png;base64,' + imgData.data[0].b64_json : null);
+        var hlChange = changes.find(function(ch) { return ch.campo === 'headline'; });
+        var hlText = hlChange ? hlChange.valor : 'Criativo alterado';
+        if (bgSrc && composition) {
+          await composeAndPreview(bgSrc, composition, format);
+        } else if (bgSrc) {
+          renderRealImages(imgData.data, hlText);
+        }
+      } else {
+        renderResults(changes[0] ? changes[0].valor : 'Criativo alterado');
+      }
+    } catch(imgErr) {
+      console.warn('Erro imagem:', imgErr.message);
+      renderResults(changes[0] ? changes[0].valor : 'Criativo alterado');
+    }
+
+  } catch(err) {
+    out.innerHTML = '<span style="color:#ff6b6b">Erro: ' + err.message + '</span>';
+  }
+
+  btn.disabled = false;
+  btnIcon.textContent = '\u270F';
+  btnText.textContent = 'Gerar versao alterada';
 }
 
 </script>
