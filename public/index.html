@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1167,6 +1166,30 @@ body {
 .alterar-check-field.visible { display:block; }
 .alterar-base-preview { display:none; padding:10px 13px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; color:var(--ink2); line-height:1.6; margin-top:6px; max-height:80px; overflow-y:auto; }
 .alterar-base-preview.visible { display:block; }
+
+/* ── DASHBOARD ── */
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.dash-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 12px; }
+.dash-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.dash-avatar-fallback { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: white; flex-shrink: 0; }
+.dash-user-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+.dash-user-email { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+.dash-stat-big { padding: 16px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border2); }
+.dash-stat-num { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--ink); letter-spacing: -1px; }
+.dash-stat-label { font-size: 12px; color: var(--ink2); }
+.dash-clients { padding: 14px 20px; }
+.dash-clients-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
+.dash-client-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border2); }
+.dash-client-row:last-child { border-bottom: none; }
+.dash-client-name { font-size: 12px; color: var(--ink); }
+.dash-client-count { font-size: 12px; font-weight: 700; color: var(--accent); }
+.dash-empty-user { padding: 14px 20px; font-size: 12px; color: var(--ink3); }
+.dash-last-active { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+.dash-total-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+.dash-total-label { font-size: 13px; color: var(--ink2); }
+.dash-total-num { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--ink); }
+
 </style>
 </head>
 <body>
@@ -1195,6 +1218,9 @@ body {
       <button class="nav-item" onclick="showPage('referencias')">
         <span class="nav-icon">◉</span> Referências
       </button>
+      <button class="nav-item" onclick="showPage('dashboard')">
+        <span class="nav-icon">▦</span> Dashboard
+      </button>
     </div>
 
     <div class="nav-section" style="margin-top:8px">
@@ -1205,11 +1231,11 @@ body {
     </div>
 
     <div class="sidenav-footer">
-      <div class="user-chip">
-        <div class="user-avatar">G</div>
-        <div>
-          <div class="user-name">Gestora</div>
-          <div class="user-role">Gestor de Tráfego</div>
+      <div class="user-chip" id="sidenavUser">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <div style="min-width:0">
+          <div class="user-name" id="userName" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Carregando...</div>
+          <div class="user-role"><a href="/auth/logout" style="color:rgba(255,255,255,0.35);text-decoration:none;font-size:10px">Sair</a></div>
         </div>
       </div>
     </div>
@@ -1224,6 +1250,7 @@ body {
       <div class="topbar-actions">
         <button class="btn btn-ghost btn-sm">📋 Ajuda</button>
         <button class="btn btn-primary btn-sm" id="topbarBtn" onclick="openAddClient()">+ Novo cliente</button>
+        <div id="topbarUserAvatar" style="width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="Sair" onclick="window.location='/auth/logout'"></div>
       </div>
     </div>
 
@@ -1663,6 +1690,23 @@ body {
   </div>
 </div>
 
+
+    <!-- ── PAGE: DASHBOARD ── -->
+    <div class="page" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub">Uso da plataforma por usuário</div>
+        </div>
+      </div>
+      <div id="dashboardContent">
+        <div class="empty-state">
+          <div class="empty-icon">▦</div>
+          <div class="empty-title">Carregando...</div>
+        </div>
+      </div>
+    </div>
+
 <!-- ── MODAL: ADD CLIENT ── -->
 <div class="modal-overlay" id="addClientModal">
   <div class="modal">
@@ -1846,7 +1890,7 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
 
-  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', historico: 'Histórico', referencias: 'Banco de Referências' };
+  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', historico: 'Histórico', referencias: 'Banco de Referências', dashboard: 'Dashboard' };
   document.getElementById('topbarTitle').textContent = labels[id] || id;
 
   const btnLabels = { clients: '+ Novo cliente', gerar: '', historico: '', referencias: '' };
@@ -1857,6 +1901,7 @@ function showPage(id) {
   if (id === 'clients') renderClientsGrid();
   if (id === 'gerar') populateQuickSelect();
   if (id === 'referencias') renderRefsPage();
+  if (id === 'dashboard') renderDashboard();
 
   document.querySelectorAll('.nav-item').forEach(btn => {
     if (btn.getAttribute('onclick')?.includes(id)) btn.classList.add('active');
@@ -2176,6 +2221,7 @@ ${hasArtDir
           renderRealImages(imgData.data, headline);
         }
         currentClient.creatives = (currentClient.creatives || 0) + 1;
+        trackCreative(currentClient.name);
       } else {
         console.warn('Image API sem dados:', imgData);
         renderResults(headline);
@@ -2738,6 +2784,7 @@ function openAddRef() {
     sel.appendChild(opt);
   });
   pendingRefImg = null;
+  document.getElementById('refImgInput').value = ''; // reset so same file triggers onchange again
   document.getElementById('refImgLabel').innerHTML = `
     <div style="font-size:24px;margin-bottom:6px">🖼</div>
     <div class="logo-upload-label">Clique para subir a imagem</div>
@@ -3349,6 +3396,104 @@ async function generateAlterar() {
   btnIcon.textContent = '\u270F';
   btnText.textContent = 'Gerar versao alterada';
 }
+
+
+// ── AUTH INIT ──────────────────────────────────────────────────────────────
+async function initAuth() {
+  try {
+    var res = await fetch('/api/me');
+    if (!res.ok) { window.location.href = '/login'; return; }
+    var user = await res.json();
+
+    // Topbar avatar
+    var topAvatar = document.getElementById('topbarUserAvatar');
+    if (topAvatar) {
+      if (user.photo) {
+        topAvatar.innerHTML = '<img src="' + user.photo + '" style="width:100%;height:100%;object-fit:cover">';
+      } else {
+        topAvatar.textContent = user.name.charAt(0).toUpperCase();
+      }
+      topAvatar.title = user.name + ' — Clique para sair';
+    }
+
+    // Sidenav footer
+    var nameEl = document.getElementById('userName');
+    var avatarEl = document.getElementById('userAvatar');
+    if (nameEl) nameEl.textContent = user.name.split(' ')[0];
+    if (avatarEl) {
+      if (user.photo) {
+        avatarEl.style.background = 'none';
+        avatarEl.innerHTML = '<img src="' + user.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+      } else {
+        avatarEl.textContent = user.name.charAt(0).toUpperCase();
+      }
+    }
+  } catch(e) {
+    window.location.href = '/login';
+  }
+}
+
+// ── TRACK CREATIVE ─────────────────────────────────────────────────────────
+function trackCreative(clientName) {
+  fetch('/api/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clientName: clientName || '' })
+  }).catch(function() {}); // fire and forget
+}
+
+// ── RENDER DASHBOARD ───────────────────────────────────────────────────────
+async function renderDashboard() {
+  var container = document.getElementById('dashboardContent');
+  try {
+    var res = await fetch('/api/stats');
+    var users = await res.json();
+
+    if (!users || users.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">▦</div><div class="empty-title">Sem dados ainda</div><div class="empty-sub">Gere criativos para ver as estatísticas aqui.</div></div>';
+      return;
+    }
+
+    var totalAll = users.reduce(function(s, u) { return s + u.totalCreatives; }, 0);
+
+    var html = '<div class="dash-total-bar"><div><div class="dash-total-label">Total de criativos gerados</div><div class="dash-last-active">Todos os usuários</div></div><div class="dash-total-num">' + totalAll + '</div></div>';
+    html += '<div class="dash-grid">';
+
+    users.forEach(function(u) {
+      var initials = u.name ? u.name.charAt(0).toUpperCase() : '?';
+      var avatarHtml = u.photo
+        ? '<img class="dash-avatar" src="' + u.photo + '" alt="">'
+        : '<div class="dash-avatar-fallback">' + initials + '</div>';
+
+      var lastActive = u.lastActive
+        ? new Date(u.lastActive).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+        : 'Nunca';
+
+      var clientRows = '';
+      var clientEntries = Object.entries(u.byClient || {}).sort(function(a,b){ return b[1]-a[1]; });
+      if (clientEntries.length > 0) {
+        clientEntries.forEach(function(entry) {
+          clientRows += '<div class="dash-client-row"><span class="dash-client-name">' + entry[0] + '</span><span class="dash-client-count">' + entry[1] + '</span></div>';
+        });
+      } else {
+        clientRows = '<div class="dash-empty-user">Nenhum criativo gerado ainda.</div>';
+      }
+
+      html += '<div class="dash-card">'
+        + '<div class="dash-card-header">' + avatarHtml + '<div><div class="dash-user-name">' + u.name + '</div><div class="dash-user-email">' + u.email + '</div></div></div>'
+        + '<div class="dash-stat-big"><div class="dash-stat-num">' + u.totalCreatives + '</div><div><div class="dash-stat-label">criativos gerados</div><div class="dash-last-active">Último: ' + lastActive + '</div></div></div>'
+        + '<div class="dash-clients"><div class="dash-clients-title">Por cliente</div>' + clientRows + '</div>'
+        + '</div>';
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Erro ao carregar</div><div class="empty-sub">' + e.message + '</div></div>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() { initAuth(); });
 
 </script>
 
