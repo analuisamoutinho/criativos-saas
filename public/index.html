@@ -24,22 +24,28 @@
 }
 
 
-/* ── RESET GLOBAL: garante que nenhum CSS externo sobreponha o fundo ── */
-html {
+/* ── RESET GLOBAL: cobre qualquer fundo externo (logo, watermark, etc) ── */
+html, body {
   background: #f4f2ed !important;
-}
-body {
   background-image: none !important;
+}
+/* Cobre qualquer imagem de fundo que venha de CSS externo */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
   background:
     radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
     radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
-    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%) !important;
-  min-height: 100vh !important;
+    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%);
+  z-index: -9999;
+  pointer-events: none;
 }
-.shell, .main, .sidenav {
+.shell, .main {
   background-image: none !important;
-  background: transparent !important;
+  background-color: transparent !important;
 }
+/* sidenav mantém seu fundo escuro — não sobrescrever */
 
 * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -52,7 +58,26 @@ body {
 }
 
 /* ── LAYOUT ── */
-.shell { display: flex; min-height: 100vh; }
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
+    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%);
+  position: relative;
+  z-index: 0;
+}
+.shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
+    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%);
+  z-index: -1;
+}
 
 /* ── SIDEBAR NAV ── */
 .sidenav {
@@ -1809,7 +1834,36 @@ body {
 
 <script>
 // ─── STATE ───────────────────────────────────────────────
-let clients = [];
+let clients = [
+  {
+    id: 'case-aceleradora',
+    name: 'Case Aceleradora',
+    segment: 'Aceleradora de Negócios',
+    value: 'Arquitetura de crescimento baseada em dados — não em achismo',
+    audience: 'Empresários consolidados que buscam maturidade estratégica',
+    tone: 'Premium / Estratégico',
+    styles: ['Minimalista', 'Sofisticado', 'Editorial'],
+    colors: ['#C39436', '#0D0D0D', '#F5F0E8'],
+    font: 'Playfair Display',
+    guidelines: 'Nunca usar foguetes, escadas de dinheiro ou gradientes excessivos. Dourado metálico apenas em títulos e destaques. Fundo sempre preto profundo ou preto fosco. Textos em off-white quente, nunca branco puro. Cada peça deve parecer um documento estratégico de alto nível.',
+    logo: null,
+    creativeCount: 0
+  },
+  {
+    id: 'ana-moutinho',
+    name: 'Ana Moutinho',
+    segment: 'Perfil Pessoal / Marca Pessoal',
+    value: 'Uma mente estratégica observando o mundo com profundidade emocional',
+    audience: 'Mulheres que buscam profundidade, repertório e observação estratégica',
+    tone: 'Contemplativo / Sofisticado',
+    styles: ['Cinematográfico', 'Minimalista', 'Orgânico'],
+    colors: ['#3B2B1F', '#F5EFE6', '#6B4F3A'],
+    font: 'Cormorant Garamond',
+    guidelines: 'Paleta creme, bege quente, café, marrom escuro, verde oliva, vinho queimado. Temperatura quente, baixa saturação, aspecto cinematográfico. Nunca visual de empreendedora digital, coach ou frases motivacionais genéricas. O feed deve parecer "luz do fim da tarde entrando pela janela."',
+    logo: null,
+    creativeCount: 0
+  }
+];
 let currentClient = null;
 let generatedPrompt = '';
 let modalStep = 1;
