@@ -23,6 +23,24 @@
   --radius-sm: 8px;
 }
 
+
+/* ── RESET GLOBAL: garante que nenhum CSS externo sobreponha o fundo ── */
+html {
+  background: #f4f2ed !important;
+}
+body {
+  background-image: none !important;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
+    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%) !important;
+  min-height: 100vh !important;
+}
+.shell, .main, .sidenav {
+  background-image: none !important;
+  background: transparent !important;
+}
+
 * { margin:0; padding:0; box-sizing:border-box; }
 
 body {
@@ -69,12 +87,6 @@ body {
   width: 8px; height: 8px;
   background: var(--accent);
   border-radius: 50%;
-}
-
-.logo-mark img {
-  max-height: 36px;
-  width: auto;
-  display: block;
 }
 
 .nav-section {
@@ -1145,51 +1157,6 @@ body {
   width: 100%; height: 100%;
   display: grid; grid-template-columns: 1fr 1fr;
 }
-
-/* ── ALTERAR MODE ── */
-.alterar-base-options { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
-.alterar-base-opt {
-  display:flex; align-items:flex-start; gap:10px; padding:10px 13px;
-  border:1.5px solid var(--border); border-radius:var(--radius-sm);
-  cursor:pointer; background:var(--surface); transition:all .15s;
-}
-.alterar-base-opt:hover { border-color:var(--ink); }
-.alterar-base-opt.selected { border-color:var(--accent); background:#fff5f2; }
-.alterar-base-opt input[type=radio] { margin-top:2px; accent-color:var(--accent); flex-shrink:0; }
-.alterar-base-opt-title { font-size:13px; font-weight:600; color:var(--ink); }
-.alterar-base-opt-sub { font-size:11px; color:var(--ink2); margin-top:1px; }
-.alterar-checks { display:flex; flex-direction:column; gap:10px; }
-.alterar-check-row { display:flex; flex-direction:column; gap:6px; }
-.alterar-check-label { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; font-weight:600; color:var(--ink); }
-.alterar-check-label input[type=checkbox] { accent-color:var(--accent); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
-.alterar-check-field { display:none; margin-left:23px; }
-.alterar-check-field.visible { display:block; }
-.alterar-base-preview { display:none; padding:10px 13px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); font-size:12px; color:var(--ink2); line-height:1.6; margin-top:6px; max-height:80px; overflow-y:auto; }
-.alterar-base-preview.visible { display:block; }
-
-/* ── DASHBOARD ── */
-.dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.dash-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 12px; }
-.dash-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-.dash-avatar-fallback { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: white; flex-shrink: 0; }
-.dash-user-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
-.dash-user-email { font-size: 11px; color: var(--ink3); margin-top: 1px; }
-.dash-stat-big { padding: 16px 20px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border2); }
-.dash-stat-num { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--ink); letter-spacing: -1px; }
-.dash-stat-label { font-size: 12px; color: var(--ink2); }
-.dash-clients { padding: 14px 20px; }
-.dash-clients-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); margin-bottom: 10px; }
-.dash-client-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border2); }
-.dash-client-row:last-child { border-bottom: none; }
-.dash-client-name { font-size: 12px; color: var(--ink); }
-.dash-client-count { font-size: 12px; font-weight: 700; color: var(--accent); }
-.dash-empty-user { padding: 14px 20px; font-size: 12px; color: var(--ink3); }
-.dash-last-active { font-size: 11px; color: var(--ink3); margin-top: 2px; }
-.dash-total-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
-.dash-total-label { font-size: 13px; color: var(--ink2); }
-.dash-total-num { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--ink); }
-
 </style>
 </head>
 <body>
@@ -1212,14 +1179,14 @@ body {
       <button class="nav-item" onclick="showPage('gerar')">
         <span class="nav-icon">✦</span> Gerar criativo
       </button>
+      <button class="nav-item" onclick="showPage('carrossel')">
+        <span class="nav-icon">▦</span> Carrossel Instagram
+      </button>
       <button class="nav-item" onclick="showPage('historico')">
         <span class="nav-icon">◷</span> Histórico
       </button>
       <button class="nav-item" onclick="showPage('referencias')">
         <span class="nav-icon">◉</span> Referências
-      </button>
-      <button class="nav-item" onclick="showPage('dashboard')">
-        <span class="nav-icon">▦</span> Dashboard
       </button>
     </div>
 
@@ -1231,11 +1198,11 @@ body {
     </div>
 
     <div class="sidenav-footer">
-      <div class="user-chip" id="sidenavUser">
-        <div class="user-avatar" id="userAvatar">?</div>
-        <div style="min-width:0">
-          <div class="user-name" id="userName" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Carregando...</div>
-          <div class="user-role"><a href="/auth/logout" style="color:rgba(255,255,255,0.35);text-decoration:none;font-size:10px">Sair</a></div>
+      <div class="user-chip">
+        <div class="user-avatar">G</div>
+        <div>
+          <div class="user-name">Gestora</div>
+          <div class="user-role">Gestor de Tráfego</div>
         </div>
       </div>
     </div>
@@ -1250,7 +1217,6 @@ body {
       <div class="topbar-actions">
         <button class="btn btn-ghost btn-sm">📋 Ajuda</button>
         <button class="btn btn-primary btn-sm" id="topbarBtn" onclick="openAddClient()">+ Novo cliente</button>
-        <div id="topbarUserAvatar" style="width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;cursor:pointer" title="Sair" onclick="window.location='/auth/logout'"></div>
       </div>
     </div>
 
@@ -1293,7 +1259,6 @@ body {
               <div class="mode-toggle" style="margin-left:auto">
                 <button class="mode-btn active" id="modeSingle" onclick="setMode('single')">Único</button>
                 <button class="mode-btn" id="modePacote" onclick="setMode('pacote')">📋 Pacote PDF</button>
-                <button class="mode-btn" id="modeAlterar" onclick="setMode('alterar')">✏ Alterar</button>
               </div>
             </div>
             <div class="gen-section-body">
@@ -1445,9 +1410,10 @@ body {
                   <div class="model-pill" onclick="selectModel(this,'openai')" data-model="openai">
                     <div class="model-pill-icon">◈</div>
                     <div>
-                      <div class="model-pill-name">GPT Image 1.5</div>
-                      <div class="model-pill-sub">OpenAI · Boa aderência ao prompt</div>
+                      <div class="model-pill-name">GPT Image 2</div>
+                      <div class="model-pill-sub">OpenAI · Reasoning · Texto perfeito</div>
                     </div>
+                    <div class="model-pill-badge" style="background:#f0f9ff;color:#0369a1">Novo</div>
                   </div>
                 </div>
               </div>
@@ -1457,97 +1423,6 @@ body {
                 <span id="genBtnText">Gerar criativo</span>
               </button>
               </div><!-- end singleMode -->
-              <!-- ALTERAR MODE -->
-              <div id="alterarMode" style="display:none">
-                <div class="brand-notice" style="margin-bottom:14px">
-                  ✏ Use este modo para ajustar <strong>um elemento específico</strong> de um criativo já gerado — mantendo todo o resto intacto.
-                </div>
-                <div class="briefing-section-label">Base do criativo</div>
-                <div class="alterar-base-options">
-                  <label class="alterar-base-opt selected" id="alterarOptSession" onclick="selectAlterarBase('session')">
-                    <input type="radio" name="alterarBase" value="session" checked>
-                    <div>
-                      <div class="alterar-base-opt-title">Último gerado nesta sessão</div>
-                      <div class="alterar-base-opt-sub" id="alterarSessionSub">Usa o prompt e composição do criativo mais recente</div>
-                    </div>
-                  </label>
-                  <label class="alterar-base-opt" id="alterarOptDescrever" onclick="selectAlterarBase('descrever')">
-                    <input type="radio" name="alterarBase" value="descrever">
-                    <div>
-                      <div class="alterar-base-opt-title">Descrever o criativo base</div>
-                      <div class="alterar-base-opt-sub">Descreva o visual e copy do criativo existente</div>
-                    </div>
-                  </label>
-                </div>
-                <div class="alterar-base-preview" id="alterarSessionPreview"></div>
-                <div class="form-group" id="alterarDescreverGroup" style="display:none">
-                  <textarea class="form-textarea" id="alterarDescricaoBase" style="height:80px"
-                    placeholder="Ex: Fundo escuro com luz lateral. Headline branca em cima. CTA laranja no rodapé. Logo inferior direito."></textarea>
-                </div>
-                <div class="briefing-section-label" style="margin-top:6px">O que alterar</div>
-                <div class="alterar-checks">
-                  <div class="alterar-check-row">
-                    <label class="alterar-check-label">
-                      <input type="checkbox" id="chkHeadline" onchange="toggleAlterarField('fieldHeadline', this)">
-                      Headline
-                    </label>
-                    <div class="alterar-check-field" id="fieldHeadline">
-                      <input class="form-input" type="text" id="altHeadline" placeholder="Novo texto da headline">
-                    </div>
-                  </div>
-                  <div class="alterar-check-row">
-                    <label class="alterar-check-label">
-                      <input type="checkbox" id="chkSub" onchange="toggleAlterarField('fieldSub', this)">
-                      Subheadline
-                    </label>
-                    <div class="alterar-check-field" id="fieldSub">
-                      <input class="form-input" type="text" id="altSub" placeholder="Novo texto da subheadline">
-                    </div>
-                  </div>
-                  <div class="alterar-check-row">
-                    <label class="alterar-check-label">
-                      <input type="checkbox" id="chkCta" onchange="toggleAlterarField('fieldCta', this)">
-                      CTA
-                    </label>
-                    <div class="alterar-check-field" id="fieldCta">
-                      <input class="form-input" type="text" id="altCta" placeholder="Novo texto do botão CTA">
-                    </div>
-                  </div>
-                  <div class="alterar-check-row">
-                    <label class="alterar-check-label">
-                      <input type="checkbox" id="chkCenario" onchange="toggleAlterarField('fieldCenario', this)">
-                      Cenário / fundo visual
-                    </label>
-                    <div class="alterar-check-field" id="fieldCenario">
-                      <textarea class="form-textarea" id="altCenario" style="height:72px"
-                        placeholder="Ex: Trocar para ambiente externo ao ar livre, luz natural de manhã."></textarea>
-                    </div>
-                  </div>
-                  <div class="alterar-check-row">
-                    <label class="alterar-check-label">
-                      <input type="checkbox" id="chkCores" onchange="toggleAlterarField('fieldCores', this)">
-                      Cores do texto / overlay
-                    </label>
-                    <div class="alterar-check-field" id="fieldCores">
-                      <input class="form-input" type="text" id="altCores" placeholder="Ex: Headline em azul #1a3cff, CTA fundo verde #16a34a">
-                    </div>
-                  </div>
-                  <div class="alterar-check-row">
-                    <label class="alterar-check-label">
-                      <input type="checkbox" id="chkOutro" onchange="toggleAlterarField('fieldOutro', this)">
-                      Outra instrução
-                    </label>
-                    <div class="alterar-check-field" id="fieldOutro">
-                      <textarea class="form-textarea" id="altOutro" style="height:64px"
-                        placeholder="Qualquer outro ajuste. Ex: Remover overlay, adicionar urgência, etc."></textarea>
-                    </div>
-                  </div>
-                </div>
-                <button class="btn btn-accent" style="width:100%;justify-content:center;padding:11px;margin-top:16px" id="alterarBtn" onclick="generateAlterar()">
-                  <span id="alterarBtnIcon">✏</span>
-                  <span id="alterarBtnText">Gerar versão alterada</span>
-                </button>
-              </div><!-- end alterarMode -->
             </div>
           </div>
 
@@ -1614,6 +1489,131 @@ body {
     </div>
 
     <!-- ── PAGE: REFERÊNCIAS ── -->
+
+    <!-- ── PAGE: CARROSSEL INSTAGRAM ── -->
+    <div class="page" id="page-carrossel">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Carrossel Instagram</div>
+          <div class="page-sub">Cole o texto → IA gera os slides → você aprova → publica direto no seu Instagram</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+
+        <!-- LEFT: BRIEFING -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+
+          <div class="card" style="padding:20px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink2);margin-bottom:14px">Conteúdo</div>
+
+            <div class="form-group">
+              <label class="form-label">Texto / roteiro do carrossel <span>*</span></label>
+              <textarea class="form-textarea" id="carrosselTexto" style="height:160px;resize:vertical" placeholder="Cole aqui o texto completo que vai virar o carrossel. Pode ser um roteiro, artigo, legenda longa, tópicos — a IA vai estruturar em slides."></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Nº de slides</label>
+                <select class="form-select" id="carrosselSlides">
+                  <option value="4">4 slides</option>
+                  <option value="5" selected>5 slides</option>
+                  <option value="7">7 slides</option>
+                  <option value="10">10 slides</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Formato</label>
+                <select class="form-select" id="carrosselFormato">
+                  <option value="1:1">Quadrado 1:1</option>
+                  <option value="4:5" selected>Retrato 4:5</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:20px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink2);margin-bottom:14px">Perfil & Identidade Visual</div>
+
+            <div style="display:flex;flex-direction:column;gap:8px" id="perfilSelector">
+
+              <div class="model-pill active" onclick="selectPerfil(this,'case')" style="padding:10px 14px">
+                <div style="width:32px;height:32px;border-radius:8px;background:#0D0D0D;border:1px solid #C39436;display:flex;align-items:center;justify-content:center;font-weight:800;color:#C39436;font-size:13px;flex-shrink:0">C</div>
+                <div>
+                  <div class="model-pill-name" style="font-size:12px">Case Aceleradora</div>
+                  <div style="font-size:10px;color:var(--ink3)">@caseaceleradora · Dourado / Preto profundo</div>
+                </div>
+              </div>
+
+              <div class="model-pill" onclick="selectPerfil(this,'ana')" style="padding:10px 14px">
+                <div style="width:32px;height:32px;border-radius:8px;background:#3B2B1F;display:flex;align-items:center;justify-content:center;font-weight:800;color:#F5EFE6;font-size:13px;flex-shrink:0">A</div>
+                <div>
+                  <div class="model-pill-name" style="font-size:12px">Ana Moutinho</div>
+                  <div style="font-size:10px;color:var(--ink3)">@analuisa.moutinho · Bege / Creme / Cinema</div>
+                </div>
+              </div>
+
+            </div>
+
+            <div style="margin-top:12px">
+              <label class="form-label" style="margin-top:10px">Modelo de imagem de fundo</label>
+              <div class="model-pills" id="carrosselModelPills">
+                <div class="model-pill active" onclick="selectCarrosselModel(this,'gemini')" style="padding:8px 12px">
+                  <div class="model-pill-icon" style="font-size:13px">✦</div>
+                  <div><div class="model-pill-name" style="font-size:12px">Gemini Imagen 4</div></div>
+                </div>
+                <div class="model-pill" onclick="selectCarrosselModel(this,'openai')" style="padding:8px 12px">
+                  <div class="model-pill-icon" style="font-size:13px">◈</div>
+                  <div><div class="model-pill-name" style="font-size:12px">GPT Image 2</div></div>
+                  <div class="model-pill-badge" style="background:#f0f9ff;color:#0369a1;font-size:9px">Novo</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-accent" style="width:100%;justify-content:center;padding:12px;font-size:14px" id="carrosselBtn" onclick="generateCarrossel()">
+            <span id="carrosselBtnIcon">▦</span>
+            <span id="carrosselBtnText">Gerar carrossel</span>
+          </button>
+        </div>
+
+        <!-- RIGHT: PREVIEW -->
+        <div id="carrosselRight">
+          <div class="card" style="padding:40px;text-align:center;color:var(--ink3)" id="carrosselEmpty">
+            <div style="font-size:40px;margin-bottom:12px">▦</div>
+            <div style="font-size:15px;font-weight:600;color:var(--ink2);margin-bottom:6px">Seu carrossel vai aparecer aqui</div>
+            <div style="font-size:13px">Cole o texto e clique em Gerar</div>
+          </div>
+
+          <div id="carrosselPreview" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <div style="font-size:14px;font-weight:700">Preview dos slides</div>
+              <div style="font-size:12px;color:var(--ink2)" id="carrosselSlideCount"></div>
+            </div>
+
+            <div id="carrosselSlidesGrid" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;margin-bottom:20px"></div>
+
+            <div class="card" style="padding:16px;margin-bottom:16px">
+              <div style="font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--ink2);margin-bottom:10px">Legenda do post</div>
+              <textarea class="form-textarea" id="carrosselLegenda" style="height:120px;resize:vertical"></textarea>
+              <div style="font-size:11px;color:var(--ink3);margin-top:6px">Edite a vontade antes de publicar.</div>
+            </div>
+
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-accent" style="flex:1;justify-content:center;padding:12px;font-size:14px" id="publishBtn" onclick="publishCarrossel()">
+                <span id="publishBtnIcon">📸</span>
+                <span id="publishBtnText">Publicar no Instagram</span>
+              </button>
+              <button class="btn btn-ghost" onclick="downloadCarrosselZip()" style="padding:12px 16px" title="Baixar slides como ZIP">↓ ZIP</button>
+            </div>
+
+            <div id="publishStatus" style="margin-top:12px;display:none;padding:12px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-align:center"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <div class="page" id="page-referencias">
       <div class="page-header">
         <div>
@@ -1689,23 +1689,6 @@ body {
     </div>
   </div>
 </div>
-
-
-    <!-- ── PAGE: DASHBOARD ── -->
-    <div class="page" id="page-dashboard">
-      <div class="page-header">
-        <div>
-          <div class="page-title">Dashboard</div>
-          <div class="page-sub">Uso da plataforma por usuário</div>
-        </div>
-      </div>
-      <div id="dashboardContent">
-        <div class="empty-state">
-          <div class="empty-icon">▦</div>
-          <div class="empty-title">Carregando...</div>
-        </div>
-      </div>
-    </div>
 
 <!-- ── MODAL: ADD CLIENT ── -->
 <div class="modal-overlay" id="addClientModal">
@@ -1890,10 +1873,10 @@ function showPage(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
 
-  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', historico: 'Histórico', referencias: 'Banco de Referências', dashboard: 'Dashboard' };
+  const labels = { clients: 'Clientes', detail: 'Cliente', gerar: 'Gerar criativo', carrossel: 'Carrossel Instagram', historico: 'Histórico', referencias: 'Banco de Referências' };
   document.getElementById('topbarTitle').textContent = labels[id] || id;
 
-  const btnLabels = { clients: '+ Novo cliente', gerar: '', historico: '', referencias: '' };
+  const btnLabels = { clients: '+ Novo cliente', gerar: '', carrossel: '', historico: '', referencias: '' };
   const topBtn = document.getElementById('topbarBtn');
   topBtn.textContent = btnLabels[id] || '';
   topBtn.style.display = btnLabels[id] ? 'inline-flex' : 'none';
@@ -1901,7 +1884,6 @@ function showPage(id) {
   if (id === 'clients') renderClientsGrid();
   if (id === 'gerar') populateQuickSelect();
   if (id === 'referencias') renderRefsPage();
-  if (id === 'dashboard') renderDashboard();
 
   document.querySelectorAll('.nav-item').forEach(btn => {
     if (btn.getAttribute('onclick')?.includes(id)) btn.classList.add('active');
@@ -2221,7 +2203,6 @@ ${hasArtDir
           renderRealImages(imgData.data, headline);
         }
         currentClient.creatives = (currentClient.creatives || 0) + 1;
-        trackCreative(currentClient.name);
       } else {
         console.warn('Image API sem dados:', imgData);
         renderResults(headline);
@@ -2495,26 +2476,12 @@ function setMode(mode) {
   currentMode = mode;
   document.getElementById('singleMode').style.display = mode === 'single' ? 'block' : 'none';
   document.getElementById('pacoteMode').style.display = mode === 'pacote' ? 'block' : 'none';
-  document.getElementById('alterarMode').style.display = mode === 'alterar' ? 'block' : 'none';
   document.getElementById('modeSingle').classList.toggle('active', mode === 'single');
   document.getElementById('modePacote').classList.toggle('active', mode === 'pacote');
-  document.getElementById('modeAlterar').classList.toggle('active', mode === 'alterar');
   document.getElementById('outputSection').style.display = 'none';
   document.getElementById('resultsSection').style.display = 'none';
   if (document.getElementById('pacoteResultsSection')) {
     document.getElementById('pacoteResultsSection').style.display = 'none';
-  }
-  if (mode === 'alterar') {
-    const preview = document.getElementById('alterarSessionPreview');
-    const sub = document.getElementById('alterarSessionSub');
-    if (generatedPrompt) {
-      preview.textContent = generatedPrompt.slice(0, 260) + (generatedPrompt.length > 260 ? '...' : '');
-      preview.classList.add('visible');
-      if (sub) sub.textContent = 'Prompt desta sessao disponivel';
-    } else {
-      preview.classList.remove('visible');
-      if (sub) sub.textContent = 'Nenhum criativo gerado ainda nesta sessao';
-    }
   }
 }
 
@@ -2784,7 +2751,6 @@ function openAddRef() {
     sel.appendChild(opt);
   });
   pendingRefImg = null;
-  document.getElementById('refImgInput').value = ''; // reset so same file triggers onchange again
   document.getElementById('refImgLabel').innerHTML = `
     <div style="font-size:24px;margin-bottom:6px">🖼</div>
     <div class="logo-upload-label">Clique para subir a imagem</div>
@@ -3213,289 +3179,409 @@ function downloadComposed() {
   }, 'image/png');
 }
 
+// ─── CARROSSEL INSTAGRAM ──────────────────────────────────
+let carrosselModel = 'gemini';
+let carrosselSlides = [];
+let carrosselPerfil = 'case';
 
-// ── ALTERAR MODE HELPERS ──────────────────────────────────────────────────
-function selectAlterarBase(val) {
-  document.querySelectorAll('.alterar-base-opt').forEach(function(el) { el.classList.remove('selected'); });
-  var key = val.charAt(0).toUpperCase() + val.slice(1);
-  document.getElementById('alterarOpt' + key).classList.add('selected');
-  document.getElementById('alterarDescreverGroup').style.display = val === 'descrever' ? 'block' : 'none';
-  var preview = document.getElementById('alterarSessionPreview');
-  if (val === 'session' && generatedPrompt) {
-    preview.classList.add('visible');
-  } else {
-    preview.classList.remove('visible');
-  }
+function selectCarrosselModel(el, model) {
+  document.querySelectorAll('#carrosselModelPills .model-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  carrosselModel = model;
 }
 
-function toggleAlterarField(fieldId, checkbox) {
-  var field = document.getElementById(fieldId);
-  if (checkbox.checked) {
-    field.classList.add('visible');
-    var inp = field.querySelector('input,textarea');
-    if (inp) inp.focus();
-  } else {
-    field.classList.remove('visible');
-    var inp2 = field.querySelector('input,textarea');
-    if (inp2) inp2.value = '';
-  }
+function selectPerfil(el, perfil) {
+  document.querySelectorAll('#perfilSelector .model-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  carrosselPerfil = perfil;
 }
 
-// ── GENERATE ALTERAR ─────────────────────────────────────────────────────
-async function generateAlterar() {
-  var radioEl = document.querySelector('input[name="alterarBase"]:checked');
-  var baseMode = radioEl ? radioEl.value : 'session';
+// Perfis de marca
+const PERFIS = {
+  // ── CASE ACELERADORA ─────────────────────────────────────
+  case: {
+    name:        'Case Aceleradora',
+    instagram:   '@caseaceleradora',
+    accountKey:  'marca',
+    // Identidade visual (Manual v2)
+    colors:      ['#C39436', '#0D0D0D', '#F5F0E8'],
+    colorAccent: '#D4A843',
+    font:        'Playfair Display',
+    bodyFont:    'Inter',
+    initials:    'C',
+    // Diretrizes para Claude
+    tone:        'Premium, estrategico, sóbrio, autoridade sem agressividade',
+    bgStyle:     'minimalista sofisticado, dourado metalico, preto profundo, fotografico editorial, sem foguetes ou hype',
+    slideStyle:  'estrutural, analitico, frases de impacto curtas, dados e decisao',
+    ctaStyle:    'Seguir nao e convite — e posicionamento.',
+    avoidVisual: 'foguetes, escadas de dinheiro, gradientes excessivos, cores saturadas, stock photos genericas',
+    avoidCopy:   'hype, promessas irreais, gatilho de escassez, energia de coach',
+    systemExtra: `A marca Case Aceleradora é uma aceleradora de negócios premium — não uma agência de tráfego.
+Posicionamento: "Tráfego baseado em dados. Não em achismo."
+Tom: autoridade editorial, clareza cirúrgica, nenhuma palavra desperdiçada.
+Visual: dourado metálico (#C39436) em títulos e destaques, fundo preto profundo (#0D0D0D), off-white quente (#F5F0E8) nos textos.
+Nunca usar: foguetes, escadas, gradientes excessivos, amarelo vibrante, stock photos de apertos de mão.
+Cada slide deve parecer uma página de documento estratégico de alto nível.`
+  },
 
-  var changes = [];
-  if (document.getElementById('chkHeadline').checked) {
-    var v = document.getElementById('altHeadline').value.trim();
-    if (v) changes.push({ campo: 'headline', valor: v });
+  // ── ANA MOUTINHO (perfil pessoal) ────────────────────────
+  ana: {
+    name:        'Ana Moutinho',
+    instagram:   '@analuisa.moutinho',
+    accountKey:  'pessoal',
+    // Identidade visual (Manual pessoal)
+    colors:      ['#3B2B1F', '#F5EFE6', '#6B4F3A'],
+    colorAccent: '#8B6F5E',
+    font:        'Cormorant Garamond',
+    bodyFont:    'Inter',
+    initials:    'A',
+    // Diretrizes para Claude
+    tone:        'Sofisticado, humano, contemplativo, inteligente, emocionalmente lúcido — nunca coach',
+    bgStyle:     'cinematografico, temperatura quente, baixa saturação, contraste suave, granulação organica, luz do fim da tarde, íntimo',
+    slideStyle:  'frases curtas, ritmo respiravel, fragmentos de diario, observacoes pessoais, sem poluicao visual',
+    ctaStyle:    'Sem CTA agressiva. Deixar sensacao, reflexao, continuacao mental.',
+    avoidVisual: 'cores neon, saturação alta, azul vibrante, rosa chiclete, branco puro excessivo, visual empreendedora digital, estética coach',
+    avoidCopy:   'frases motivacionais genericas, energia de coach, profundidade forçada, excesso de autopromoção, LinkedIn feminino',
+    systemExtra: `O perfil de Ana Moutinho é uma extensão da mente estratégica por trás da Case — não um perfil de lifestyle genérico.
+Sensação: íntimo, contemplativo, silenciosamente sofisticado, cinematográfico, verdadeiro.
+Tom: pensamentos capturados, fragmentos de diário, observações pessoais, pequenas crônicas. Nunca professoral ou coach.
+Visual: paleta creme, bege quente, café, marrom escuro, verde oliva, vinho queimado. Temperatura quente, baixa saturação, aspecto cinematográfico.
+Slide 1: imagem emocional + frase forte que interrompe emocionalmente.
+Slides intermediários: alternar texto sobre foto, cenas do cotidiano, frases minimalistas, imagens contemplativas.
+Slide final: deixar sensação e reflexão — nunca CTA agressiva.
+Elementos visuais recorrentes: livros, café, janelas com luz lateral, rotina silenciosa, ambientes aconchegantes.
+O carrossel deve parecer "profundidade que naturalmente virou conteúdo" — nunca "conteúdo tentando parecer profundo."`
   }
-  if (document.getElementById('chkSub').checked) {
-    var v2 = document.getElementById('altSub').value.trim();
-    if (v2) changes.push({ campo: 'subheadline', valor: v2 });
-  }
-  if (document.getElementById('chkCta').checked) {
-    var v3 = document.getElementById('altCta').value.trim();
-    if (v3) changes.push({ campo: 'cta', valor: v3 });
-  }
-  if (document.getElementById('chkCenario').checked) {
-    var v4 = document.getElementById('altCenario').value.trim();
-    if (v4) changes.push({ campo: 'cenario_visual', valor: v4 });
-  }
-  if (document.getElementById('chkCores').checked) {
-    var v5 = document.getElementById('altCores').value.trim();
-    if (v5) changes.push({ campo: 'cores_texto', valor: v5 });
-  }
-  if (document.getElementById('chkOutro').checked) {
-    var v6 = document.getElementById('altOutro').value.trim();
-    if (v6) changes.push({ campo: 'outro', valor: v6 });
-  }
+};
 
-  if (changes.length === 0) {
-    alert('Marque pelo menos um elemento para alterar e preencha o novo valor.');
-    return;
-  }
+async function generateCarrossel() {
+  const texto = document.getElementById('carrosselTexto').value.trim();
+  if (!texto) { alert('Cole o texto do carrossel antes de gerar.'); return; }
 
-  var btn = document.getElementById('alterarBtn');
-  var btnIcon = document.getElementById('alterarBtnIcon');
-  var btnText = document.getElementById('alterarBtnText');
+  const nSlides = parseInt(document.getElementById('carrosselSlides').value);
+  const formato = document.getElementById('carrosselFormato').value;
+
+  const btn     = document.getElementById('carrosselBtn');
+  const btnIcon = document.getElementById('carrosselBtnIcon');
+  const btnText = document.getElementById('carrosselBtnText');
   btn.disabled = true;
   btnIcon.innerHTML = '<div class="spin"></div>';
-  btnText.textContent = 'Claude ajustando criativo...';
+  btnText.textContent = 'Claude estruturando slides...';
 
-  document.getElementById('outputSection').style.display = 'block';
-  document.getElementById('resultsSection').style.display = 'none';
-  var out = document.getElementById('promptOutput');
-  out.innerHTML = '<span class="cursor-blink"></span>';
+  document.getElementById('carrosselEmpty').style.display = 'none';
+  document.getElementById('carrosselPreview').style.display = 'none';
 
-  var c = currentClient;
-
-  var baseDesc = '';
-  if (baseMode === 'session' && generatedPrompt) {
-    baseDesc = 'PROMPT VISUAL ORIGINAL:\n' + generatedPrompt;
-  } else {
-    var descricao = document.getElementById('alterarDescricaoBase').value.trim();
-    if (!descricao) {
-      alert('Descreva o criativo base no campo de texto.');
-      btn.disabled = false;
-      btnIcon.textContent = '\u270F';
-      btnText.textContent = 'Gerar versao alterada';
-      return;
+  const brand = PERFIS[carrosselPerfil];
+  const systemPrompt = `Voce e um especialista em criacao de carrosseis virais para Instagram.
+Recebe um texto e deve retornar SOMENTE um JSON valido, sem markdown, sem explicacao, neste formato exato:
+{
+  "slides": [
+    {
+      "tipo": "capa",
+      "titulo": "Titulo impactante (max 8 palavras)",
+      "subtitulo": "Subtitulo opcional (max 12 palavras) ou null",
+      "visual_prompt": "Descricao do fundo visual sem texto, fotografia ou render 3D publicitario, 80-100 palavras"
+    },
+    {
+      "tipo": "conteudo",
+      "numero": 1,
+      "titulo": "Titulo curto do slide (max 6 palavras)",
+      "corpo": "Texto do slide (max 40 palavras, claro e direto)",
+      "visual_prompt": "Descricao do fundo visual sem texto, 60-80 palavras"
+    },
+    {
+      "tipo": "cta",
+      "chamada": "Frase de acao forte (max 8 palavras)",
+      "instrucao": "Salve e compartilhe com quem precisa",
+      "visual_prompt": "Descricao do fundo visual sem texto, 60-80 palavras"
     }
-    baseDesc = 'DESCRICAO DO CRIATIVO ORIGINAL:\n' + descricao;
-  }
+  ],
+  "legenda": "Legenda completa para o post no Instagram com emojis e hashtags relevantes (max 300 palavras)",
+  "alt_text": "Descricao acessivel do carrossel (max 100 caracteres)"
+}
 
-  var changesList = changes.map(function(ch) { return '- ' + ch.campo + ': "' + ch.valor + '"'; }).join('\n');
+${brand.systemExtra}
 
-  var systemPrompt = 'Voce e um diretor de arte especialista em publicidade de alta conversao.\n\nVoce recebera: (1) a descricao de um criativo existente e (2) uma lista de alteracoes especificas.\n\nSua tarefa: retornar SOMENTE um JSON valido com dois campos "visual_prompt" e "composition" aplicando EXATAMENTE as alteracoes solicitadas e mantendo TUDO O MAIS identico ao original.\n\nRegras:\n- Altere somente o que foi explicitamente pedido\n- Mantenha identidade visual, paleta e tom do cliente\n- visual_prompt descreve APENAS cenario visual sem texto sem logo\n- composition instrui posicao e estilo dos textos por cima da imagem\n- Responda SOMENTE com o JSON. Sem markdown, sem explicacao.\n\nEstrutura da composition:\n{\n  "headline": { "text": "...", "position": "top|bottom|middle", "align": "left|center|right", "color": "#hex", "size": "xl|lg|md", "weight": "black|bold|regular", "margin_top": 60, "margin_side": 60 },\n  "subheadline": { "text": "...", "position": "top|bottom|middle", "align": "left|center|right", "color": "#hex", "size": "md|sm", "weight": "regular|bold", "margin_top": 20 },\n  "cta": { "text": "...", "style": "button|text", "color": "#hex", "bg": "#hex", "position": "bottom", "margin_bottom": 80 },\n  "logo": { "position": "bottom-right", "margin": 50, "max_height": 80 },\n  "overlay": { "type": "none", "opacity": 0.0 },\n  "accent_line": { "show": false }\n}';
+Cores primárias: ${brand.colors[0]} e ${brand.colors[1]}.
+Estilo visual dos fundos: ${brand.bgStyle}.
+Tom: ${brand.tone}.
+Estilo dos slides: ${brand.slideStyle}.
+EVITAR visualmente: ${brand.avoidVisual}.
+EVITAR no copy: ${brand.avoidCopy}.
 
-  var userMsg = 'CLIENTE: ' + c.name + ' | ' + c.segment + '\nIDENTIDADE VISUAL:\nCores: ' + c.colors.join(' . ') + '\nFonte: ' + c.font + '\nTom: ' + c.tone + '\n\n' + baseDesc + '\n\nALTERACAO SOLICITADA:\n' + changesList + '\n\nGere o JSON aplicando apenas estas alteracoes. Mantenha todo o resto exatamente como no original.';
+O visual_prompt de cada slide deve ser coerente com essa identidade e sem nenhum texto, letra ou logo na imagem.
+Retorne EXATAMENTE ${nSlides} slides (incluindo capa e CTA).`;
 
+  let estrutura = null;
   try {
-    var res = await fetch('/api/claude', {
+    const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 1200,
+        max_tokens: 2000,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userMsg }]
+        messages: [{ role: 'user', content: `Texto para virar carrossel:\n\n${texto}` }]
       })
     });
+    const data = await res.json();
+    const raw  = data.content?.[0]?.text || '{}';
+    estrutura  = JSON.parse(raw.replace(/```json|```/g, '').trim());
+  } catch(e) {
+    alert('Erro ao estruturar slides com Claude: ' + e.message);
+    btn.disabled = false;
+    btnIcon.textContent = '▦';
+    btnText.textContent = 'Gerar carrossel';
+    return;
+  }
 
-    if (!res.ok) throw new Error('API error ' + res.status);
-    var data = await res.json();
-    var rawJson = data.content && data.content[0] ? data.content[0].text : '{}';
+  const slides = estrutura.slides || [];
+  const legenda = estrutura.legenda || '';
+  document.getElementById('carrosselLegenda').value = legenda;
 
-    var claudeOut = {};
+  // Gerar imagens de fundo para cada slide
+  const { w, h } = getCarrosselSize(formato);
+  carrosselSlides = [];
+  const grid = document.getElementById('carrosselSlidesGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < slides.length; i++) {
+    const slide = slides[i];
+    btnText.textContent = `Gerando slide ${i+1}/${slides.length}...`;
+
+    // Placeholder canvas enquanto gera
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px';
+    const canvas = document.createElement('canvas');
+    const thumbW = formato === '1:1' ? 160 : 128;
+    const thumbH = formato === '1:1' ? 160 : 160;
+    canvas.width  = w;
+    canvas.height = h;
+    canvas.style.cssText = `width:${thumbW}px;height:${thumbH}px;border-radius:8px;border:1px solid var(--border);background:#111`;
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:10px;color:var(--ink3);text-align:center;max-width:' + thumbW + 'px';
+    label.textContent = slide.tipo === 'capa' ? 'Capa' : slide.tipo === 'cta' ? 'CTA' : `Slide ${slide.numero || i}`;
+    wrapper.appendChild(canvas);
+    wrapper.appendChild(label);
+    grid.appendChild(wrapper);
+
+    // Gerar imagem de fundo
+    let bgSrc = null;
     try {
-      claudeOut = JSON.parse(rawJson.replace(/```json|```/g, '').trim());
-    } catch(e2) {
-      throw new Error('Claude nao retornou JSON valido. Tente novamente.');
+      const endpoint = carrosselModel === 'gemini' ? '/api/gemini-image' : '/api/image';
+      const body = carrosselModel === 'gemini'
+        ? { prompt: slide.visual_prompt, n: 1, aspectRatio: formato }
+        : { prompt: slide.visual_prompt, n: 1, size: formato === '4:5' ? '1024x1280' : '1024x1024', quality: 'high' };
+
+      const imgRes  = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const imgData = await imgRes.json();
+      bgSrc = imgData.data?.[0]?.url || (imgData.data?.[0]?.b64_json ? `data:image/png;base64,${imgData.data[0].b64_json}` : null);
+    } catch(e) {
+      console.warn('Erro imagem slide', i, e.message);
     }
 
-    var newPrompt = claudeOut.visual_prompt || rawJson;
-    var composition = claudeOut.composition || null;
-    generatedPrompt = newPrompt;
+    // Desenhar slide no canvas
+    await drawCarrosselSlide(canvas, slide, bgSrc, w, h);
+    carrosselSlides.push({ slide, bgSrc, canvas });
+  }
 
-    out.innerHTML = '';
-    var displayed = '';
-    for (var i = 0; i < newPrompt.length; i++) {
-      await new Promise(function(r) { setTimeout(r, 5); });
-      displayed += newPrompt[i];
-      out.innerHTML = displayed + '<span class="cursor-blink"></span>';
-    }
-    out.innerHTML = displayed;
+  document.getElementById('carrosselSlideCount').textContent = `${slides.length} slides gerados`;
+  document.getElementById('carrosselPreview').style.display = 'block';
+  document.getElementById('publishStatus').style.display = 'none';
 
-    var changeLabels = changes.map(function(ch) { return ch.campo; }).join(', ');
-    document.querySelector('#outputSection .gen-section-header').innerHTML =
-      '<div class="gen-section-title">Prompt ajustado</div>' +
-      '<span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:100px;background:#fff8e6;color:#b45309">' +
-      '\u270F Alterado: ' + changeLabels + '</span>' +
-      '<button class="btn btn-ghost btn-sm" id="copyPromptBtn" onclick="copyPrompt()" style="margin-left:auto">\uD83D\uDCCB Copiar</button>';
+  btn.disabled = false;
+  btnIcon.textContent = '▦';
+  btnText.textContent = 'Gerar novamente';
+}
 
+function getCarrosselSize(formato) {
+  if (formato === '4:5') return { w: 1080, h: 1350 };
+  return { w: 1080, h: 1080 };
+}
+
+async function drawCarrosselSlide(canvas, slide, bgSrc, w, h) {
+  const ctx = canvas.getContext('2d');
+  const brand = PERFIS[carrosselPerfil];
+
+  // Background
+  if (bgSrc) {
     try {
-      var isGemini = selectedModel === 'gemini';
-      var formatEl = document.getElementById('genFormat');
-      var format = formatEl ? formatEl.value : 'Feed Instagram (1:1)';
-      var formatMap = { 'Story (9:16)': '9:16', 'Feed Instagram (1:1)': '1:1', 'Banner Web (1.91:1)': '16:9', 'Carrossel': '1:1', 'YouTube Thumbnail': '16:9' };
-      var aspectRatio = formatMap[format] || '1:1';
-      var endpoint = isGemini ? '/api/gemini-image' : '/api/image';
-      var body = isGemini
-        ? { prompt: newPrompt, n: 1, aspectRatio: aspectRatio }
-        : { prompt: newPrompt, n: 1, size: aspectRatio === '9:16' ? '1024x1792' : '1024x1024', quality: 'high' };
+      const img = await loadImage(bgSrc);
+      ctx.drawImage(img, 0, 0, w, h);
+    } catch(e) {
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, w, h);
+    }
+  } else {
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, w, h);
+  }
 
-      btnText.textContent = isGemini ? 'Gemini gerando visual...' : 'GPT Image gerando...';
-      var imgRes = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      var imgData = await imgRes.json();
+  // Overlay escuro na parte inferior (legibilidade)
+  const overlayColor = brand.colors[1] || '#0D0D0D';
+  // Convert hex to RGB for overlay
+  const oR = parseInt(overlayColor.slice(1,3),16);
+  const oG = parseInt(overlayColor.slice(3,5),16);
+  const oB = parseInt(overlayColor.slice(5,7),16);
+  const grad = ctx.createLinearGradient(0, h * 0.35, 0, h);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, `rgba(${oR},${oG},${oB},0.88)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
 
-      if (imgData.data && imgData.data.length > 0) {
-        btnText.textContent = 'Compondo...';
-        var bgSrc = imgData.data[0].url || (imgData.data[0].b64_json ? 'data:image/png;base64,' + imgData.data[0].b64_json : null);
-        var hlChange = changes.find(function(ch) { return ch.campo === 'headline'; });
-        var hlText = hlChange ? hlChange.valor : 'Criativo alterado';
-        if (bgSrc && composition) {
-          await composeAndPreview(bgSrc, composition, format);
-        } else if (bgSrc) {
-          renderRealImages(imgData.data, hlText);
-        }
-      } else {
-        renderResults(changes[0] ? changes[0].valor : 'Criativo alterado');
-      }
-    } catch(imgErr) {
-      console.warn('Erro imagem:', imgErr.message);
-      renderResults(changes[0] ? changes[0].valor : 'Criativo alterado');
+  const margin = 70;
+  const maxW   = w - margin * 2;
+
+  if (slide.tipo === 'capa') {
+    // Linha laranja no topo
+    ctx.fillStyle = brand.colors[0];
+    ctx.fillRect(margin, margin, 80, 6);
+
+    // Titulo grande
+    ctx.fillStyle = '#ffffff';
+    const titleFont = brand.font || 'Syne';
+    const bodyFont = brand.bodyFont || 'Instrument Sans';
+    ctx.font = `900 ${w * 0.075}px '${titleFont}', serif`;
+    ctx.textAlign = 'left';
+    const tituloLines = wrapTextLines(ctx, slide.titulo.toUpperCase(), maxW);
+    const tituloSize  = w * 0.075;
+    tituloLines.forEach((line, i) => {
+      ctx.fillText(line, margin, h * 0.62 + i * tituloSize * 1.15 + tituloSize);
+    });
+
+    // Subtitulo
+    if (slide.subtitulo) {
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.font = `400 ${w * 0.032}px '${bodyFont}', sans-serif`;
+      const subLines = wrapTextLines(ctx, slide.subtitulo, maxW);
+      const subY = h * 0.62 + tituloLines.length * tituloSize * 1.15 + tituloSize + 20;
+      subLines.forEach((line, i) => {
+        ctx.fillText(line, margin, subY + i * w * 0.04);
+      });
     }
 
-  } catch(err) {
-    out.innerHTML = '<span style="color:#ff6b6b">Erro: ' + err.message + '</span>';
+    // Swipe indicator
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.font = `500 ${w * 0.025}px 'Instrument Sans', sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.fillText('Deslize →', w - margin, h - margin);
+
+  } else if (slide.tipo === 'conteudo') {
+    // Numero do slide
+    ctx.fillStyle = brand.colors[0];
+    ctx.font = `800 ${w * 0.055}px 'Syne', sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.fillText(`0${slide.numero || ''}`, margin, margin + w * 0.055);
+
+    // Titulo
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 ${w * 0.06}px '${titleFont}', serif`;
+    const tituloLines = wrapTextLines(ctx, slide.titulo, maxW);
+    const tituloSize  = w * 0.06;
+    tituloLines.forEach((line, i) => {
+      ctx.fillText(line, margin, h * 0.58 + i * tituloSize * 1.2 + tituloSize);
+    });
+
+    // Corpo
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.font = `400 ${w * 0.031}px 'Instrument Sans', sans-serif`;
+    const corpoLines = wrapTextLines(ctx, slide.corpo, maxW);
+    const corpoY = h * 0.58 + tituloLines.length * tituloSize * 1.2 + tituloSize + 22;
+    corpoLines.forEach((line, i) => {
+      ctx.fillText(line, margin, corpoY + i * w * 0.042);
+    });
+
+    // Linha laranja embaixo
+    ctx.fillStyle = brand.colors[0];
+    ctx.fillRect(margin, h - margin - 4, 60, 4);
+
+  } else if (slide.tipo === 'cta') {
+    // Chamada grande
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 ${w * 0.072}px '${titleFont}', serif`;
+    ctx.textAlign = 'center';
+    const chamadaLines = wrapTextLines(ctx, slide.chamada.toUpperCase(), maxW);
+    const chamadaSize  = w * 0.072;
+    const totalH = chamadaLines.length * chamadaSize * 1.15;
+    chamadaLines.forEach((line, i) => {
+      ctx.fillText(line, w / 2, (h - totalH) / 2 + i * chamadaSize * 1.15 + chamadaSize);
+    });
+
+    // Instrucao
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.font = `400 ${w * 0.03}px 'Instrument Sans', sans-serif`;
+    ctx.fillText(slide.instrucao, w / 2, h * 0.72);
+
+    // Botao laranja
+    const btnW = w * 0.55, btnH = w * 0.085;
+    const btnX = (w - btnW) / 2, btnY = h * 0.77;
+    ctx.fillStyle = brand.colorAccent || brand.colors[0];
+    roundRect(ctx, btnX, btnY, btnW, btnH, 12);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 ${w * 0.033}px 'Instrument Sans', sans-serif`;
+    ctx.fillText('Seguir ' + brand.instagram, w / 2, btnY + btnH * 0.65);
+  }
+}
+
+async function publishCarrossel() {
+  if (carrosselSlides.length === 0) return;
+
+  const legenda = document.getElementById('carrosselLegenda').value.trim();
+  const btn     = document.getElementById('publishBtn');
+  const btnIcon = document.getElementById('publishBtnIcon');
+  const btnText = document.getElementById('publishBtnText');
+  const status  = document.getElementById('publishStatus');
+
+  btn.disabled = true;
+  btnIcon.innerHTML = '<div class="spin"></div>';
+  btnText.textContent = 'Publicando...';
+  status.style.display = 'none';
+
+  // Converter cada canvas para base64
+  const imagens = carrosselSlides.map(s => {
+    return s.canvas.toDataURL('image/png').split(',')[1];
+  });
+
+  try {
+    const res = await fetch('/api/instagram/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imagens, legenda, perfil: carrosselPerfil })
+    });
+    const data = await res.json();
+
+    if (data.ok) {
+      status.style.cssText = 'margin-top:12px;display:block;padding:14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-align:center;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0';
+      status.textContent = '✓ Publicado com sucesso no Instagram!';
+    } else {
+      throw new Error(data.error || 'Erro desconhecido');
+    }
+  } catch(e) {
+    status.style.cssText = 'margin-top:12px;display:block;padding:14px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-align:center;background:#fef2f2;color:#dc2626;border:1px solid #fecaca';
+    status.textContent = '✕ Erro ao publicar: ' + e.message;
   }
 
   btn.disabled = false;
-  btnIcon.textContent = '\u270F';
-  btnText.textContent = 'Gerar versao alterada';
+  btnIcon.textContent = '📸';
+  btnText.textContent = 'Publicar no Instagram';
 }
 
-
-// ── AUTH INIT ──────────────────────────────────────────────────────────────
-async function initAuth() {
-  try {
-    var res = await fetch('/api/me');
-    if (!res.ok) { window.location.href = '/login'; return; }
-    var user = await res.json();
-
-    // Topbar avatar
-    var topAvatar = document.getElementById('topbarUserAvatar');
-    if (topAvatar) {
-      if (user.photo) {
-        topAvatar.innerHTML = '<img src="' + user.photo + '" style="width:100%;height:100%;object-fit:cover">';
-      } else {
-        topAvatar.textContent = user.name.charAt(0).toUpperCase();
-      }
-      topAvatar.title = user.name + ' — Clique para sair';
-    }
-
-    // Sidenav footer
-    var nameEl = document.getElementById('userName');
-    var avatarEl = document.getElementById('userAvatar');
-    if (nameEl) nameEl.textContent = user.name.split(' ')[0];
-    if (avatarEl) {
-      if (user.photo) {
-        avatarEl.style.background = 'none';
-        avatarEl.innerHTML = '<img src="' + user.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
-      } else {
-        avatarEl.textContent = user.name.charAt(0).toUpperCase();
-      }
-    }
-  } catch(e) {
-    window.location.href = '/login';
-  }
+async function downloadCarrosselZip() {
+  // Baixa cada slide individualmente se JSZip nao disponivel
+  carrosselSlides.forEach((s, i) => {
+    s.canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = `slide-${String(i+1).padStart(2,'0')}-${s.slide.tipo}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
 }
-
-// ── TRACK CREATIVE ─────────────────────────────────────────────────────────
-function trackCreative(clientName) {
-  fetch('/api/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ clientName: clientName || '' })
-  }).catch(function() {}); // fire and forget
-}
-
-// ── RENDER DASHBOARD ───────────────────────────────────────────────────────
-async function renderDashboard() {
-  var container = document.getElementById('dashboardContent');
-  try {
-    var res = await fetch('/api/stats');
-    var users = await res.json();
-
-    if (!users || users.length === 0) {
-      container.innerHTML = '<div class="empty-state"><div class="empty-icon">▦</div><div class="empty-title">Sem dados ainda</div><div class="empty-sub">Gere criativos para ver as estatísticas aqui.</div></div>';
-      return;
-    }
-
-    var totalAll = users.reduce(function(s, u) { return s + u.totalCreatives; }, 0);
-
-    var html = '<div class="dash-total-bar"><div><div class="dash-total-label">Total de criativos gerados</div><div class="dash-last-active">Todos os usuários</div></div><div class="dash-total-num">' + totalAll + '</div></div>';
-    html += '<div class="dash-grid">';
-
-    users.forEach(function(u) {
-      var initials = u.name ? u.name.charAt(0).toUpperCase() : '?';
-      var avatarHtml = u.photo
-        ? '<img class="dash-avatar" src="' + u.photo + '" alt="">'
-        : '<div class="dash-avatar-fallback">' + initials + '</div>';
-
-      var lastActive = u.lastActive
-        ? new Date(u.lastActive).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-        : 'Nunca';
-
-      var clientRows = '';
-      var clientEntries = Object.entries(u.byClient || {}).sort(function(a,b){ return b[1]-a[1]; });
-      if (clientEntries.length > 0) {
-        clientEntries.forEach(function(entry) {
-          clientRows += '<div class="dash-client-row"><span class="dash-client-name">' + entry[0] + '</span><span class="dash-client-count">' + entry[1] + '</span></div>';
-        });
-      } else {
-        clientRows = '<div class="dash-empty-user">Nenhum criativo gerado ainda.</div>';
-      }
-
-      html += '<div class="dash-card">'
-        + '<div class="dash-card-header">' + avatarHtml + '<div><div class="dash-user-name">' + u.name + '</div><div class="dash-user-email">' + u.email + '</div></div></div>'
-        + '<div class="dash-stat-big"><div class="dash-stat-num">' + u.totalCreatives + '</div><div><div class="dash-stat-label">criativos gerados</div><div class="dash-last-active">Último: ' + lastActive + '</div></div></div>'
-        + '<div class="dash-clients"><div class="dash-clients-title">Por cliente</div>' + clientRows + '</div>'
-        + '</div>';
-    });
-
-    html += '</div>';
-    container.innerHTML = html;
-  } catch(e) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-title">Erro ao carregar</div><div class="empty-sub">' + e.message + '</div></div>';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() { initAuth(); });
-
 </script>
+
+
 
 <!-- ── COMPOSE PREVIEW MODAL ── -->
 <div class="compose-modal-overlay" id="composeModal">
