@@ -24,59 +24,32 @@
 }
 
 
-/* ── RESET GLOBAL: cobre qualquer fundo externo (logo, watermark, etc) ── */
-html, body {
-  background: #f4f2ed !important;
-  background-image: none !important;
-}
-/* Cobre qualquer imagem de fundo que venha de CSS externo */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
-    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%);
-  z-index: -9999;
-  pointer-events: none;
-}
-.shell, .main {
-  background-image: none !important;
-  background-color: transparent !important;
-}
-/* sidenav mantém seu fundo escuro — não sobrescrever */
-
 * { margin:0; padding:0; box-sizing:border-box; }
 
+/* ── FUNDO GLOBAL — gradiente bege, cobre qualquer imagem externa ── */
+html {
+  background: #ede8df;
+}
 body {
   font-family: 'Instrument Sans', sans-serif;
-  background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
   font-size: 14px;
+  /* Gradiente bege em camadas — base sólida que mata qualquer watermark */
+  background:
+    radial-gradient(ellipse 80% 50% at 15% 10%, rgba(210,190,165,0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 85%, rgba(195,175,150,0.3) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 50% 50%, rgba(230,220,205,0.2) 0%, transparent 70%),
+    linear-gradient(165deg, #f5f0e8 0%, #ede8df 35%, #e4ddd2 70%, #d9d0c4 100%);
+  background-attachment: fixed;
 }
 
 /* ── LAYOUT ── */
 .shell {
   display: flex;
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
-    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%);
+  background: transparent;
   position: relative;
-  z-index: 0;
-}
-.shell::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 10% 0%, rgba(229,71,13,0.07) 0%, transparent 55%),
-    radial-gradient(ellipse at 90% 100%, rgba(229,71,13,0.05) 0%, transparent 50%),
-    linear-gradient(160deg, #f7f5f0 0%, #f4f2ed 40%, #ede9e1 100%);
-  z-index: -1;
 }
 
 /* ── SIDEBAR NAV ── */
