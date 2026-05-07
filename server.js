@@ -177,7 +177,7 @@ app.post('/api/gemini-image', async (req, res) => {
     const { prompt, n = 1, aspectRatio = '1:1' } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-preview-05-20:predict?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
