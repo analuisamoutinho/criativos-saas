@@ -68,8 +68,6 @@ body {
 .sidenav-logo {
   padding: 22px 20px 18px;
   border-bottom: 1px solid rgba(255,255,255,0.08);
-  display: flex;
-  align-items: center;
 }
 
 .logo-mark {
@@ -87,15 +85,6 @@ body {
   width: 8px; height: 8px;
   background: var(--accent);
   border-radius: 50%;
-}
-
-.logo-img {
-  display: block;
-  width: auto;
-  height: 32px;
-  max-width: 100%;
-  max-height: 40px;
-  object-fit: contain;
 }
 
 .nav-section {
@@ -3363,7 +3352,8 @@ Retorne EXATAMENTE ${nSlides} slides (incluindo capa e CTA).`;
       })
     });
     const data = await res.json();
-    const raw  = data.content?.[0]?.text || '{}';
+    const raw  = data.content?.[0]?.text;
+    if (!raw) throw new Error('Resposta do servidor: ' + JSON.stringify(data).slice(0, 400));
     estrutura  = JSON.parse(raw.replace(/```json|```/g, '').trim());
   } catch(e) {
     alert('Erro ao estruturar slides com Claude: ' + e.message);
@@ -3408,7 +3398,7 @@ Retorne EXATAMENTE ${nSlides} slides (incluindo capa e CTA).`;
     try {
       const endpoint = carrosselModel === 'gemini' ? '/api/gemini-image' : '/api/image';
       const body = carrosselModel === 'gemini'
-        ? { prompt: slide.visual_prompt, n: 1, aspectRatio: formato }
+        ? { prompt: slide.visual_prompt, n: 1, aspectRatio: formato === '4:5' ? '4:3' : formato }
         : { prompt: slide.visual_prompt, n: 1, size: formato === '4:5' ? '1024x1280' : '1024x1024', quality: 'high' };
 
       const imgRes  = await fetch(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
