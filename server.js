@@ -241,6 +241,187 @@ ${systemExtra || ''}`;
   }
 });
 
+// ── Content Machine — geração de copy via GPT-4o (BrandsDecoded) ─────────────
+// Tipos: tendencia | case | educativo | comparacao | lista | prova_social | oferta | dump
+app.post('/api/content-machine/generate', async (req, res) => {
+  try {
+    const { tipo, tema, profile } = req.body;
+    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema são obrigatórios.' });
+
+    const manualNote = getManualText(profile);
+    const account = getAccount(profile);
+
+    const tipoLabels = {
+      tendencia:   'Análise de Tendência',
+      case:        'Case de Sucesso',
+      educativo:   'Educativo / Framework',
+      comparacao:  'Comparação / Antes & Depois',
+      lista:       'Lista Valiosa',
+      prova_social:'Prova Social',
+      oferta:      'Oferta',
+      dump:        'Dump / Bastidores',
+    };
+
+    const estruturas = {
+      tendencia: `
+- Slide 1 (CAPA): Hook de 14–18 palavras. Afirmação provocativa ou pergunta que active tensão, curiosidade ou identidade sobre a tendência.
+- Slide 2 (SUB-HOOK): 8–12 palavras. Tensiona ou concretiza o slide 1. Não depende sintaticamente do slide 1.
+- Slides 3–4: Por que esta tendência está a acontecer agora. Evidências e sinais observáveis.
+- Slides 5–7: Implicações do movimento para o mercado/sociedade/negócios.
+- Slides 8–9: O que isto significa para o público de ${account.name}.
+- Slide 10 (CTA): Convite para comentar palavra-chave, seguir ou guardar.`,
+      case: `
+- Slide 1 (CAPA): Hook de 14–18 palavras. Apresenta o case como fenómeno, não como notícia.
+- Slide 2 (SUB-HOOK): 8–12 palavras. Aprofunda a tensão ou o mistério do case.
+- Slides 3–4: Contexto — quem é, o que fez, qual era a situação de partida.
+- Slides 5–6: O PONTO DE VIRADA — a decisão ou mudança que transformou tudo.
+- Slides 7–8: Resultados e números que comprovam a grandeza do case.
+- Slide 9: Lição prática que o leitor pode aplicar no próprio negócio.
+- Slide 10 (CTA): Convite claro para ação.`,
+      educativo: `
+- Slide 1 (CAPA): Hook de 14–18 palavras com promessa clara de aprendizado.
+- Slide 2 (SUB-HOOK): 8–12 palavras que tensionam ou aprofundam a promessa.
+- Slide 3: Introdução ao conceito/framework — por que isto importa.
+- Slides 4–8: Os passos, princípios ou elementos (1 por slide), com exemplos concretos.
+- Slide 9: Como aplicar na prática — exemplo direto.
+- Slide 10 (CTA): Call to action.`,
+      comparacao: `
+- Slide 1 (CAPA): Hook de 14–18 palavras que activa o contraste imediatamente.
+- Slide 2 (SUB-HOOK): 8–12 palavras que definem os dois polos da comparação.
+- Slides 3–5: Lado A — o cenário ruim/antigo/errado, com detalhes e exemplos reais.
+- Slide 6: O ponto de virada — o que separa os dois lados.
+- Slides 7–9: Lado B — o cenário bom/novo/certo, com resultados concretos.
+- Slide 10 (CTA): Convite para reflexão ou ação.`,
+      lista: `
+- Slide 1 (CAPA): Hook de 14–18 palavras com número específico e promessa de valor.
+- Slide 2 (SUB-HOOK): 8–12 palavras que justificam por que esta lista importa agora.
+- Slides 3–9: Um item da lista por slide (mínimo 5, máximo 7 itens). Cada item com 2+ frases de desenvolvimento.
+- Slide 10 (CTA): Convite para guardar, comentar ou seguir.`,
+      prova_social: `
+- Slide 1 (CAPA): Hook de 14–18 palavras focado no resultado conquistado.
+- Slide 2 (SUB-HOOK): 8–12 palavras com o contexto humano da transformação.
+- Slide 3: A situação antes — dor, frustração, ponto de partida.
+- Slides 4–6: O processo — o que foi feito, as decisões, os ajustes.
+- Slides 7–8: Os resultados — números, evidências, mudanças concretas.
+- Slide 9: Lição universal que qualquer pessoa pode extrair.
+- Slide 10 (CTA): Convite para quem quer o mesmo resultado.`,
+      oferta: `
+- Slide 1 (CAPA): Hook de 14–18 palavras que activa desejo sem soar como anúncio.
+- Slide 2 (SUB-HOOK): 8–12 palavras que aprofundam a promessa de transformação.
+- Slides 3–4: O problema que o produto/serviço resolve, com riqueza de detalhes.
+- Slides 5–6: A solução e como funciona — benefícios, não features.
+- Slide 7: Para quem é — qualificação do público ideal.
+- Slide 8: Prova — resultado de quem já usou.
+- Slide 9: O que está incluído / como funciona o processo.
+- Slide 10 (CTA): Convite claro e específico para a ação de compra/contacto.`,
+      dump: `
+- Slide 1 (CAPA): Hook de 14–18 palavras que humaniza e gera curiosidade.
+- Slide 2 (SUB-HOOK): 8–12 palavras que contextualizam o momento ou período.
+- Slides 3–7: Momentos específicos com narrativa (o que estava a acontecer, o que foi aprendido, o que foi sentido).
+- Slide 8: Uma reflexão ou aprendizado gerado por esse período/evento.
+- Slide 9: Como isto se conecta com o trabalho/missão de ${account.name}.
+- Slide 10 (CTA): Convite para comentar, partilhar ou seguir.`,
+    };
+
+    const systemPrompt = `És o Content Machine da BrandsDecoded — gerador de carrosseis de alto desempenho para Instagram.
+As tuas prioridades: tensão narrativa, curiosidade, identidade, progressão de raciocínio.
+NUNCA inventes factos, números, datas ou pesquisas.
+NUNCA uses AI slop: frases genéricas, jargão corporativo, abstracções vazias, travessão —, "não é X, é Y", "e isso muda tudo", "colapso silencioso", "virou" em headlines.
+Sempre em português do Brasil. Retorna APENAS JSON válido sem markdown.`;
+
+    const userPrompt = `Tipo de carrossel: ${tipoLabels[tipo] || tipo}
+Perfil: ${account.name} (${account.handle})
+${manualNote ? `Diretrizes do cliente: ${manualNote}\n` : ''}
+Tema: "${tema}"
+
+Estrutura obrigatória:
+${estruturas[tipo] || estruturas.educativo}
+
+REGRAS DE COPY (BrandsDecoded):
+- Slide 1 (hook): mínimo 14 e máximo 18 palavras. Nunca comece com "Descubra", "Saiba", "Aprenda", "Conheça". Sem travessão —.
+- Slide 2 (sub-hook): mínimo 8 e máximo 12 palavras. Não pode depender sintaticamente do slide 1. Não começa com conectivo de continuação.
+- Tom analítico, cultural, jornalístico e nativo de rede social.
+- Cada slide empurra o raciocínio adiante — nunca repete o anterior.
+- Sem bullets dentro dos textos dos slides.
+- Apenas factos verificáveis.
+
+Retorna APENAS este JSON (sem markdown, sem texto antes ou depois):
+{
+  "tipo": "${tipo}",
+  "tipo_label": "${tipoLabels[tipo] || tipo}",
+  "tema": "${tema}",
+  "profile": "${profile}",
+  "slides": [
+    { "numero": 1, "titulo": "CAPA", "texto": "..." },
+    { "numero": 2, "titulo": "SUB-HOOK", "texto": "..." },
+    { "numero": 3, "titulo": "...", "texto": "..." },
+    { "numero": 4, "titulo": "...", "texto": "..." },
+    { "numero": 5, "titulo": "...", "texto": "..." },
+    { "numero": 6, "titulo": "...", "texto": "..." },
+    { "numero": 7, "titulo": "...", "texto": "..." },
+    { "numero": 8, "titulo": "...", "texto": "..." },
+    { "numero": 9, "titulo": "...", "texto": "..." },
+    { "numero": 10, "titulo": "CTA", "texto": "..." }
+  ]
+}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        temperature: 0.8,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+
+    let text = data.choices[0].message.content.trim();
+    // Remover fences markdown se o modelo as incluir mesmo assim
+    text = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+
+    const parsed = JSON.parse(text);
+
+    // Guardar na biblioteca de conteúdos gerados
+    const item = saveGeneratedContent({
+      id: `cnt_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'pendente',
+      type: 'carrossel',
+      contentMachineType: tipo,
+      contentMachineTypeLabel: tipoLabels[tipo] || tipo,
+      profile,
+      topic: tema,
+      carouselData: {
+        title: tema,
+        slideCount: parsed.slides?.length || 10,
+        slides: (parsed.slides || []).map(s => ({
+          slideNumber: s.numero,
+          heading: s.texto,
+          body: '',
+          imagePrompt: '',
+          titulo: s.titulo,
+        })),
+        caption: '',
+        hashtags: '',
+      },
+    });
+
+    res.json({ success: true, contentId: item.id, ...parsed });
+  } catch (err) {
+    console.error('Content Machine error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Image generation — GPT Image-1 ───────────────────────────────────────────
 app.post('/api/image', async (req, res) => {
   try {
