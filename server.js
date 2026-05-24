@@ -410,13 +410,24 @@ CHECKLIST INTERNO DA HEADLINE (executar antes de serializar)
 CONTENT MACHINE — ESTRUTURA E PROGRESSÃO
 ═══════════════════════════════════════════
 
-ESTRUTURA OBRIGATÓRIA DE 18 TEXTOS
-textos 1–2 = capa (hook + sub-hook)
-textos 3, 7, 11, 14 = títulos
-textos 4, 5, 8, 9, 12, 13, 15, 16 = parágrafos
-textos 6 e 10 = parágrafos curtos
+ESTRUTURA DE 18 TEXTOS EM ATÉ 15 SLIDES
+Os 18 textos são unidades de copy — não são 18 slides. Múltiplos textos podem e devem ocupar o mesmo slide. O carrossel não pode ultrapassar 15 slides (imagens).
+
+POSIÇÕES FIXAS DOS 18 TEXTOS
+textos 1–2 = capa (sempre slide 1, os dois textos juntos)
+textos 3, 7, 11, 14 = títulos de seção
+textos 4, 5, 8, 9, 12, 13, 15, 16 = parágrafos de desenvolvimento
+textos 6 e 10 = parágrafos curtos de transição
 texto 17 = fechamento real
 texto 18 = assinatura fixa
+
+REGRA DE AGRUPAMENTO EM SLIDES
+- Slide 1: textos 1 + 2 (capa obrigatoriamente com os dois textos)
+- Slides internos: título + parágrafo(s) no mesmo slide quando fizerem sentido juntos. Ex: texto 3 (título) + texto 4 (parágrafo) = 1 slide. Ou texto 7 (título) + textos 8 e 9 (parágrafos) = 1 slide.
+- Parágrafos densos ou de desenvolvimento podem ocupar slide próprio quando o conteúdo exigir espaço.
+- Texto 6 e texto 10 (curtos) geralmente ficam sozinhos ou com o parágrafo anterior.
+- Textos 17 + 18 podem estar no mesmo slide final.
+- Resultado: entre 10 e 15 slides no total. Nunca mais que 15.
 
 FAIXAS DE PALAVRAS POR POSIÇÃO
 - texto 1 (hook): 14 a 18 palavras
@@ -431,21 +442,21 @@ ASSINATURA FIXA (texto 18 — sempre exatamente assim)
 Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente "CASE" que nossa equipe te chama.
 
 PROGRESSÃO NARRATIVA
-O carrossel funciona como funil interno. Cada slide tem uma função na cadeia:
+O carrossel funciona como funil interno. Cada texto avança o raciocínio:
 - Textos 1-2: CAPA — parar o scroll do desconhecido
-- Textos 3-5: TRAÇÃO — abrir o problema, contextualizar a tensão, mais argumentos para continuar
-- Textos 6-10: AVANÇO — mecanismo, por que acontece, prova com evidências observáveis
+- Textos 3-5: TRAÇÃO — abrir o problema, contextualizar a tensão
+- Textos 6-10: AVANÇO — mecanismo, por que acontece, evidências observáveis
 - Textos 11-16: CONSEQUÊNCIA e APLICAÇÃO — implicações, o que muda, lição transferível
-- Texto 17: FECHAMENTO — encerrar o argumento com força real, sem resumir o que já foi dito
-- Texto 18: ASSINATURA — fixa, conforme definida acima
+- Texto 17: FECHAMENTO — fechar o argumento com força real, não resumir
+- Texto 18: ASSINATURA — fixa, nunca alterada
 
 REGRAS DE PROGRESSÃO
 - Cada texto deve abrir uma micro-tensão que o próximo resolve parcialmente.
 - Nunca repetir a ideia central do texto anterior com outras palavras.
 - Nunca resumir o que já foi dito.
-- Texto 3 deve conectar diretamente com a tensão aberta no texto 2.
-- Texto 17 deve fechar o argumento com força, não com resumo ou motivacional.
-- Texto 18 é sempre a assinatura fixa, nunca alterada.
+- Texto 3 deve conectar com a tensão aberta no texto 2.
+- Texto 17 fecha com força, sem motivacional vazio.
+- Texto 18 é sempre a assinatura fixa.
 
 DISCIPLINA INTERNA ANTES DE SERIALIZAR
 Revisar internamente:
@@ -455,6 +466,7 @@ Revisar internamente:
 - Gramática e fluência natural em português do Brasil
 - AI slop removido (frases com cara de tradução, jargão, pares simétricos, abstrações vazias)
 - Independência sintática entre texto 1 e texto 2
+- Total de slides entre 10 e 15
 - Assinatura fixa no texto 18
 - Se qualquer item falhar, reescrever internamente antes de serializar.
 
@@ -496,33 +508,119 @@ Garantir que cada texto empurra o raciocínio do anterior.
 Verificar faixas de palavras por posição antes de serializar.
 Texto 18 sempre com a assinatura fixa.
 
-Retornar APENAS este JSON (exatamente 18 slides, sem adicionar nem remover):
+Retornar APENAS este JSON.
+REGRA DO JSON: cada objeto em "slides" representa 1 imagem/slide real. Cada slide tem "textos" — um array com 1 ou 2 textos que aparecem nessa imagem. O slide 1 sempre tem os textos 1 e 2. Total de slides: entre 10 e 15. Total de textos: exatamente 18.
+
 {
   "tipo": "${tipo}",
   "tipo_label": "${tipoLabels[tipo] || tipo}",
   "tema": "${tema}",
   "profile": "${profile}",
   "slides": [
-    { "numero": 1,  "titulo": "CAPA",    "texto": "..." },
-    { "numero": 2,  "titulo": "SUB-HOOK","texto": "..." },
-    { "numero": 3,  "titulo": "TÍTULO",  "texto": "..." },
-    { "numero": 4,  "titulo": "...",     "texto": "..." },
-    { "numero": 5,  "titulo": "...",     "texto": "..." },
-    { "numero": 6,  "titulo": "CURTO",  "texto": "..." },
-    { "numero": 7,  "titulo": "TÍTULO",  "texto": "..." },
-    { "numero": 8,  "titulo": "...",     "texto": "..." },
-    { "numero": 9,  "titulo": "...",     "texto": "..." },
-    { "numero": 10, "titulo": "CURTO",  "texto": "..." },
-    { "numero": 11, "titulo": "TÍTULO",  "texto": "..." },
-    { "numero": 12, "titulo": "...",     "texto": "..." },
-    { "numero": 13, "titulo": "...",     "texto": "..." },
-    { "numero": 14, "titulo": "TÍTULO",  "texto": "..." },
-    { "numero": 15, "titulo": "...",     "texto": "..." },
-    { "numero": 16, "titulo": "...",     "texto": "..." },
-    { "numero": 17, "titulo": "FECHAMENTO", "texto": "..." },
-    { "numero": 18, "titulo": "ASSINATURA", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \"CASE\" que nossa equipe te chama." }
+    {
+      "slide": 1,
+      "funcao": "CAPA",
+      "textos": [
+        { "posicao": 1, "tipo": "hook",     "texto": "..." },
+        { "posicao": 2, "tipo": "sub-hook", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 2,
+      "funcao": "TRAÇÃO",
+      "textos": [
+        { "posicao": 3, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 4, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 3,
+      "funcao": "TRAÇÃO",
+      "textos": [
+        { "posicao": 5, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 4,
+      "funcao": "TRANSIÇÃO",
+      "textos": [
+        { "posicao": 6, "tipo": "curto", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 5,
+      "funcao": "AVANÇO",
+      "textos": [
+        { "posicao": 7, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 8, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 6,
+      "funcao": "AVANÇO",
+      "textos": [
+        { "posicao": 9, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 7,
+      "funcao": "TRANSIÇÃO",
+      "textos": [
+        { "posicao": 10, "tipo": "curto", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 8,
+      "funcao": "CONSEQUÊNCIA",
+      "textos": [
+        { "posicao": 11, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 12, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 9,
+      "funcao": "CONSEQUÊNCIA",
+      "textos": [
+        { "posicao": 13, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 10,
+      "funcao": "APLICAÇÃO",
+      "textos": [
+        { "posicao": 14, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 15, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 11,
+      "funcao": "APLICAÇÃO",
+      "textos": [
+        { "posicao": 16, "tipo": "paragrafo", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 12,
+      "funcao": "FECHAMENTO",
+      "textos": [
+        { "posicao": 17, "tipo": "fechamento", "texto": "..." }
+      ]
+    },
+    {
+      "slide": 13,
+      "funcao": "ASSINATURA",
+      "textos": [
+        { "posicao": 18, "tipo": "assinatura", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \"CASE\" que nossa equipe te chama." }
+      ]
+    }
   ]
-}`;
+}
+
+IMPORTANTE: o template acima é um exemplo de distribuição (13 slides). O modelo pode ajustar o agrupamento para chegar entre 10 e 15 slides, desde que:
+- os 18 textos estejam todos presentes com as posições de 1 a 18
+- as posições e faixas de palavras por tipo sejam respeitadas
+- o slide 1 tenha sempre os textos 1 e 2 juntos
+- o texto 18 seja sempre a assinatura fixa`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -550,6 +648,27 @@ Retornar APENAS este JSON (exatamente 18 slides, sem adicionar nem remover):
 
     const parsed = JSON.parse(text);
 
+    // Normalizar slides: cada slide tem "textos" (array), não um único "texto"
+    // Garante compatibilidade com o frontend que espera heading/body por slide
+    const slidesNormalizados = (parsed.slides || []).map(s => {
+      const textos = s.textos || [];
+      const primeiro = textos[0] || {};
+      const segundo  = textos[1] || {};
+      return {
+        slideNumber: s.slide,
+        funcao: s.funcao || '',
+        heading: primeiro.texto || '',
+        body:    segundo.texto  || '',
+        tipoTexto1: primeiro.tipo || '',
+        tipoTexto2: segundo.tipo  || '',
+        posicao1: primeiro.posicao || null,
+        posicao2: segundo.posicao  || null,
+        imagePrompt: '',
+        // textos raw para acesso completo no frontend
+        textos,
+      };
+    });
+
     // Guardar na biblioteca de conteúdos gerados
     const item = saveGeneratedContent({
       id: `cnt_${Date.now()}`,
@@ -562,20 +681,15 @@ Retornar APENAS este JSON (exatamente 18 slides, sem adicionar nem remover):
       topic: tema,
       carouselData: {
         title: tema,
-        slideCount: parsed.slides?.length || 10,
-        slides: (parsed.slides || []).map(s => ({
-          slideNumber: s.numero,
-          heading: s.texto,
-          body: '',
-          imagePrompt: '',
-          titulo: s.titulo,
-        })),
+        slideCount: slidesNormalizados.length,
+        slides: slidesNormalizados,
         caption: '',
         hashtags: '',
       },
     });
 
-    res.json({ success: true, contentId: item.id, ...parsed });
+    // Devolver parsed original + slides normalizados para o frontend
+    res.json({ success: true, contentId: item.id, ...parsed, slidesNormalizados });
   } catch (err) {
     console.error('Content Machine error:', err);
     res.status(500).json({ error: err.message });
