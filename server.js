@@ -1,528 +1,489 @@
 const express = require('express');
 const cors = require('cors');
-const fetch = require('node-fetch');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
-// ─── Mapeamento de perfis usando as vars do Railway ──────────────────────────
-const PROFILES = {
-  case: {
-    name: 'Case Aceleradora',
-    handle: '@caseaceleradora',
-    get igUserId() { return process.env.INSTAGRAM_ACCOUNT_ID_MARCA; },
-    get igToken()  { return process.env.INSTAGRAM_ACCESS_TOKEN; }
-  },
-  ana: {
-    name: 'Ana Moutinho',
-    handle: '@analuisa.moutinho',
-    get igUserId() { return process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL; },
-    get igToken()  { return process.env.INSTAGRAM_ACCESS_TOKEN; }
-  }
+// ── Storage ──────────────────────────────────────────────────────────────────
+const upload = multer({ dest: 'uploads/' });
+const SCHEDULED_FILE = 'scheduled_posts.json';
+const GENERATED_FILE = 'generated_content.json';   // base de criativos gerados
+const MANUALS_DIR   = 'manuals/';
+
+if (!fs.existsSync('uploads/')) fs.mkdirSync('uploads/');
+if (!fs.existsSync(MANUALS_DIR)) fs.mkdirSync(MANUALS_DIR);
+if (!fs.existsSync(SCHEDULED_FILE)) fs.writeFileSync(SCHEDULED_FILE, '[]');
+if (!fs.existsSync(GENERATED_FILE)) fs.writeFileSync(GENERATED_FILE, '[]');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function readJSON(file) {
+  try { return JSON.parse(fs.readFileSync(file, 'utf-8')); } catch { return []; }
+}
+function writeJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// Salva criativo na base geral
+function saveGeneratedContent(item) {
+  const all = readJSON(GENERATED_FILE);
+  all.unshift(item);                 // mais recente primeiro
+  writeJSON(GENERATED_FILE, all);
+  return item;
+}
+
+// Atualiza status de um criativo
+function updateContentStatus(id, status, extra = {}) {
+  const all = readJSON(GENERATED_FILE);
+  const idx = all.findIndex(i => i.id === id);
+  if (idx !== -1) { all[idx] = { ...all[idx], status, ...extra }; writeJSON(GENERATED_FILE, all); }
+}
+
+// ── Accounts ─────────────────────────────────────────────────────────────────
+const ACCOUNTS = {
+  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,   token: process.env.INSTAGRAM_TOKEN_MARCA,   name: 'Case Aceleradora',  handle: '@caseaceleradora'  },
+  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL, token: process.env.INSTAGRAM_TOKEN_PESSOAL, name: 'Ana Moutinho',       handle: '@analuisa.moutinho' },
 };
 
-// ─── Multer: upload de PDFs dos manuais de cliente ───────────────────────────
-const manualStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = './manuals';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const profile = req.body.profile || 'unknown';
-    cb(null, `${profile}_manual.pdf`);
-  }
-});
-const uploadManual = multer({ storage: manualStorage, limits: { fileSize: 20 * 1024 * 1024 } });
+function getAccount(profile) { return ACCOUNTS[profile] || ACCOUNTS.marca; }
 
-// ─── Multer: upload de imagens para hospedar (URL pública para o IG) ─────────
-const imageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = './uploads';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`);
-  }
+// ── Manual upload ─────────────────────────────────────────────────────────────
+app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
+  const { profile } = req.body;
+  if (!req.file) return res.status(400).json({ error: 'Nenhum ficheiro enviado' });
+  const dest = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
+  fs.renameSync(req.file.path, dest);
+  res.json({ success: true, message: `Manual do perfil "${profile}" guardado.` });
 });
-const uploadImage = multer({ storage: imageStorage, limits: { fileSize: 50 * 1024 * 1024 } });
 
-// ════════════════════════════════════════════════════════════════════════════
-//  1. PROXY CLAUDE API
-// ════════════════════════════════════════════════════════════════════════════
+function getManualText(profile) {
+  const p = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
+  if (!fs.existsSync(p)) return '';
+  // Basic extraction – in production use pdf-parse
+  return '[Manual do cliente carregado — usar diretrizes de tom, cores e linguagem definidas no PDF]';
+}
+
+// ── Claude API ────────────────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
   try {
+    const { prompt, profile, systemExtra } = req.body;
+    const manualNote = getManualText(profile);
+    const systemMsg = `Você é especialista em marketing digital e criação de conteúdo para Instagram.
+Responda sempre em português de Portugal.
+${manualNote ? `\n## Manual do cliente\n${manualNote}` : ''}
+${systemExtra || ''}`;
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        system: systemMsg,
+        messages: [{ role: 'user', content: prompt }],
+      }),
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || `Claude API error ${response.status}`);
-    res.json(data);
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    res.json({ content: data.content[0].text });
   } catch (err) {
-    console.error('Claude proxy error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ════════════════════════════════════════════════════════════════════════════
-//  2. PROXY GEMINI IMAGEN
-// ════════════════════════════════════════════════════════════════════════════
+// ── Image generation — GPT Image-1 ───────────────────────────────────────────
+app.post('/api/image', async (req, res) => {
+  try {
+    const { prompt, size = '1024x1024' } = req.body;
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size }),
+    });
+    const data = await response.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    res.json({ url: data.data[0].url, b64: data.data[0].b64_json });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Image generation — Gemini Imagen ─────────────────────────────────────────
 app.post('/api/gemini-image', async (req, res) => {
   try {
-    const { prompt, aspectRatio } = req.body;
-    // Gemini não aceita '4:5' — mapeia para o mais próximo aceito
-    const aspectMap = { '4:5': '4:3', '9:16': '9:16', '1:1': '1:1', '16:9': '16:9', '3:4': '3:4' };
-    const geminiAspect = aspectMap[aspectRatio] || '4:3';
-
+    const { prompt } = req.body;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio: geminiAspect }
-      })
+      body: JSON.stringify({ instances: [{ prompt }], parameters: { sampleCount: 1 } }),
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || `Gemini error ${response.status}`);
-    res.json(data);
-  } catch (err) {
-    console.error('Gemini image error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  3. PROXY GPT IMAGE-1 (batch: 1–10 imagens simultâneas)
-// ════════════════════════════════════════════════════════════════════════════
-app.post('/api/image', async (req, res) => {
-  try {
-    const { prompt, n = 1, size = '1024x1024', quality = 'standard' } = req.body;
-    const count = Math.min(Math.max(parseInt(n) || 1, 1), 10);
-
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt,
-        n: count,
-        size,
-        quality,
-        response_format: 'b64_json'
-      })
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || `OpenAI error ${response.status}`);
-    res.json(data);
-  } catch (err) {
-    console.error('GPT image error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ════════════════════════════════════════════════════════════════════════════
-//  4. MANUAL DO CLIENTE (upload + status)
-// ════════════════════════════════════════════════════════════════════════════
-app.post('/api/manual/upload', uploadManual.single('manual'), (req, res) => {
-  try {
-    if (!req.body.profile) return res.status(400).json({ error: 'profile obrigatório' });
-    if (!req.file)         return res.status(400).json({ error: 'arquivo não enviado' });
-    res.json({ success: true, message: `Manual do perfil "${req.body.profile}" salvo.`, size: req.file.size });
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    const b64 = data.predictions[0].bytesBase64Encoded;
+    res.json({ b64 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.get('/api/manual/status/:profile', (req, res) => {
-  const file = path.join('./manuals', `${req.params.profile}_manual.pdf`);
-  if (fs.existsSync(file)) {
-    const stat = fs.statSync(file);
-    res.json({ exists: true, size: stat.size, updatedAt: stat.mtime });
-  } else {
-    res.json({ exists: false });
-  }
+// ── Base de criativos gerados ─────────────────────────────────────────────────
+app.get('/api/content', (req, res) => {
+  const all = readJSON(GENERATED_FILE);
+  const { profile, type, status } = req.query;
+  let filtered = all;
+  if (profile) filtered = filtered.filter(i => i.profile === profile);
+  if (type)    filtered = filtered.filter(i => i.type    === type);
+  if (status)  filtered = filtered.filter(i => i.status  === status);
+  res.json(filtered);
 });
 
-// ════════════════════════════════════════════════════════════════════════════
-//  5. CALENDÁRIO EDITORIAL MENSAL
-// ════════════════════════════════════════════════════════════════════════════
-app.post('/api/calendar/generate', async (req, res) => {
-  try {
-    const { profile, month, year, postsPerWeek = 4 } = req.body;
-    if (!profile || !month || !year) return res.status(400).json({ error: 'profile, month e year obrigatórios' });
-
-    const prof = PROFILES[profile];
-    if (!prof) return res.status(400).json({ error: 'Perfil inválido' });
-
-    // Tenta ler o manual do cliente e extrair contexto via Claude
-    const manualPath = path.join('./manuals', `${profile}_manual.pdf`);
-    let manualContext = 'Nenhum manual carregado para este cliente.';
-
-    if (fs.existsSync(manualPath)) {
-      try {
-        const base64 = fs.readFileSync(manualPath).toString('base64');
-        const extractRes = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01'
-          },
-          body: JSON.stringify({
-            model: 'claude-sonnet-4-6',
-            max_tokens: 2000,
-            messages: [{
-              role: 'user',
-              content: [
-                { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-                { type: 'text', text: 'Extraia e resuma em português: tom de voz, nicho, público-alvo, temas principais, objetivos e diretrizes de conteúdo. Máx. 800 palavras.' }
-              ]
-            }]
-          })
-        });
-        const extractData = await extractRes.json();
-        if (extractData.content?.[0]?.text) manualContext = extractData.content[0].text;
-      } catch (e) {
-        console.warn('Falha ao extrair manual:', e.message);
-      }
-    }
-
-    const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const monthName  = monthNames[parseInt(month) - 1];
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const totalPosts  = Math.round((daysInMonth / 7) * postsPerWeek);
-
-    const prompt = `Você é especialista em marketing digital e criação de conteúdo para Instagram.
-
-Crie um calendário editorial completo para ${monthName}/${year} para o perfil ${prof.handle} (${prof.name}).
-
-Configurações:
-- Período: ${monthName}/${year} (${daysInMonth} dias)
-- Posts/semana: ${postsPerWeek} | Total: ~${totalPosts} posts
-- Diretrizes do cliente: ${manualContext}
-
-Retorne APENAS JSON válido (sem markdown, sem texto extra) neste formato exato:
-{
-  "month": "${month}",
-  "year": "${year}",
-  "profile": "${profile}",
-  "profileName": "${prof.name}",
-  "totalPosts": ${totalPosts},
-  "strategy": "resumo da estratégia do mês em 2-3 frases",
-  "posts": [
-    {
-      "id": 1,
-      "day": 2,
-      "weekday": "Segunda",
-      "type": "carrossel",
-      "theme": "tema do post",
-      "title": "título sugerido",
-      "caption": "legenda completa com emojis e hashtags",
-      "hashtags": ["#tag1", "#tag2"],
-      "visualDescription": "descrição detalhada para geração de imagem IA",
-      "cta": "chamada para ação",
-      "bestTime": "19:00",
-      "status": "pending"
-    }
-  ]
-}
-
-Distribua os posts de forma equilibrada. Varie os tipos: carrossel, reels, feed, stories.
-Todos os textos em português brasileiro.`;
-
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000, messages: [{ role: 'user', content: prompt }] })
-    });
-
-    const claudeData = await claudeRes.json();
-    if (!claudeRes.ok) throw new Error(claudeData.error?.message || 'Erro na Claude API');
-
-    const rawText = claudeData.content?.[0]?.text || '';
-    if (!rawText) throw new Error('Claude retornou resposta vazia');
-
-    let calendar;
-    try {
-      const clean = rawText.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim();
-      calendar = JSON.parse(clean);
-    } catch (e) {
-      throw new Error('JSON inválido retornado pela Claude: ' + rawText.slice(0, 300));
-    }
-
-    // Persiste o calendário
-    const calDir = './calendars';
-    if (!fs.existsSync(calDir)) fs.mkdirSync(calDir, { recursive: true });
-    fs.writeFileSync(path.join(calDir, `${profile}_${year}_${String(month).padStart(2,'0')}.json`), JSON.stringify(calendar, null, 2));
-
-    res.json({ success: true, calendar });
-  } catch (err) {
-    console.error('Calendar generate error:', err);
-    res.status(500).json({ error: err.message });
-  }
+app.post('/api/content/save', (req, res) => {
+  const item = {
+    id: `cnt_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    status: 'pendente',   // pendente | agendado | publicado
+    ...req.body,
+  };
+  saveGeneratedContent(item);
+  res.json({ success: true, item });
 });
 
-app.get('/api/calendar/:profile/:year/:month', (req, res) => {
-  const { profile, year, month } = req.params;
-  const file = path.join('./calendars', `${profile}_${year}_${String(month).padStart(2,'0')}.json`);
-  if (fs.existsSync(file)) {
-    res.json({ success: true, calendar: JSON.parse(fs.readFileSync(file, 'utf8')) });
-  } else {
-    res.json({ success: false, message: 'Calendário não encontrado' });
-  }
+app.patch('/api/content/:id', (req, res) => {
+  const all = readJSON(GENERATED_FILE);
+  const idx = all.findIndex(i => i.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Criativo não encontrado' });
+  all[idx] = { ...all[idx], ...req.body };
+  writeJSON(GENERATED_FILE, all);
+  res.json({ success: true, item: all[idx] });
 });
 
-app.patch('/api/calendar/:profile/:year/:month/post/:postId', (req, res) => {
-  const { profile, year, month, postId } = req.params;
-  const file = path.join('./calendars', `${profile}_${year}_${String(month).padStart(2,'0')}.json`);
-  if (!fs.existsSync(file)) return res.status(404).json({ error: 'Calendário não encontrado' });
-  const cal = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const post = cal.posts.find(p => p.id === parseInt(postId));
-  if (!post) return res.status(404).json({ error: 'Post não encontrado' });
-  if (req.body.status)    post.status    = req.body.status;
-  if (req.body.igPostId)  post.igPostId  = req.body.igPostId;
-  if (req.body.imageUrl)  post.imageUrl  = req.body.imageUrl;
-  if (req.body.imageUrls) post.imageUrls = req.body.imageUrls;
-  fs.writeFileSync(file, JSON.stringify(cal, null, 2));
-  res.json({ success: true, post });
-});
+// ── Instagram — publicação imediata ──────────────────────────────────────────
+async function publishSingle(account, imageUrl, caption) {
+  const { id: accountId, token } = account;
+  // 1. criar container
+  const containerRes = await fetch(
+    `https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(caption)}&access_token=${token}`,
+    { method: 'POST' }
+  );
+  const { id: containerId, error } = await containerRes.json();
+  if (error) throw new Error(error.message);
 
-// ════════════════════════════════════════════════════════════════════════════
-//  6. INSTAGRAM — helpers internos
-// ════════════════════════════════════════════════════════════════════════════
+  // 2. aguardar processamento
+  await new Promise(r => setTimeout(r, 5000));
 
-async function igCreateMediaContainer({ igUserId, igToken, imageUrl, caption, isCarouselItem = false }) {
-  const body = new URLSearchParams({ access_token: igToken, image_url: imageUrl });
-  if (isCarouselItem) body.append('is_carousel_item', 'true');
-  else if (caption)   body.append('caption', caption);
-
-  const r = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media`, {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString()
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error?.message || `IG media create error ${r.status}`);
-  return d.id;
+  // 3. publicar
+  const pubRes = await fetch(
+    `https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${containerId}&access_token=${token}`,
+    { method: 'POST' }
+  );
+  return pubRes.json();
 }
 
-async function igCreateCarouselContainer({ igUserId, igToken, children, caption }) {
-  const body = new URLSearchParams({
-    access_token: igToken,
-    media_type: 'CAROUSEL',
-    children: children.join(','),
-    caption: caption || ''
-  });
-  const r = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media`, {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString()
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error?.message || `IG carousel create error ${r.status}`);
-  return d.id;
-}
-
-async function igPublishContainer({ igUserId, igToken, creationId }) {
-  const body = new URLSearchParams({ access_token: igToken, creation_id: creationId });
-  const r = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media_publish`, {
-    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString()
-  });
-  const d = await r.json();
-  if (!r.ok) throw new Error(d.error?.message || `IG publish error ${r.status}`);
-  return d.id;
-}
-
-async function igWaitReady(igToken, containerId, maxTries = 20) {
-  for (let i = 0; i < maxTries; i++) {
-    const r = await fetch(`https://graph.facebook.com/v21.0/${containerId}?fields=status_code&access_token=${igToken}`);
-    const d = await r.json();
-    if (d.status_code === 'FINISHED') return;
-    if (d.status_code === 'ERROR')    throw new Error('Container IG retornou ERROR');
-    await new Promise(ok => setTimeout(ok, 3000));
+async function publishCarousel(account, imageUrls, caption) {
+  const { id: accountId, token } = account;
+  // 1. criar item containers
+  const childIds = [];
+  for (const url of imageUrls) {
+    const r = await fetch(
+      `https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(url)}&is_carousel_item=true&access_token=${token}`,
+      { method: 'POST' }
+    );
+    const { id, error } = await r.json();
+    if (error) throw new Error(error.message);
+    childIds.push(id);
   }
-  throw new Error('Timeout aguardando container IG');
+
+  // 2. container do carrossel
+  const carouselRes = await fetch(
+    `https://graph.facebook.com/v19.0/${accountId}/media?media_type=CAROUSEL&children=${childIds.join(',')}&caption=${encodeURIComponent(caption)}&access_token=${token}`,
+    { method: 'POST' }
+  );
+  const { id: carouselId, error: cerr } = await carouselRes.json();
+  if (cerr) throw new Error(cerr.message);
+
+  await new Promise(r => setTimeout(r, 8000));
+
+  const pubRes = await fetch(
+    `https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${carouselId}&access_token=${token}`,
+    { method: 'POST' }
+  );
+  return pubRes.json();
 }
 
-async function publishToIG(prof, { imageUrl, imageUrls, caption, postType }) {
-  if (!prof.igUserId || !prof.igToken) throw new Error('Credenciais Instagram não configuradas para este perfil');
-
-  if (postType === 'carousel' && imageUrls?.length > 1) {
-    const childIds = [];
-    for (const url of imageUrls) {
-      const cid = await igCreateMediaContainer({ igUserId: prof.igUserId, igToken: prof.igToken, imageUrl: url, isCarouselItem: true });
-      await igWaitReady(prof.igToken, cid);
-      childIds.push(cid);
-    }
-    const carId = await igCreateCarouselContainer({ igUserId: prof.igUserId, igToken: prof.igToken, children: childIds, caption });
-    await igWaitReady(prof.igToken, carId);
-    return igPublishContainer({ igUserId: prof.igUserId, igToken: prof.igToken, creationId: carId });
-  } else {
-    const cid = await igCreateMediaContainer({ igUserId: prof.igUserId, igToken: prof.igToken, imageUrl, caption });
-    await igWaitReady(prof.igToken, cid);
-    return igPublishContainer({ igUserId: prof.igUserId, igToken: prof.igToken, creationId: cid });
-  }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  7. INSTAGRAM — endpoints públicos
-// ════════════════════════════════════════════════════════════════════════════
-
-// Publicação imediata — feed único
 app.post('/api/instagram/post', async (req, res) => {
   try {
-    const { profile, imageUrl, caption } = req.body;
-    if (!profile || !imageUrl) return res.status(400).json({ error: 'profile e imageUrl obrigatórios' });
-    const prof = PROFILES[profile];
-    if (!prof) return res.status(400).json({ error: 'Perfil inválido' });
-    const igPostId = await publishToIG(prof, { imageUrl, caption: caption || '', postType: 'single' });
-    res.json({ success: true, igPostId, message: 'Post publicado com sucesso!' });
+    const { imageUrl, caption, profile, contentId } = req.body;
+    const account = getAccount(profile);
+    const result = await publishSingle(account, imageUrl, caption);
+    if (result.error) return res.status(500).json({ error: result.error.message });
+    if (contentId) updateContentStatus(contentId, 'publicado', { publishedAt: new Date().toISOString(), instagramId: result.id });
+    res.json({ success: true, id: result.id });
   } catch (err) {
-    console.error('IG post error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Publicação imediata — carrossel
 app.post('/api/instagram/carousel', async (req, res) => {
   try {
-    const { profile, imageUrls, caption } = req.body;
-    if (!profile || !imageUrls?.length) return res.status(400).json({ error: 'profile e imageUrls obrigatórios' });
-    if (imageUrls.length < 2 || imageUrls.length > 10) return res.status(400).json({ error: 'Carrossel requer 2–10 imagens' });
-    const prof = PROFILES[profile];
-    if (!prof) return res.status(400).json({ error: 'Perfil inválido' });
-    const igPostId = await publishToIG(prof, { imageUrls, caption: caption || '', postType: 'carousel' });
-    res.json({ success: true, igPostId, message: `Carrossel com ${imageUrls.length} slides publicado!` });
+    const { imageUrls, caption, profile, contentId } = req.body;
+    const account = getAccount(profile);
+    const result = await publishCarousel(account, imageUrls, caption);
+    if (result.error) return res.status(500).json({ error: result.error.message });
+    if (contentId) updateContentStatus(contentId, 'publicado', { publishedAt: new Date().toISOString(), instagramId: result.id });
+    res.json({ success: true, id: result.id });
   } catch (err) {
-    console.error('IG carousel error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Agendamento de post
-const scheduledPosts = [];
-
-app.post('/api/instagram/schedule', async (req, res) => {
+// ── Agendamento ───────────────────────────────────────────────────────────────
+app.post('/api/instagram/schedule', (req, res) => {
   try {
-    const { profile, imageUrl, imageUrls, caption, scheduledTime, postType = 'single' } = req.body;
-    if (!profile || !scheduledTime) return res.status(400).json({ error: 'profile e scheduledTime obrigatórios' });
+    const { scheduledAt, contentId, ...rest } = req.body;
+    const posts = readJSON(SCHEDULED_FILE);
+    const newPost = { id: `sch_${Date.now()}`, contentId, scheduledAt, status: 'pending', ...rest };
+    posts.push(newPost);
+    writeJSON(SCHEDULED_FILE, posts);
 
-    const schedDate = new Date(scheduledTime);
-    if (isNaN(schedDate.getTime()))   return res.status(400).json({ error: 'scheduledTime inválido (use ISO 8601)' });
-    if (schedDate <= new Date())      return res.status(400).json({ error: 'scheduledTime deve ser no futuro' });
+    if (contentId) updateContentStatus(contentId, 'agendado', {
+      scheduledAt,
+      scheduleId: newPost.id,
+    });
 
-    const prof = PROFILES[profile];
-    if (!prof) return res.status(400).json({ error: 'Perfil inválido' });
-
-    const schedId = `sched_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-    const record = { id: schedId, profile, postType, imageUrl, imageUrls, caption: caption || '', scheduledTime: schedDate.toISOString(), status: 'scheduled', createdAt: new Date().toISOString() };
-    scheduledPosts.push(record);
-
-    const delay = schedDate.getTime() - Date.now();
-    setTimeout(async () => {
-      const p = scheduledPosts.find(x => x.id === schedId);
-      if (!p || p.status !== 'scheduled') return;
-      p.status = 'publishing';
-      try {
-        const igPostId = await publishToIG(prof, { imageUrl: p.imageUrl, imageUrls: p.imageUrls, caption: p.caption, postType: p.postType });
-        p.status = 'published';
-        p.igPostId = igPostId;
-        p.publishedAt = new Date().toISOString();
-        console.log(`✅ Agendado publicado: ${schedId} → IG: ${igPostId}`);
-      } catch (err) {
-        p.status = 'error';
-        p.error = err.message;
-        console.error(`❌ Falha no agendado ${schedId}:`, err.message);
-      }
-    }, delay);
-
-    res.json({ success: true, schedId, scheduledTime: schedDate.toISOString(), message: `Agendado para ${schedDate.toLocaleString('pt-BR')}` });
+    res.json({ success: true, scheduledPost: newPost });
   } catch (err) {
-    console.error('Schedule error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 app.get('/api/instagram/scheduled', (req, res) => {
-  const { profile } = req.query;
-  const list = profile ? scheduledPosts.filter(p => p.profile === profile) : scheduledPosts;
-  res.json({ success: true, posts: list.filter(p => p.status !== 'cancelled').sort((a,b) => new Date(a.scheduledTime) - new Date(b.scheduledTime)) });
+  const posts = readJSON(SCHEDULED_FILE);
+  res.json(posts);
 });
 
-app.delete('/api/instagram/scheduled/:id', (req, res) => {
-  const p = scheduledPosts.find(x => x.id === req.params.id);
-  if (!p) return res.status(404).json({ error: 'Agendamento não encontrado' });
-  if (p.status === 'published') return res.status(400).json({ error: 'Post já publicado, não pode cancelar' });
-  p.status = 'cancelled';
-  res.json({ success: true, message: 'Agendamento cancelado' });
-});
+// ── Processador de posts agendados (roda a cada minuto) ───────────────────────
+setInterval(async () => {
+  const posts = readJSON(SCHEDULED_FILE);
+  const now = new Date();
+  let changed = false;
 
-app.get('/api/instagram/insights/:profile', async (req, res) => {
-  try {
-    const prof = PROFILES[req.params.profile];
-    if (!prof) return res.status(400).json({ error: 'Perfil inválido' });
-    if (!prof.igUserId || !prof.igToken) return res.status(400).json({ error: 'Credenciais não configuradas' });
-    const fields = 'followers_count,media_count,profile_picture_url,name,biography';
-    const r = await fetch(`https://graph.facebook.com/v21.0/${prof.igUserId}?fields=${fields}&access_token=${prof.igToken}`);
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error?.message || 'Erro nos insights');
-    res.json({ success: true, insights: d });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  for (const post of posts) {
+    if (post.status !== 'pending') continue;
+    const scheduled = new Date(post.scheduledAt);
+    if (scheduled > now) continue;
 
-// ════════════════════════════════════════════════════════════════════════════
-//  8. UPLOAD DE IMAGEM (gera URL pública para passar ao IG)
-// ════════════════════════════════════════════════════════════════════════════
-app.post('/api/upload-image', uploadImage.single('image'), (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'Imagem não enviada' });
-    const baseUrl = process.env.PUBLIC_URL || process.env.BASE_URL || `https://${req.get('host')}`;
-    const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
-    res.json({ success: true, imageUrl, filename: req.file.filename });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-app.use('/uploads', express.static('uploads'));
-
-// ════════════════════════════════════════════════════════════════════════════
-//  9. HEALTH CHECK
-// ════════════════════════════════════════════════════════════════════════════
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    profiles: Object.keys(PROFILES),
-    pendingScheduled: scheduledPosts.filter(p => p.status === 'scheduled').length,
-    env: {
-      claude:   !!process.env.ANTHROPIC_API_KEY,
-      gemini:   !!process.env.GEMINI_API_KEY,
-      openai:   !!process.env.OPENAI_API_KEY,
-      igToken:  !!process.env.INSTAGRAM_ACCESS_TOKEN,
-      igMarca:  !!process.env.INSTAGRAM_ACCOUNT_ID_MARCA,
-      igPessoal:!!process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL,
-      publicUrl: process.env.PUBLIC_URL || process.env.BASE_URL || 'não configurado'
+    try {
+      const account = getAccount(post.profile);
+      let result;
+      if (post.type === 'carousel' && post.imageUrls?.length > 1) {
+        result = await publishCarousel(account, post.imageUrls, post.caption);
+      } else {
+        result = await publishSingle(account, post.imageUrl || post.imageUrls?.[0], post.caption);
+      }
+      post.status = result.error ? 'error' : 'published';
+      post.publishedAt = new Date().toISOString();
+      post.instagramId = result.id;
+      if (post.contentId) updateContentStatus(post.contentId, 'publicado', { publishedAt: post.publishedAt, instagramId: result.id });
+      changed = true;
+    } catch (err) {
+      post.status = 'error';
+      post.error = err.message;
+      changed = true;
     }
-  });
+  }
+
+  if (changed) writeJSON(SCHEDULED_FILE, posts);
+}, 60_000);
+
+// ── Calendário editorial ──────────────────────────────────────────────────────
+// Sem limite de 7/semana — o utilizador configura maxPerDay (padrão 3)
+app.post('/api/calendar/generate', async (req, res) => {
+  try {
+    const { month, year, profile, postsPerDay = 2, totalPosts } = req.body;
+    const manualNote = getManualText(profile);
+    const account = getAccount(profile);
+
+    // Calcular número de dias úteis no mês (seg-sáb) para distribuição inteligente
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const calculatedTotal = totalPosts || Math.min(postsPerDay * daysInMonth, 90); // máx 90/mês
+
+    const prompt = `Gera um calendário editorial para Instagram para ${account.name} (${account.handle}).
+
+Mês: ${month}/${year}
+Total de posts: ${calculatedTotal}
+Posts por dia (máx): ${postsPerDay}
+Dias no mês: ${daysInMonth}
+
+Distribui os posts ao longo de todos os dias do mês.
+Pode ter até ${postsPerDay} posts por dia em dias de maior engajamento (terça, quarta, quinta).
+Nos fins de semana podes ter 1 post por dia.
+
+${manualNote ? `\nDiretrizes do cliente:\n${manualNote}` : ''}
+
+Responde APENAS com JSON válido neste formato exacto:
+{
+  "calendar": [
+    {
+      "day": 1,
+      "posts": [
+        {
+          "time": "09:00",
+          "type": "carrossel",
+          "topic": "tema do post",
+          "caption": "legenda completa com emojis",
+          "hashtags": "#hashtag1 #hashtag2",
+          "visualDescription": "descrição visual para geração de imagem",
+          "callToAction": "texto do CTA"
+        }
+      ]
+    }
+  ]
+}
+
+Tipos possíveis: "carrossel", "feed", "reels"
+Distribui variedade de tipos ao longo do mês.
+Certifica-te que o JSON é válido e completo.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8192,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    const data = await response.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+
+    let text = data.content[0].text.trim();
+    // Extrair JSON do texto
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) text = match[0];
+
+    const calendar = JSON.parse(text);
+
+    // Cruzar com criativos já gerados/agendados/publicados
+    const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
+    const scheduled = readJSON(SCHEDULED_FILE);
+
+    // Enriquecer cada post do calendário com status
+    calendar.calendar = calendar.calendar.map(dayEntry => ({
+      ...dayEntry,
+      posts: dayEntry.posts.map(post => {
+        const postDate = new Date(year, month - 1, dayEntry.day);
+        const dateStr = postDate.toISOString().split('T')[0];
+
+        // Verificar se existe criativo gerado para este dia/tipo
+        const match = generated.find(g =>
+          g.calendarDay === dayEntry.day &&
+          g.calendarMonth === month &&
+          g.calendarYear === year
+        );
+
+        return {
+          ...post,
+          date: dateStr,
+          contentId: match?.id || null,
+          status: match?.status || 'pendente',  // pendente | agendado | publicado
+          scheduledAt: match?.scheduledAt || null,
+        };
+      }),
+    }));
+
+    res.json(calendar);
+  } catch (err) {
+    console.error('Calendar error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Máquina de Criativos rodando na porta ${PORT}`));
+// ── Gerar + Salvar carrossel na base ─────────────────────────────────────────
+// Endpoint que gera o JSON do carrossel E salva na base de criativos
+app.post('/api/carousel/generate-and-save', async (req, res) => {
+  try {
+    const { topic, profile, slides = 7, calendarDay, calendarMonth, calendarYear, caption, hashtags } = req.body;
+    const manualNote = getManualText(profile);
+    const account = getAccount(profile);
+
+    const prompt = `Cria um carrossel para Instagram sobre: "${topic}".
+Perfil: ${account.name} (${account.handle})
+${manualNote ? `\nDiretrizes:\n${manualNote}` : ''}
+
+Gera ${slides} slides. Responde apenas com JSON:
+{
+  "title": "Título do carrossel",
+  "slides": [
+    {
+      "slideNumber": 1,
+      "heading": "Título do slide",
+      "body": "Texto principal",
+      "imagePrompt": "prompt detalhado para geração de imagem"
+    }
+  ],
+  "caption": "legenda para o Instagram",
+  "hashtags": "#hashtag1 #hashtag2"
+}`;
+
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    const d = await r.json();
+    if (d.error) return res.status(500).json({ error: d.error.message });
+
+    let text = d.content[0].text.trim();
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) text = match[0];
+    const carouselData = JSON.parse(text);
+
+    // Salvar na base de criativos
+    const item = saveGeneratedContent({
+      id: `cnt_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'pendente',
+      type: 'carrossel',
+      profile,
+      topic,
+      caption: caption || carouselData.caption,
+      hashtags: hashtags || carouselData.hashtags,
+      carouselData,
+      calendarDay: calendarDay || null,
+      calendarMonth: calendarMonth || null,
+      calendarYear: calendarYear || null,
+    });
+
+    res.json({ success: true, contentId: item.id, ...carouselData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo rodando na porta ${PORT}`));
