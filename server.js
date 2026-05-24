@@ -850,7 +850,12 @@ Responde APENAS com JSON válido:
 // causando "Unexpected token '<'" ao tentar fazer JSON.parse do HTML
 app.use(express.static('public'));
 
-// Catch-all: qualquer rota não-API devolve o index.html (SPA)
+// Catch-all: rotas /api/* inexistentes → 404 JSON; resto → SPA
+// IMPORTANTE: sem isto, Express devolve index.html para /api/* não encontradas,
+// causando "Unexpected token '<'" ao tentar JSON.parse do HTML no frontend
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
+});
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
