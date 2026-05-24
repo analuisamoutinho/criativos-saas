@@ -10,16 +10,19 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
+// express.static registado no final, depois das rotas /api/*
 
 // ── Storage ──────────────────────────────────────────────────────────────────
 const upload = multer({ dest: 'uploads/' });
-const SCHEDULED_FILE = 'scheduled_posts.json';
-const GENERATED_FILE = 'generated_content.json';   // base de criativos gerados
-const MANUALS_DIR   = 'manuals/';
 
-if (!fs.existsSync('uploads/')) fs.mkdirSync('uploads/');
-if (!fs.existsSync(MANUALS_DIR)) fs.mkdirSync(MANUALS_DIR);
+// No Railway o filesystem da raiz é read-only em alguns planos; usar /tmp como fallback
+const DATA_DIR = fs.existsSync('/tmp') ? '/tmp' : '.';
+const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_posts.json');
+const GENERATED_FILE = path.join(DATA_DIR, 'generated_content.json');
+const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
+
+if (!fs.existsSync('uploads/'))  fs.mkdirSync('uploads/', { recursive: true });
+if (!fs.existsSync(MANUALS_DIR)) fs.mkdirSync(MANUALS_DIR, { recursive: true });
 if (!fs.existsSync(SCHEDULED_FILE)) fs.writeFileSync(SCHEDULED_FILE, '[]');
 if (!fs.existsSync(GENERATED_FILE)) fs.writeFileSync(GENERATED_FILE, '[]');
 
@@ -484,6 +487,16 @@ Gera ${slides} slides. Responde apenas com JSON:
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// ── Ficheiros estáticos (SEMPRE depois das rotas /api/*) ─────────────────────
+// Se o static vier antes, o Express serve index.html para rotas /api/* não encontradas
+// causando "Unexpected token '<'" ao tentar fazer JSON.parse do HTML
+app.use(express.static('public'));
+
+// Catch-all: qualquer rota não-API devolve o index.html (SPA)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo rodando na porta ${PORT}`));
