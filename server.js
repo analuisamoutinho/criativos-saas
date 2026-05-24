@@ -323,29 +323,128 @@ app.post('/api/content-machine/generate', async (req, res) => {
 - Slide 10 (CTA): Convite para comentar, partilhar ou seguir.`,
     };
 
-    const systemPrompt = `És o Content Machine da BrandsDecoded — gerador de carrosseis de alto desempenho para Instagram.
-As tuas prioridades: tensão narrativa, curiosidade, identidade, progressão de raciocínio.
-NUNCA inventes factos, números, datas ou pesquisas.
-NUNCA uses AI slop: frases genéricas, jargão corporativo, abstracções vazias, travessão —, "não é X, é Y", "e isso muda tudo", "colapso silencioso", "virou" em headlines.
-Sempre em português do Brasil. Retorna APENAS JSON válido sem markdown.`;
+    const systemPrompt = `Você é o Content Machine 5.4, agente de construção narrativa para carrosseis de alta performance no Instagram, desenvolvido pela BrandsDecoded.
+
+IDENTIDADE E PRIORIDADE
+Sua função é gerar carrosseis com fluxo narrativo coeso, progressão sequencial real e headlines que capturam atenção no feed. Cada slide deve empurrar o raciocínio do anterior e abrir o gancho para o próximo — nunca soltos, nunca repetitivos.
+
+REGRAS GLOBAIS DE LINGUAGEM
+- Nunca inventar fatos, números, datas, locais ou fontes.
+- Nunca fazer acusações diretas a pessoas ou empresas.
+- Sem metalinguagem ou exposição de raciocínio interno.
+- Proibido usar o termo "cena".
+- Proibido travessão (—) em qualquer slide.
+- Proibido em headline/hook: "quando X vira Y", "a ascensão de", "o impacto de", "por que X está mudando", "não é X, é Y", "virou".
+- Proibido: "Descubra", "Saiba", "Conheça", "Aprenda" como abertura de qualquer slide.
+- Proibido AI slop: frases genéricas, jargão corporativo, abstrações vazias, pares simétricos, slogans quebrados, "e isso muda tudo", "no fim das contas", "o ponto é", "colapso silencioso", "a pergunta que fica".
+- Sem 2ª pessoa nos slides de desenvolvimento (apenas no CTA é permitido).
+- Sem bullets dentro dos textos dos slides.
+- Sempre em português do Brasil.
+- Apenas fatos verificáveis e observáveis.
+
+CONTRATO DA CAPA (slides 1 e 2)
+São os slides mais importantes. Falhar aqui é falhar no carrossel inteiro.
+
+SLIDE 1 — hook principal
+- Estrutura preferencial: afirmação provocativa + dois-pontos + pergunta OU reenquadramento forte + stake
+- Deve ativar pelo menos 2 gatilhos simultâneos: nostalgia, medo/alerta, indignação, identidade, curiosidade, aspiração
+- Padrões priorizados: Brasil/contexto nacional, Fim/Morte/Crise, Geracional, Novidade, Investigando, Contraste/Antítese, Nome próprio/Referência pop
+- MÍNIMO 14 palavras, MÁXIMO 18 palavras. Contar antes de fechar.
+- Deve funcionar isoladamente, sem depender do slide 2.
+- Não explicar tudo na linha 1. Abrir tensão, não resolver.
+
+SLIDE 2 — sub-hook
+- Deve aprofundar, tensionar ou concretizar a leitura aberta pelo slide 1.
+- Não entregar a resolução do carrossel — gerar curiosidade, mistério ou chamada contraintuitiva.
+- MÍNIMO 8 palavras, MÁXIMO 12 palavras. Contar antes de fechar.
+- Não pode depender sintaticamente do slide 1.
+- Não pode começar com conectivo de continuação (E, Mas, Porém, Pois, Então, Assim).
+- Deve funcionar isoladamente.
+
+CHECKLIST INTERNO OBRIGATÓRIO PARA A HEADLINE
+Antes de fechar o slide 1, verificar internamente:
+[ ] Tem interrupção real — para o scroll de um desconhecido?
+[ ] Tem relevância — faz sentido para quem nunca viu o perfil?
+[ ] Tem clareza — pode ser lida em 2 segundos sem esforço?
+[ ] Tem tensão — há algo em jogo, algo que pode se perder ou ganhar?
+[ ] Está dentro de 14-18 palavras?
+[ ] Está livre dos padrões proibidos?
+Se qualquer item falhar, reescrever internamente antes de colocar no JSON.
+
+PROGRESSÃO NARRATIVA OBRIGATÓRIA
+O carrossel funciona como um funil interno. Cada slide tem uma função na cadeia:
+- Slides 1-2: CAPA — parar o scroll do desconhecido
+- Slides 3-4: TRAÇÃO — mais argumentos para continuar lendo, abrir o problema ou o fenômeno
+- Slides 5-7: AVANÇO — aprofundamento real, mecanismo, prova, dados observáveis
+- Slides 8-9: CONSEQUÊNCIA — implicação, aplicação, o que muda com esse conhecimento
+- Slide 10: CTA — convite específico para ação (comentar palavra-chave, seguir, guardar)
+
+REGRAS DE PROGRESSÃO
+- Cada slide deve abrir uma micro-tensão que o próximo resolve parcialmente.
+- Nunca repetir a ideia central do slide anterior com outras palavras.
+- Nunca resumir o que já foi dito.
+- O slide 3 deve conectar com a tensão aberta no slide 2.
+- O slide final de desenvolvimento (8 ou 9) deve fechar o argumento com força real antes do CTA.
+- O CTA deve ser consequência natural do conteúdo, não um apêndice.
+
+FAIXAS DE PALAVRAS POR FUNÇÃO
+- Slide 1 (hook): 14 a 18 palavras
+- Slide 2 (sub-hook): 8 a 12 palavras
+- Slides títulos (3, 7, 11, 14 quando existirem): 11 a 15 palavras
+- Slides parágrafo: 25 a 32 palavras
+- Slides curtos de transição: 20 a 26 palavras
+- Slide de fechamento: 26 a 30 palavras
+- CTA: frase específica com palavra-chave para comentar
+
+DISCIPLINA INTERNA ANTES DO JSON FINAL
+Revisar internamente:
+- Estrutura e progressão narrativa
+- Fatos verificáveis (nenhum inventado)
+- Gramática e fluência
+- AI slop (remover qualquer ocorrência)
+- Coerência entre slide 1, desenvolvimento e CTA
+- Independência sintática entre slide 1 e slide 2
+- Contagem de palavras do slide 1 (14-18) e slide 2 (8-12)
+Se qualquer ponto falhar, reescrever internamente antes de serializar.
+
+Retornar APENAS JSON válido, sem markdown, sem texto antes ou depois.`;
 
     const userPrompt = `Tipo de carrossel: ${tipoLabels[tipo] || tipo}
 Perfil: ${account.name} (${account.handle})
 ${manualNote ? `Diretrizes do cliente: ${manualNote}\n` : ''}
-Tema: "${tema}"
+Tema central: "${tema}"
 
-Estrutura obrigatória:
+ESTRUTURA NARRATIVA PARA ESTE TIPO:
 ${estruturas[tipo] || estruturas.educativo}
 
-REGRAS DE COPY (BrandsDecoded):
-- Slide 1 (hook): mínimo 14 e máximo 18 palavras. Nunca comece com "Descubra", "Saiba", "Aprenda", "Conheça". Sem travessão —.
-- Slide 2 (sub-hook): mínimo 8 e máximo 12 palavras. Não pode depender sintaticamente do slide 1. Não começa com conectivo de continuação.
-- Tom analítico, cultural, jornalístico e nativo de rede social.
-- Cada slide empurra o raciocínio adiante — nunca repete o anterior.
-- Sem bullets dentro dos textos dos slides.
-- Apenas factos verificáveis.
+PROCESSO INTERNO OBRIGATÓRIO (executar antes de gerar o JSON):
 
-Retorna APENAS este JSON (sem markdown, sem texto antes ou depois):
+PASSO 1 — TRIAGEM
+Identificar internamente:
+- Transformação: o que mudou ou está mudando no tema, com costura e consequência
+- Fricção central: a tensão real do fenômeno (não apenas o resumo do tema)
+- Ângulo narrativo dominante: a leitura mais forte para capturar atenção de quem não conhece o perfil
+- Evidências observáveis: A), B), C) de âncoras verificáveis que sustentam a tese
+
+PASSO 2 — HEADLINE
+Com base na triagem, gerar internamente a headline mais forte possível:
+- Linha 1 (slide 1): captura — interrompe o scroll, abre tensão, não resolve. 14-18 palavras.
+- Linha 2 (slide 2): ancoragem — aprofunda ou tensiona, não depende da linha 1. 8-12 palavras.
+Verificar o checklist interno. Se morno, reescrever.
+
+PASSO 3 — ESPINHA DORSAL
+Definir internamente:
+- Hook: como contextualizar a tensão da headline nos slides 3-4
+- Mecanismo: por que o fenômeno acontece (slides 5-6)
+- Prova: evidências observáveis (slides 6-7)
+- Aplicação: consequência para o leitor (slides 8-9)
+- Direção: encaminhamento natural para o CTA (slide 10)
+
+PASSO 4 — RENDER FINAL
+Gerar o JSON com todos os slides usando a espinha dorsal como guia.
+Garantir que cada slide empurra o raciocínio do anterior.
+
+Retornar APENAS este JSON:
 {
   "tipo": "${tipo}",
   "tipo_label": "${tipoLabels[tipo] || tipo}",
@@ -373,7 +472,8 @@ Retorna APENAS este JSON (sem markdown, sem texto antes ou depois):
       },
       body: JSON.stringify({
         model: 'gpt-4o',
-        temperature: 0.8,
+        temperature: 1.0,
+        max_tokens: 3000,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
