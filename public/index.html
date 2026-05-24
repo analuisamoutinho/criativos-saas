@@ -639,6 +639,121 @@ body {
 .library-date { font-size: .72rem; color: var(--mid); }
 .library-actions { padding: 10px 16px 14px; display: flex; gap: 7px; }
 
+/* ═══════════════════════════════════════════════════
+   BANCO DE FOTOS
+═══════════════════════════════════════════════════ */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.photo-card {
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  transition: transform .2s, box-shadow .2s;
+  cursor: pointer;
+  position: relative;
+}
+.photo-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.photo-card img {
+  width: 100%; height: 180px;
+  object-fit: cover;
+  display: block;
+}
+.photo-card-info {
+  padding: 8px 10px 10px;
+}
+.photo-card-desc { font-size: .75rem; color: var(--mid); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.photo-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+.photo-tag { font-size: .62rem; background: rgba(228,0,124,.08); color: var(--magenta); border-radius: 99px; padding: 2px 7px; }
+.photo-card-overlay {
+  position: absolute;
+  top: 0; right: 0;
+  display: flex; gap: 4px;
+  padding: 6px;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.photo-card:hover .photo-card-overlay { opacity: 1; }
+.photo-action-btn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(17,24,39,.7);
+  color: white;
+  font-size: .8rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s;
+}
+.photo-action-btn:hover { background: var(--magenta); }
+.photo-upload-zone {
+  border: 2px dashed var(--light);
+  border-radius: var(--radius-lg);
+  padding: 40px 24px;
+  text-align: center;
+  transition: border-color .2s, background .2s;
+  cursor: pointer;
+}
+.photo-upload-zone:hover, .photo-upload-zone.dragover {
+  border-color: var(--magenta);
+  background: rgba(228,0,124,.03);
+}
+.photo-upload-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.photo-upload-text { font-size: .88rem; color: var(--mid); }
+.photo-upload-text strong { color: var(--magenta); }
+
+/* Carrossel — toggle modo */
+.mode-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--pale);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-bottom: 16px;
+  border: 1px solid var(--light);
+}
+.mode-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: .82rem;
+  color: var(--mid);
+  cursor: pointer;
+  transition: all .2s;
+  font-weight: 500;
+}
+.mode-btn.active {
+  background: var(--white);
+  color: var(--dark);
+  box-shadow: 0 1px 4px rgba(0,0,0,.1);
+  font-weight: 600;
+}
+
+/* Sugestão de fotos no carrossel */
+.photo-suggestions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.photo-suggestion-item {
+  width: 64px; height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+.photo-suggestion-item:hover, .photo-suggestion-item.selected {
+  border-color: var(--magenta);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -676,6 +791,14 @@ body {
         <div class="profile-handle">@analuisa.moutinho</div>
       </div>
     </button>
+    <button class="profile-btn" onclick="setProfile('virttus', this)">
+      <div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="profile-dot"></span> Virttus
+        </div>
+        <div class="profile-handle">@virttus</div>
+      </div>
+    </button>
   </div>
 
   <nav class="nav">
@@ -696,6 +819,11 @@ body {
     </button>
     <button class="nav-item" onclick="showSection('calendar', this)">
       <span class="nav-icon">📅</span> Calendário
+    </button>
+
+    <div class="nav-section-title">Recursos</div>
+    <button class="nav-item" onclick="showSection('photos', this)">
+      <span class="nav-icon">📸</span> Banco de Fotos
     </button>
   </nav>
 
@@ -734,7 +862,7 @@ body {
 
     <div class="stats-row">
       <div class="stat-card accent-purple">
-        <div class="stat-label">Criativos gerados</div>
+        <div class="stat-label">Conteúdos gerados</div>
         <div class="stat-value" id="statTotal">–</div>
         <div class="stat-sub">total na biblioteca</div>
       </div>
@@ -757,7 +885,7 @@ body {
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">🕐 Criativos recentes</div>
+        <div class="card-title">🕐 Conteúdos recentes</div>
         <div class="content-feed" id="dashRecentFeed">
           <div style="color:var(--mid);font-size:.85rem;text-align:center;padding:24px;">A carregar...</div>
         </div>
@@ -796,34 +924,50 @@ body {
   <section class="section" id="section-carousel">
     <div class="section-header">
       <h2>Gerar Carrossel</h2>
-      <p>A IA estrutura o conteúdo e gera as imagens de cada slide.</p>
+      <p>Cola os blocos de texto prontos ou descreve um tema — a IA estrutura os slides.</p>
     </div>
 
     <div class="grid-2">
       <div>
         <div class="card">
           <div class="card-title">✍️ Configuração</div>
-          <div class="form-group">
-            <label class="form-label">Tema / Tópico</label>
-            <textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o seu negócio digital..." rows="3"></textarea>
+
+          <!-- Toggle modo -->
+          <div class="mode-toggle">
+            <button class="mode-btn active" id="modeBtnBlocks" onclick="setCarouselMode('blocks')">
+              📋 Blocos de texto
+            </button>
+            <button class="mode-btn" id="modeBtnTopic" onclick="setCarouselMode('topic')">
+              💡 Tema livre
+            </button>
           </div>
-          <div class="form-row">
+
+          <!-- Modo blocos -->
+          <div id="modeBlocks">
             <div class="form-group">
-              <label class="form-label">Nº de slides</label>
-              <select class="select" id="carouselSlides">
-                <option value="5">5 slides</option>
-                <option value="7" selected>7 slides</option>
-                <option value="10">10 slides</option>
-              </select>
+              <label class="form-label">Cole os blocos de texto</label>
+              <textarea class="textarea" id="carouselBlocks" rows="12"
+                placeholder="# Bloco 1&#10;Texto do primeiro slide&#10;&#10;# Bloco 2&#10;Texto do segundo slide&#10;&#10;# Bloco 3&#10;..."></textarea>
+              <div style="font-size:.72rem;color:var(--mid);margin-top:4px;">A IA converte cada bloco em 1 slide. Sem limite de slides.</div>
             </div>
+          </div>
+
+          <!-- Modo tópico -->
+          <div id="modeTopic" style="display:none;">
             <div class="form-group">
-              <label class="form-label">Gerador de imagens</label>
-              <select class="select" id="imageEngine">
-                <option value="gpt">GPT Image-1</option>
-                <option value="gemini">Gemini Imagen</option>
-                <option value="none">Só texto</option>
-              </select>
+              <label class="form-label">Tema / Tópico</label>
+              <textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="4"></textarea>
+              <div style="font-size:.72rem;color:var(--mid);margin-top:4px;">A IA decide quantos slides fazem sentido para o tema.</div>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Gerador de imagens</label>
+            <select class="select" id="imageEngine">
+              <option value="gpt">GPT Image-1</option>
+              <option value="gemini">Gemini Imagen</option>
+              <option value="none">Só texto (sem imagens)</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Legenda personalizada (opcional)</label>
@@ -838,6 +982,7 @@ body {
       <div>
         <div class="card" id="carouselPreviewCard" style="display:none">
           <div class="card-title" id="carouselPreviewTitle">Pré-visualização</div>
+          <div id="carouselSlideCount" style="font-size:.75rem;color:var(--mid);margin:-8px 0 10px;"></div>
           <div class="slides-preview" id="slidesPreview"></div>
 
           <div class="progress-bar" id="imageProgress" style="display:none">
@@ -845,24 +990,28 @@ body {
           </div>
           <div id="imageGenStatus" style="font-size:.78rem;color:var(--mid);margin:6px 0;"></div>
 
-          <!-- Legenda gerada -->
+          <!-- Sugestão de fotos do banco pessoal (só perfil pessoal) -->
+          <div id="photoSuggestArea" style="display:none;margin:10px 0;">
+            <div style="font-size:.75rem;color:var(--mid);margin-bottom:6px;">📸 Fotos do banco que podem encaixar:</div>
+            <div class="photo-suggestions" id="photoSuggestions"></div>
+          </div>
+
           <div class="form-group" style="margin-top:14px;">
             <label class="form-label">Legenda + Hashtags</label>
             <textarea class="textarea" id="carouselGeneratedCaption" rows="4"></textarea>
           </div>
 
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-secondary btn-sm" onclick="downloadCarousel()">⬇️ Baixar slides</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadCarousel()">⬇️ Exportar JSON</button>
             <button class="btn btn-primary btn-sm" onclick="generateCarouselImages()" id="btnGenImages">
               🎨 Gerar imagens
             </button>
           </div>
         </div>
 
-        <!-- PAINEL DE PUBLICAÇÃO — aparece após gerar -->
+        <!-- PAINEL DE PUBLICAÇÃO -->
         <div class="publish-panel" id="publishPanel">
           <div class="publish-panel-title">🚀 Publicar no Instagram</div>
-
           <div class="publish-row">
             <div class="form-group">
               <label class="form-label">Ação</label>
@@ -876,7 +1025,6 @@ body {
               <input type="datetime-local" class="input" id="scheduleDateTime" />
             </div>
           </div>
-
           <div style="display:flex;gap:8px;margin-top:4px;">
             <button class="btn btn-primary" onclick="publishCarouselDirect()" id="btnPublishCarousel" style="flex:1">
               📤 Publicar carrossel
@@ -1004,6 +1152,94 @@ body {
     </div>
   </section>
 
+  <!-- ── BANCO DE FOTOS ────────────────────────── -->
+  <section class="section" id="section-photos">
+    <div class="section-header">
+      <h2>Banco de Fotos</h2>
+      <p>Guarda as tuas fotos pessoais. A IA sugere quais usar em cada post.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <div class="card-title">📤 Adicionar foto</div>
+        <div class="photo-upload-zone" id="photoDropZone"
+          onclick="document.getElementById('photoFileInput').click()"
+          ondragover="event.preventDefault();this.classList.add('dragover')"
+          ondragleave="this.classList.remove('dragover')"
+          ondrop="handlePhotoDrop(event)">
+          <div class="photo-upload-icon">📸</div>
+          <div class="photo-upload-text">
+            <strong>Clica para selecionar</strong> ou arrasta aqui<br>
+            JPG, PNG, HEIC até 20MB
+          </div>
+        </div>
+        <input type="file" id="photoFileInput" accept="image/*" multiple style="display:none" onchange="handlePhotoSelect(event)" />
+
+        <div class="form-group" style="margin-top:16px;">
+          <label class="form-label">Descrição da foto</label>
+          <input type="text" class="input" id="photoDesc" placeholder="Ex: café da manhã, viagem para Lisboa, evento..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags (separadas por vírgula)</label>
+          <input type="text" class="input" id="photoTags" placeholder="lifestyle, viagem, trabalho, família..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Perfil</label>
+          <select class="select" id="photoProfile">
+            <option value="pessoal">Ana Moutinho (pessoal)</option>
+            <option value="marca">Case Aceleradora</option>
+            <option value="virttus">Virttus</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="uploadPhoto()" id="btnUploadPhoto" style="width:100%">
+          💾 Guardar no banco
+        </button>
+        <div id="photoUploadResult" style="margin-top:10px;font-size:.82rem;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔍 Pesquisar fotos por tema</div>
+        <div class="form-group">
+          <label class="form-label">Tema do post</label>
+          <input type="text" class="input" id="photoSearchTopic" placeholder="Ex: produtividade, empreendedorismo, rotina..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Perfil</label>
+          <select class="select" id="photoSearchProfile">
+            <option value="pessoal">Ana Moutinho (pessoal)</option>
+            <option value="marca">Case Aceleradora</option>
+            <option value="virttus">Virttus</option>
+          </select>
+        </div>
+        <button class="btn btn-outline" onclick="suggestPhotos()" style="width:100%">
+          ✨ Sugerir fotos relevantes
+        </button>
+        <div id="photoSuggestResults" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <!-- Filtros e galeria -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="card-title" style="margin:0;">📷 Galeria</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select class="select" id="galleryProfileFilter" onchange="loadPhotos()" style="width:auto;font-size:.8rem;">
+            <option value="">Todos os perfis</option>
+            <option value="pessoal">Ana Moutinho</option>
+            <option value="marca">Case Aceleradora</option>
+            <option value="virttus">Virttus</option>
+          </select>
+          <input type="text" class="input" id="galleryTagFilter" placeholder="Filtrar por tag..." style="width:140px;font-size:.8rem;" oninput="filterPhotosByTag()" />
+        </div>
+      </div>
+      <div class="photos-grid" id="photosGrid">
+        <div style="color:var(--mid);font-size:.85rem;grid-column:1/-1;text-align:center;padding:40px;">
+          A carregar fotos...
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main><!-- /main -->
 
 <!-- ══════════════════════════════════════════════════
@@ -1062,6 +1298,17 @@ let currentModalContent = null;
 
 const API = '';   // mesmo origin
 
+// Helper: garante que só faz JSON.parse quando o servidor devolve application/json
+// Evita o erro "Unexpected token '<'" quando o servidor devolve HTML de erro
+async function safeJson(response) {
+  const ct = response.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    const text = await response.text();
+    throw new Error(`Servidor devolveu ${response.status} (não-JSON): ${text.slice(0, 120)}`);
+  }
+  return response.json();
+}
+
 /* ═══════════════════════════════════════════════
    UTILS
 ═══════════════════════════════════════════════ */
@@ -1093,11 +1340,12 @@ function showSection(id, navBtn) {
   document.getElementById('section-' + id).classList.add('active');
   if (navBtn) setNavActive(id, navBtn);
 
-  const titles = { dashboard:'Dashboard', library:'Biblioteca', carousel:'Carrossel', feed:'Post Feed', calendar:'Calendário' };
+  const titles = { dashboard:'Dashboard', library:'Biblioteca', carousel:'Carrossel', feed:'Post Feed', calendar:'Calendário', photos:'Banco de Fotos' };
   document.getElementById('topbarTitle').textContent = titles[id] || id;
 
   if (id === 'dashboard') loadDashboard();
   if (id === 'library')   loadLibrary();
+  if (id === 'photos')    loadPhotos();
 }
 
 function setNavActive(id, btn) {
@@ -1112,7 +1360,7 @@ function setProfile(profile, btn) {
   currentProfile = profile;
   document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const names = { marca:'Case Aceleradora', pessoal:'Ana Moutinho' };
+  const names = { marca:'Case Aceleradora', pessoal:'Ana Moutinho', virttus:'Virttus' };
   document.getElementById('activeProfileBadge').textContent = names[profile];
   toast(`Perfil: ${names[profile]}`, 'info');
   loadDashboard();
@@ -1139,10 +1387,15 @@ async function uploadManual() {
 ═══════════════════════════════════════════════ */
 async function loadDashboard() {
   try {
-    const [all, scheduled] = await Promise.all([
-      fetch(`${API}/api/content?profile=${currentProfile}`).then(r=>r.json()),
-      fetch(`${API}/api/instagram/scheduled`).then(r=>r.json()),
-    ]);
+    await refreshContentCache();
+    const all = contentCache;
+    let scheduled = [];
+    try {
+      const sr = await fetch(`${API}/api/instagram/scheduled`);
+      if (sr.ok && (sr.headers.get('content-type')||'').includes('application/json')) {
+        scheduled = await sr.json();
+      }
+    } catch(e) { console.error('scheduled fetch error', e); }
 
     document.getElementById('statTotal').textContent = all.length;
     document.getElementById('statPendente').textContent = all.filter(i=>i.status==='pendente').length;
@@ -1209,8 +1462,8 @@ let allLibraryItems = [];
 let currentFilter = 'all';
 
 async function loadLibrary() {
-  const r = await fetch(`${API}/api/content?profile=${currentProfile}`);
-  allLibraryItems = await r.json();
+  await refreshContentCache();
+  allLibraryItems = contentCache;
   renderLibrary();
 }
 
@@ -1265,14 +1518,33 @@ function renderLibrary() {
 /* ═══════════════════════════════════════════════
    CONTENT MODAL (biblioteca)
 ═══════════════════════════════════════════════ */
+
+// Cache global — evita chamadas repetidas e erros de parse
+let contentCache = [];
+
+async function refreshContentCache() {
+  try {
+    const r = await fetch(`${API}/api/content?profile=${currentProfile}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('Resposta não é JSON');
+    contentCache = await r.json();
+  } catch(e) {
+    console.error('Erro ao carregar conteúdos:', e);
+    contentCache = [];
+  }
+}
+
 async function openContentModal(contentId) {
-  const r = await fetch(`${API}/api/content`);
-  const all = await r.json();
-  const item = all.find(i=>i.id===contentId);
-  if (!item) return;
+  let item = contentCache.find(i => i.id === contentId);
+  if (!item) {
+    await refreshContentCache();
+    item = contentCache.find(i => i.id === contentId);
+  }
+  if (!item) return toast('Conteúdo não encontrado', 'error');
   currentModalContent = item;
 
-  document.getElementById('contentModalTitle').textContent = `${typeIcon(item.type)} ${item.topic || 'Criativo'}`;
+  document.getElementById('contentModalTitle').textContent = `${typeIcon(item.type)} ${item.topic || 'Conteúdo'}`;
 
   const slides = item.carouselData?.slides || [];
   document.getElementById('contentModalBody').innerHTML = `
@@ -1360,10 +1632,12 @@ async function publishFromModal() {
 }
 
 async function quickPublish(contentId) {
-  const r = await fetch(`${API}/api/content`);
-  const all = await r.json();
-  const item = all.find(i=>i.id===contentId);
-  if (!item) return;
+  let item = contentCache.find(i => i.id === contentId);
+  if (!item) {
+    await refreshContentCache();
+    item = contentCache.find(i => i.id === contentId);
+  }
+  if (!item) return toast('Conteúdo não encontrado', 'error');
   currentModalContent = item;
   await publishFromModal();
   loadDashboard();
@@ -1372,11 +1646,29 @@ async function quickPublish(contentId) {
 /* ═══════════════════════════════════════════════
    CARROSSEL
 ═══════════════════════════════════════════════ */
+let carouselMode = 'blocks';
+
+function setCarouselMode(mode) {
+  carouselMode = mode;
+  document.getElementById('modeBtnBlocks').classList.toggle('active', mode === 'blocks');
+  document.getElementById('modeBtnTopic').classList.toggle('active', mode === 'topic');
+  document.getElementById('modeBlocks').style.display = mode === 'blocks' ? 'block' : 'none';
+  document.getElementById('modeTopic').style.display  = mode === 'topic'  ? 'block' : 'none';
+}
+
 async function generateCarousel() {
-  const topic = document.getElementById('carouselTopic').value.trim();
-  if (!topic) return toast('Escreve o tema do carrossel', 'error');
-  const slides = document.getElementById('carouselSlides').value;
   const caption = document.getElementById('carouselCaption').value;
+  let body = {};
+
+  if (carouselMode === 'blocks') {
+    const blocks = document.getElementById('carouselBlocks').value.trim();
+    if (!blocks) return toast('Cola os blocos de texto', 'error');
+    body = { blocks, profile: currentProfile, caption };
+  } else {
+    const topic = document.getElementById('carouselTopic').value.trim();
+    if (!topic) return toast('Escreve o tema do carrossel', 'error');
+    body = { topic, profile: currentProfile, caption };
+  }
 
   const btn = document.getElementById('btnGenCarousel');
   btn.disabled = true; btn.textContent = '⏳ A gerar...';
@@ -1385,7 +1677,7 @@ async function generateCarousel() {
     const r = await fetch(`${API}/api/carousel/generate-and-save`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ topic, profile: currentProfile, slides: parseInt(slides), caption }),
+      body: JSON.stringify(body),
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
@@ -1394,18 +1686,48 @@ async function generateCarousel() {
     currentCarouselContentId = d.contentId;
     currentCarouselImages = [];
 
-    // Preencher preview
     renderSlidesPreview(d.slides);
+    document.getElementById('carouselSlideCount').textContent = `${d.slides.length} slides gerados pela IA`;
     document.getElementById('carouselGeneratedCaption').value = `${d.caption}\n\n${d.hashtags}`;
     document.getElementById('carouselPreviewTitle').textContent = d.title || 'Pré-visualização';
     document.getElementById('carouselPreviewCard').style.display = 'block';
     document.getElementById('publishPanel').classList.add('visible');
 
-    toast('Carrossel gerado! Agora podes gerar as imagens ou publicar.', 'success');
+    // Sugerir fotos do banco se perfil pessoal
+    if (currentProfile === 'pessoal') {
+      loadPhotoSuggestions(body.topic || body.blocks?.slice(0,100));
+    }
+
+    toast(`Carrossel com ${d.slides.length} slides gerado!`, 'success');
   } catch(e) {
     toast('Erro: ' + e.message, 'error');
   } finally {
     btn.disabled = false; btn.textContent = '✨ Gerar carrossel';
+  }
+}
+
+async function loadPhotoSuggestions(topic) {
+  if (!topic) return;
+  const area = document.getElementById('photoSuggestArea');
+  const container = document.getElementById('photoSuggestions');
+  area.style.display = 'block';
+  container.innerHTML = '<div style="font-size:.75rem;color:var(--mid);">A procurar fotos relevantes...</div>';
+
+  try {
+    const r = await fetch(`${API}/api/photos/suggest`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ topic, profile: 'pessoal', limit: 4 }),
+    });
+    const d = await r.json();
+    if (!d.suggestions?.length) {
+      container.innerHTML = '<div style="font-size:.72rem;color:var(--mid);">Nenhuma foto encontrada no banco para este tema.</div>';
+      return;
+    }
+    container.innerHTML = d.suggestions.map(p => `
+      <img src="${p.dataUrl}" class="photo-suggestion-item" title="${p.description}"
+        onclick="this.classList.toggle('selected')" />`).join('');
+  } catch(e) {
+    area.style.display = 'none';
   }
 }
 
@@ -1641,6 +1963,169 @@ async function publishFeedPost() {
 function toggleFeedScheduleTime() {
   const v = document.getElementById('feedPublishAction').value;
   document.getElementById('feedScheduleTimeGroup').style.display = v === 'schedule' ? 'block' : 'none';
+}
+
+/* ═══════════════════════════════════════════════
+   BANCO DE FOTOS
+═══════════════════════════════════════════════ */
+let allPhotos = [];
+let pendingPhotoFile = null;
+
+function handlePhotoSelect(event) {
+  const files = Array.from(event.target.files);
+  if (files.length) processPendingPhoto(files[0]);
+}
+
+function handlePhotoDrop(event) {
+  event.preventDefault();
+  document.getElementById('photoDropZone').classList.remove('dragover');
+  const files = Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (files.length) processPendingPhoto(files[0]);
+}
+
+function processPendingPhoto(file) {
+  pendingPhotoFile = file;
+  // Preview na zona de upload
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const zone = document.getElementById('photoDropZone');
+    zone.innerHTML = `
+      <img src="${e.target.result}" style="max-height:140px;border-radius:8px;margin-bottom:8px;" />
+      <div style="font-size:.82rem;color:var(--dark);font-weight:600;">${file.name}</div>
+      <div style="font-size:.72rem;color:var(--mid);">${(file.size/1024/1024).toFixed(1)} MB</div>`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadPhoto() {
+  if (!pendingPhotoFile) return toast('Seleciona uma foto primeiro', 'error');
+  const desc    = document.getElementById('photoDesc').value;
+  const tags    = document.getElementById('photoTags').value;
+  const profile = document.getElementById('photoProfile').value;
+
+  const btn = document.getElementById('btnUploadPhoto');
+  btn.disabled = true; btn.textContent = '⏳ A guardar...';
+
+  const fd = new FormData();
+  fd.append('photo', pendingPhotoFile);
+  fd.append('profile', profile);
+  fd.append('description', desc);
+  fd.append('tags', tags);
+
+  try {
+    const r = await fetch(`${API}/api/photos/upload`, { method:'POST', body: fd });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    toast('Foto guardada no banco! 📸', 'success');
+    document.getElementById('photoUploadResult').innerHTML = `<span style="color:#065F46;">✅ Guardado: ${d.photo.originalName}</span>`;
+    document.getElementById('photoDesc').value = '';
+    document.getElementById('photoTags').value = '';
+    pendingPhotoFile = null;
+    // Reset drop zone
+    document.getElementById('photoDropZone').innerHTML = `
+      <div class="photo-upload-icon">📸</div>
+      <div class="photo-upload-text"><strong>Clica para selecionar</strong> ou arrasta aqui<br>JPG, PNG, HEIC até 20MB</div>`;
+    loadPhotos();
+  } catch(e) {
+    toast('Erro: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '💾 Guardar no banco';
+  }
+}
+
+async function loadPhotos() {
+  const profile = document.getElementById('galleryProfileFilter')?.value || '';
+  const url = `${API}/api/photos${profile ? `?profile=${profile}` : ''}`;
+  try {
+    const r = await fetch(url);
+    allPhotos = await r.json();
+    renderPhotosGrid(allPhotos);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function filterPhotosByTag() {
+  const tag = document.getElementById('galleryTagFilter').value.toLowerCase().trim();
+  if (!tag) { renderPhotosGrid(allPhotos); return; }
+  renderPhotosGrid(allPhotos.filter(p =>
+    p.tags.some(t => t.toLowerCase().includes(tag)) ||
+    p.description.toLowerCase().includes(tag)
+  ));
+}
+
+async function renderPhotosGrid(photos) {
+  const grid = document.getElementById('photosGrid');
+  if (!photos.length) {
+    grid.innerHTML = '<div style="color:var(--mid);font-size:.85rem;grid-column:1/-1;text-align:center;padding:40px;">Nenhuma foto no banco ainda. Adiciona a primeira! 📸</div>';
+    return;
+  }
+
+  grid.innerHTML = '<div style="color:var(--mid);font-size:.82rem;grid-column:1/-1;padding:8px 0;">A carregar imagens...</div>';
+
+  // Carregar imagens em paralelo (com dataUrl)
+  const withImages = await Promise.all(photos.map(async p => {
+    try {
+      const r = await fetch(`${API}/api/photos/${p.id}`);
+      return r.json();
+    } catch { return p; }
+  }));
+
+  grid.innerHTML = withImages.map(p => `
+    <div class="photo-card">
+      <img src="${p.dataUrl || ''}" alt="${p.description || ''}" loading="lazy" />
+      <div class="photo-card-overlay">
+        <button class="photo-action-btn" onclick="deletePhoto('${p.id}')" title="Apagar">🗑️</button>
+      </div>
+      <div class="photo-card-info">
+        <div class="photo-card-desc">${p.description || 'Sem descrição'}</div>
+        <div class="photo-tags">
+          ${(p.tags||[]).map(t => `<span class="photo-tag">${t}</span>`).join('')}
+          <span class="photo-tag" style="background:rgba(59,15,76,.08);color:var(--purple);">${p.profile}</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function deletePhoto(id) {
+  if (!confirm('Apagar esta foto do banco?')) return;
+  const r = await fetch(`${API}/api/photos/${id}`, { method:'DELETE' });
+  const d = await r.json();
+  if (d.success) { toast('Foto apagada', 'info'); loadPhotos(); }
+  else toast('Erro: ' + d.error, 'error');
+}
+
+async function suggestPhotos() {
+  const topic   = document.getElementById('photoSearchTopic').value.trim();
+  const profile = document.getElementById('photoSearchProfile').value;
+  if (!topic) return toast('Escreve um tema para pesquisar', 'error');
+
+  const resultEl = document.getElementById('photoSuggestResults');
+  resultEl.innerHTML = '<div style="color:var(--mid);font-size:.82rem;">✨ A procurar fotos relevantes...</div>';
+
+  try {
+    const r = await fetch(`${API}/api/photos/suggest`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ topic, profile, limit: 5 }),
+    });
+    const d = await r.json();
+    if (!d.suggestions?.length) {
+      resultEl.innerHTML = '<div style="color:var(--mid);font-size:.82rem;">Nenhuma foto encontrada para este tema.</div>';
+      return;
+    }
+    resultEl.innerHTML = `
+      <div style="font-size:.75rem;color:var(--mid);margin-bottom:8px;">${d.suggestions.length} foto(s) sugerida(s):</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        ${d.suggestions.map(p => `
+          <div style="text-align:center;">
+            <img src="${p.dataUrl}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--magenta);" />
+            <div style="font-size:.65rem;color:var(--mid);margin-top:3px;max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.description||''}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e) {
+    resultEl.innerHTML = `<div style="color:#EF4444;font-size:.82rem;">Erro: ${e.message}</div>`;
+  }
 }
 
 /* ═══════════════════════════════════════════════
