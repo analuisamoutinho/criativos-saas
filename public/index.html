@@ -2651,6 +2651,8 @@ async function generateContentMachine() {
     const d = await r.json();
     if (d.error) throw new Error(d.error);
 
+    // Nova estrutura: slides com textos agrupados
+    // Usar slidesNormalizados (heading/body) ou slides raw com textos[]
     cmCurrentSlides    = d.slides || [];
     cmCurrentSlideIdx  = 0;
     cmCurrentContentId = d.contentId || null;
@@ -2668,6 +2670,32 @@ async function generateContentMachine() {
     btn.disabled = false;
     btn.textContent = '⚡ Gerar copy com GPT-4o';
   }
+}
+
+// Helpers para nova estrutura slides[].textos[]
+function cmSlideTexto1(s) {
+  if (s.textos && s.textos.length > 0) return s.textos[0].texto || '';
+  return s.heading || s.texto || '';
+}
+function cmSlideTexto2(s) {
+  if (s.textos && s.textos.length > 1) return s.textos[1].texto || '';
+  return s.body || '';
+}
+function cmSlideFuncao(s) {
+  return s.funcao || s.titulo || '';
+}
+function cmSlideNumLabel(s, i) {
+  return s.slide || (i + 1);
+}
+function cmSlideIsCapa(s, i) {
+  return (s.funcao === 'CAPA') || i === 0;
+}
+function cmSlideAllText(s) {
+  const t1 = cmSlideTexto1(s);
+  const t2 = cmSlideTexto2(s);
+  return t2 ? `${t1}
+
+${t2}` : t1;
 }
 
 function renderCMResult(data) {
@@ -2689,30 +2717,43 @@ function renderCMResult(data) {
 
   // Slide numbers
   const numContainer = document.getElementById('cmSlideNumbers');
-  numContainer.innerHTML = cmCurrentSlides.map((_, i) => `
+  numContainer.innerHTML = cmCurrentSlides.map((s, i) => `
     <button
       onclick="goToCMSlide(${i})"
       id="cmSlideNum_${i}"
       style="width:28px;height:28px;border-radius:6px;font-size:11px;cursor:pointer;
              border:1.5px solid var(--light);background:var(--white);color:var(--mid);
              transition:all .12s;font-family:var(--font-body);"
-    >${i + 1}</button>`).join('');
+    >${cmSlideNumLabel(s, i)}</button>`).join('');
 
-  // All slides list
+  // All slides list — mostra os dois textos quando existem
   const allContainer = document.getElementById('cmAllSlides');
-  allContainer.innerHTML = cmCurrentSlides.map((s, i) => `
+  allContainer.innerHTML = cmCurrentSlides.map((s, i) => {
+    const t1 = cmSlideTexto1(s);
+    const t2 = cmSlideTexto2(s);
+    const isCapa = cmSlideIsCapa(s, i);
+    const textoCount = (s.textos || [t1]).filter(x => (x.texto || x) !== '').length;
+    return `
     <div onclick="goToCMSlide(${i})"
       id="cmAllSlide_${i}"
       style="background:var(--pale);border-radius:8px;padding:10px 12px;cursor:pointer;
-             border-left:3px solid ${i < 2 ? t.color : 'var(--light)'};transition:all .12s;">
-      <div style="font-size:10px;font-weight:700;color:var(--mid);margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">
-        Slide ${s.numero} · ${s.titulo}
+             border-left:3px solid ${isCapa ? t.color : 'var(--light)'};transition:all .12s;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;">
+          Slide ${cmSlideNumLabel(s, i)} · ${cmSlideFuncao(s)}
+        </div>
+        ${textoCount > 1 ? `<span style="font-size:9px;background:${t.color}18;color:${t.color};padding:1px 6px;border-radius:10px;font-weight:700;">${textoCount} textos</span>` : ''}
       </div>
       <div style="font-size:12px;color:var(--dark);line-height:1.5;
                   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-        ${s.texto}
+        ${t1}
       </div>
-    </div>`).join('');
+      ${t2 ? `<div style="font-size:11px;color:var(--mid);margin-top:3px;line-height:1.4;
+                  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">
+        ${t2}
+      </div>` : ''}
+    </div>`;
+  }).join('');
 
   goToCMSlide(0);
 }
@@ -2723,14 +2764,38 @@ function goToCMSlide(idx) {
   const s = cmCurrentSlides[idx];
   const tipo = cmSelectedType;
   const t = CM_TYPES[tipo] || { color: '#6B7280' };
+  const isCapa = cmSlideIsCapa(s, idx);
 
-  document.getElementById('cmSlideNum').textContent    = `Slide ${s.numero}`;
-  document.getElementById('cmSlideTitulo').textContent = s.titulo;
-  document.getElementById('cmSlideTexto').textContent  = s.texto;
-  document.getElementById('cmSlideWordCount').textContent = `${(s.texto || '').split(/\s+/).filter(Boolean).length} palavras`;
-  document.getElementById('cmSlideCard').style.borderColor = idx < 2 ? t.color : 'var(--light)';
-  document.getElementById('cmSlideCardHeader').style.background = idx < 2 ? t.color + '10' : 'var(--pale)';
-  document.getElementById('cmSlideNum').style.color = idx < 2 ? t.color : 'var(--mid)';
+  const t1 = cmSlideTexto1(s);
+  const t2 = cmSlideTexto2(s);
+  const textos = s.textos || [];
+
+  document.getElementById('cmSlideNum').textContent    = `Slide ${cmSlideNumLabel(s, idx)}`;
+  document.getElementById('cmSlideTitulo').textContent = cmSlideFuncao(s);
+  document.getElementById('cmSlideCard').style.borderColor = isCapa ? t.color : 'var(--light)';
+  document.getElementById('cmSlideCardHeader').style.background = isCapa ? t.color + '10' : 'var(--pale)';
+  document.getElementById('cmSlideNum').style.color = isCapa ? t.color : 'var(--mid)';
+
+  // Renderizar textos do slide — pode ter 1 ou 2
+  const textoEl = document.getElementById('cmSlideTexto');
+  if (textos.length > 1) {
+    // Dois textos: exibir separados com rótulos
+    textoEl.innerHTML = textos.map(tx => `
+      <div style="margin-bottom:${textos.indexOf(tx) < textos.length - 1 ? '14px' : '0'}">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+                    color:${isCapa ? t.color : 'var(--mid)'};margin-bottom:4px;">
+          ${tx.tipo || 'texto'} ${tx.posicao ? `· pos. ${tx.posicao}` : ''}
+        </div>
+        <div style="font-size:15px;line-height:1.7;color:var(--dark);white-space:pre-wrap;">${tx.texto || ''}</div>
+        <div style="font-size:10px;color:var(--light);margin-top:3px;">${(tx.texto || '').split(/\s+/).filter(Boolean).length} palavras</div>
+      </div>`).join('<hr style="border:none;border-top:1px solid var(--light);margin:0 0 14px;">')
+  } else {
+    textoEl.innerHTML = `
+      <div style="font-size:15px;line-height:1.7;color:var(--dark);white-space:pre-wrap;">${t1}</div>`;
+  }
+
+  const totalPalavras = (t1 + ' ' + t2).split(/\s+/).filter(Boolean).length;
+  document.getElementById('cmSlideWordCount').textContent = `${totalPalavras} palavras neste slide`;
 
   // Atualizar botões de número
   document.querySelectorAll('[id^="cmSlideNum_"]').forEach((btn, i) => {
@@ -2761,9 +2826,17 @@ function navCMSlide(dir) {
 }
 
 function copyCMSlides() {
-  const text = cmCurrentSlides.map(s =>
-    `SLIDE ${s.numero} — ${s.titulo}\n${s.texto}`
-  ).join('\n\n---\n\n');
+  // Copiar todos os textos agrupados por slide
+  const text = cmCurrentSlides.map((s, i) => {
+    const num = cmSlideNumLabel(s, i);
+    const funcao = cmSlideFuncao(s);
+    const textos = s.textos || [];
+    if (textos.length > 1) {
+      const linhas = textos.map(tx => `[${tx.tipo || 'texto'}] ${tx.texto || ''}`).join('\n\n');
+      return `SLIDE ${num} — ${funcao}\n${linhas}`;
+    }
+    return `SLIDE ${num} — ${funcao}\n${cmSlideTexto1(s)}`;
+  }).join('\n\n---\n\n');
   navigator.clipboard?.writeText(text).then(() => {
     const el = document.getElementById('cmCopyConfirm');
     el.style.display = 'block';
