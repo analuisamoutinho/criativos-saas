@@ -21,17 +21,38 @@ const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_posts.json');
 const GENERATED_FILE = path.join(DATA_DIR, 'generated_content.json');
 const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
 
-if (!fs.existsSync('uploads/'))  fs.mkdirSync('uploads/', { recursive: true });
-if (!fs.existsSync(MANUALS_DIR)) fs.mkdirSync(MANUALS_DIR, { recursive: true });
-if (!fs.existsSync(SCHEDULED_FILE)) fs.writeFileSync(SCHEDULED_FILE, '[]');
-if (!fs.existsSync(GENERATED_FILE)) fs.writeFileSync(GENERATED_FILE, '[]');
+// Garantir dirs de upload (readJSON/writeJSON cuidam dos JSON automaticamente)
+try { fs.mkdirSync('uploads/', { recursive: true }); } catch(e) {}
+try { fs.mkdirSync(MANUALS_DIR, { recursive: true }); } catch(e) {}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function readJSON(file) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf-8')); } catch { return []; }
+function ensureFile(file, defaultContent = '[]') {
+  try {
+    const dir = path.dirname(file);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    if (!fs.existsSync(file)) fs.writeFileSync(file, defaultContent, 'utf-8');
+  } catch(e) { console.error('ensureFile error:', file, e.message); }
 }
+
+function readJSON(file) {
+  try {
+    ensureFile(file);
+    const raw = fs.readFileSync(file, 'utf-8').trim();
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch(e) {
+    console.error('readJSON error:', file, e.message);
+    return [];
+  }
+}
+
 function writeJSON(file, data) {
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  try {
+    ensureFile(file);
+    fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
+  } catch(e) {
+    console.error('writeJSON error:', file, e.message);
+  }
 }
 
 // Salva criativo na base geral
