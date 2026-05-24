@@ -51,8 +51,9 @@ function updateContentStatus(id, status, extra = {}) {
 
 // ── Accounts ─────────────────────────────────────────────────────────────────
 const ACCOUNTS = {
-  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,   token: process.env.INSTAGRAM_TOKEN_MARCA,   name: 'Case Aceleradora',  handle: '@caseaceleradora'  },
-  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL, token: process.env.INSTAGRAM_TOKEN_PESSOAL, name: 'Ana Moutinho',       handle: '@analuisa.moutinho' },
+  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,    token: process.env.INSTAGRAM_TOKEN_MARCA,    name: 'Case Aceleradora', handle: '@caseaceleradora'   },
+  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL,  token: process.env.INSTAGRAM_TOKEN_PESSOAL,  name: 'Ana Moutinho',      handle: '@analuisa.moutinho' },
+  virttus: { id: process.env.INSTAGRAM_ACCOUNT_ID_VIRTTUS,  token: process.env.INSTAGRAM_TOKEN_VIRTTUS,  name: 'Virttus',           handle: '@virttus'           },
 };
 
 function getAccount(profile) { return ACCOUNTS[profile] || ACCOUNTS.marca; }
@@ -69,9 +70,123 @@ app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
 function getManualText(profile) {
   const p = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
   if (!fs.existsSync(p)) return '';
-  // Basic extraction – in production use pdf-parse
   return '[Manual do cliente carregado — usar diretrizes de tom, cores e linguagem definidas no PDF]';
 }
+
+// ── Banco de fotos pessoais ───────────────────────────────────────────────────
+const PHOTOS_DIR  = path.join(DATA_DIR, 'photos');
+const PHOTOS_FILE = path.join(DATA_DIR, 'photos_meta.json');
+const photoUpload = multer({
+  dest: 'uploads/photos/',
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Apenas imagens são permitidas'));
+  },
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+});
+
+if (!fs.existsSync(PHOTOS_DIR))  fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+if (!fs.existsSync(PHOTOS_FILE)) fs.writeFileSync(PHOTOS_FILE, '[]');
+if (!fs.existsSync('uploads/photos/')) fs.mkdirSync('uploads/photos/', { recursive: true });
+
+// Upload de foto
+app.post('/api/photos/upload', photoUpload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Nenhum ficheiro enviado' });
+    const { profile = 'pessoal', tags = '', description = '' } = req.body;
+
+    const ext  = path.extname(req.file.originalname) || '.jpg';
+    const id   = `photo_${Date.now()}`;
+    const dest = path.join(PHOTOS_DIR, `${id}${ext}`);
+    fs.renameSync(req.file.path, dest);
+
+    // Ler como base64 para servir no frontend
+    const b64 = fs.readFileSync(dest).toString('base64');
+    const mime = req.file.mimetype || 'image/jpeg';
+    const dataUrl = `data:${mime};base64,${b64}`;
+
+    const meta = {
+      id, profile,
+      filename: `${id}${ext}`,
+      originalName: req.file.originalname,
+      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      description,
+      uploadedAt: new Date().toISOString(),
+      dataUrl,
+    };
+
+    const all = readJSON(PHOTOS_FILE);
+    all.unshift(meta);
+    writeJSON(PHOTOS_FILE, all);
+
+    res.json({ success: true, photo: meta });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Listar fotos
+app.get('/api/photos', (req, res) => {
+  const { profile, tag } = req.query;
+  let all = readJSON(PHOTOS_FILE);
+  if (profile) all = all.filter(p => p.profile === profile);
+  if (tag)     all = all.filter(p => p.tags.includes(tag));
+  res.json(all.map(({ dataUrl, ...rest }) => rest));
+});
+
+// !! DEVE VIR ANTES DE /api/photos/:id — senão "suggest" é tratado como um :id
+// Sugerir fotos relevantes para um tema (Claude analisa tags/descrições)
+app.post('/api/photos/suggest', async (req, res) => {
+  try {
+    const { topic, profile = 'pessoal', limit = 3 } = req.body;
+    const all = readJSON(PHOTOS_FILE).filter(p => p.profile === profile);
+    if (!all.length) return res.json({ suggestions: [] });
+
+    const photoList = all.map(p => `ID: ${p.id} | Tags: ${p.tags.join(', ')} | Descrição: ${p.description}`).join('\n');
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 512,
+        messages: [{ role: 'user', content: `Dado este tema de post para Instagram: "${topic}"\n\nEstas são as fotos disponíveis no banco:\n${photoList}\n\nSeleciona até ${limit} IDs de fotos que melhor se encaixam com o tema. Responde APENAS com JSON: {"suggestions": ["id1", "id2"]}` }],
+      }),
+    });
+    const d = await r.json();
+    const text = d.content[0].text;
+    const match = text.match(/\{[\s\S]*\}/);
+    const parsed = match ? JSON.parse(match[0]) : { suggestions: [] };
+
+    const allFull = readJSON(PHOTOS_FILE);
+    const photos = parsed.suggestions
+      .map(id => allFull.find(p => p.id === id))
+      .filter(Boolean);
+
+    res.json({ suggestions: photos });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Servir foto por id  (rotas com :id SEMPRE depois das rotas literais)
+app.get('/api/photos/:id', (req, res) => {
+  const all = readJSON(PHOTOS_FILE);
+  const photo = all.find(p => p.id === req.params.id);
+  if (!photo) return res.status(404).json({ error: 'Foto não encontrada' });
+  res.json(photo);
+});
+
+// Apagar foto
+app.delete('/api/photos/:id', (req, res) => {
+  let all = readJSON(PHOTOS_FILE);
+  const photo = all.find(p => p.id === req.params.id);
+  if (!photo) return res.status(404).json({ error: 'Foto não encontrada' });
+  const filePath = path.join(PHOTOS_DIR, photo.filename);
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  all = all.filter(p => p.id !== req.params.id);
+  writeJSON(PHOTOS_FILE, all);
+  res.json({ success: true });
+});
 
 // ── Claude API ────────────────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
@@ -419,31 +534,70 @@ Certifica-te que o JSON é válido e completo.`;
 });
 
 // ── Gerar + Salvar carrossel na base ─────────────────────────────────────────
-// Endpoint que gera o JSON do carrossel E salva na base de criativos
+// Modos:
+//   - "blocks": o utilizador cola blocos de texto prontos (ex: # Bloco 1 ... # Bloco 2)
+//               a IA organiza cada bloco em 1 slide, sem alterar o conteúdo
+//   - "topic":  o utilizador dá só um tema/tópico e a IA cria tudo do zero
+// Sem limite de slides — a IA decide quantos fazem sentido para o conteúdo
 app.post('/api/carousel/generate-and-save', async (req, res) => {
   try {
-    const { topic, profile, slides = 7, calendarDay, calendarMonth, calendarYear, caption, hashtags } = req.body;
+    const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags } = req.body;
     const manualNote = getManualText(profile);
     const account = getAccount(profile);
+    const mode = blocks ? 'blocks' : 'topic';
 
-    const prompt = `Cria um carrossel para Instagram sobre: "${topic}".
-Perfil: ${account.name} (${account.handle})
-${manualNote ? `\nDiretrizes:\n${manualNote}` : ''}
+    let prompt;
 
-Gera ${slides} slides. Responde apenas com JSON:
+    if (mode === 'blocks') {
+      // Modo blocos: cada bloco vira 1 slide, IA só formata + gera imagePrompt
+      prompt = `Tens os seguintes blocos de texto para um carrossel do Instagram do perfil ${account.name} (${account.handle}).
+Cada bloco deve virar exatamente 1 slide. Não alteres o texto dos blocos — apenas formata.
+
+BLOCOS:
+${blocks}
+
+${manualNote ? `\nDiretrizes do cliente:\n${manualNote}` : ''}
+
+Responde APENAS com JSON válido:
 {
-  "title": "Título do carrossel",
+  "title": "título interno do carrossel (não aparece no post)",
+  "slideCount": <número total de slides>,
   "slides": [
     {
       "slideNumber": 1,
-      "heading": "Título do slide",
-      "body": "Texto principal",
-      "imagePrompt": "prompt detalhado para geração de imagem"
+      "heading": "texto principal do bloco (preserva o original)",
+      "body": "texto secundário se houver (pode ser vazio)",
+      "imagePrompt": "prompt detalhado em inglês para gerar imagem de fundo: ambiente, luz, composição, paleta — compatível com o tom do texto. Sem texto na imagem."
     }
   ],
-  "caption": "legenda para o Instagram",
-  "hashtags": "#hashtag1 #hashtag2"
+  "caption": "legenda completa para o Instagram com emojis e CTA",
+  "hashtags": "#hashtag1 #hashtag2 #hashtag3"
 }`;
+    } else {
+      // Modo tópico: IA cria tudo do zero, decide quantos slides fazem sentido
+      prompt = `Cria um carrossel completo para Instagram sobre: "${topic}".
+Perfil: ${account.name} (${account.handle})
+${manualNote ? `\nDiretrizes:\n${manualNote}` : ''}
+
+Decide o número ideal de slides para o tema (sem limite máximo — usa quantos forem necessários para o conteúdo fluir bem).
+Cada slide deve ter uma ideia clara e impactante.
+
+Responde APENAS com JSON válido:
+{
+  "title": "título interno do carrossel",
+  "slideCount": <número total de slides>,
+  "slides": [
+    {
+      "slideNumber": 1,
+      "heading": "texto principal do slide",
+      "body": "texto secundário (pode ser vazio)",
+      "imagePrompt": "prompt detalhado em inglês para imagem de fundo. Sem texto na imagem."
+    }
+  ],
+  "caption": "legenda completa com emojis e CTA",
+  "hashtags": "#hashtag1 #hashtag2 #hashtag3"
+}`;
+    }
 
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -454,7 +608,7 @@ Gera ${slides} slides. Responde apenas com JSON:
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
+        max_tokens: 8192,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -463,18 +617,18 @@ Gera ${slides} slides. Responde apenas com JSON:
     if (d.error) return res.status(500).json({ error: d.error.message });
 
     let text = d.content[0].text.trim();
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) text = match[0];
+    const matchJson = text.match(/\{[\s\S]*\}/);
+    if (matchJson) text = matchJson[0];
     const carouselData = JSON.parse(text);
 
-    // Salvar na base de criativos
     const item = saveGeneratedContent({
       id: `cnt_${Date.now()}`,
       createdAt: new Date().toISOString(),
       status: 'pendente',
       type: 'carrossel',
+      mode,
       profile,
-      topic,
+      topic: topic || `Carrossel ${carouselData.slideCount} slides`,
       caption: caption || carouselData.caption,
       hashtags: hashtags || carouselData.hashtags,
       carouselData,
