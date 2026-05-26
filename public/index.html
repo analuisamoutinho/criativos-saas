@@ -33,6 +33,27 @@
   --font-body: 'DM Sans', sans-serif;
 }
 
+.cm-type-btn {
+  background: var(--white);
+  border: 1.5px solid var(--light);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all .18s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: var(--font-body);
+}
+.cm-type-btn:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.cm-type-btn.selected { border-color: var(--magenta); box-shadow: 0 0 0 3px rgba(228,0,124,.12); }
+.cm-type-header { display: flex; align-items: center; justify-content: space-between; }
+.cm-type-emoji { font-size: 22px; }
+.cm-type-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .03em; }
+.cm-type-name { font-family: var(--font-head); font-size: .88rem; font-weight: 700; color: var(--dark); }
+.cm-type-desc { font-size: .75rem; color: var(--mid); line-height: 1.5; }
+
 /* ── Reset ───────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 15px; }
@@ -825,6 +846,9 @@ body {
     <button class="nav-item" onclick="showSection('photos', this)">
       <span class="nav-icon">📸</span> Banco de Fotos
     </button>
+    <button class="nav-item" id="navContentMachine" onclick="showSection('contentmachine', this)">
+      <span class="nav-icon">⚡</span> Content Machine
+    </button>
   </nav>
 
   <div class="sidebar-footer">
@@ -1137,23 +1161,15 @@ body {
       <div class="spinner"></div> A gerar calendário editorial com IA...
     </div>
 
-    <!-- Preview bar — aparece antes de aprovar -->
     <div id="calendarPreviewBar" style="display:none;margin-bottom:16px;">
-      <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--radius-lg);
-                  padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div>
           <div style="font-weight:700;font-size:.9rem;color:#92400E;">📋 Sugestão gerada — revê e aprova</div>
-          <div style="font-size:.78rem;color:#B45309;margin-top:2px;">
-            Clica em qualquer post para editar o tema, tipo ou horário antes de aprovar.
-          </div>
+          <div style="font-size:.78rem;color:#B45309;margin-top:2px;">Clica em qualquer post para editar o tema, tipo ou horário antes de aprovar.</div>
         </div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-outline" onclick="rejectCalendar()" style="border-color:#EF4444;color:#EF4444;">
-            ✕ Rejeitar e regerar
-          </button>
-          <button class="btn btn-primary" onclick="approveCalendar()" style="background:#16A34A;">
-            ✓ Aprovar calendário
-          </button>
+          <button class="btn btn-outline" onclick="rejectCalendar()" style="border-color:#EF4444;color:#EF4444;">✕ Rejeitar e regerar</button>
+          <button class="btn btn-primary" onclick="approveCalendar()" style="background:#16A34A;">✓ Aprovar calendário</button>
         </div>
       </div>
     </div>
@@ -1166,12 +1182,133 @@ body {
             <span class="badge badge-pendente">⏳ Pendente</span>
             <span class="badge badge-agendado">📆 Agendado</span>
             <span class="badge badge-publicado">✅ Publicado</span>
-            <span id="calApprovedBadge" style="display:none;background:#DCFCE7;color:#166534;
-                  font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:20px;">✓ Aprovado</span>
+            <span id="calApprovedBadge" style="display:none;background:#DCFCE7;color:#166534;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:20px;">✓ Aprovado</span>
           </div>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
       </div>
+    </div>
+  </section>
+
+  <!-- ── CONTENT MACHINE ──────────────────────────────── -->
+  <section class="section" id="section-contentmachine">
+    <div class="section-header">
+      <h2>⚡ Content Machine</h2>
+      <p>Escolhe o tipo de carrossel, insere o tema — o GPT-4o gera a copy completa com a estrutura BrandsDecoded.</p>
+    </div>
+
+    <div id="cmTypeSelector">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-bottom:28px;">
+        <button class="cm-type-btn" data-tipo="tendencia" data-color="#7C3AED" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">📡</span><span class="cm-type-tag" style="background:#7C3AED18;color:#7C3AED">Motor de Awareness</span></div>
+          <div class="cm-type-name">Análise de Tendência</div>
+          <div class="cm-type-desc">Pega um movimento cultural em alta e analisa com profundidade. Alto potencial de viralização.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="case" data-color="#059669" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">🏆</span><span class="cm-type-tag" style="background:#05966918;color:#059669">Motor de Awareness</span></div>
+          <div class="cm-type-name">Case de Sucesso</div>
+          <div class="cm-type-desc">Pega uma marca ou pessoa e explica por que deu certo (ou errado). Gera posicionamento e alcance.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="educativo" data-color="#0369A1" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">📚</span><span class="cm-type-tag" style="background:#0369A118;color:#0369A1">Autoridade</span></div>
+          <div class="cm-type-name">Educativo / Framework</div>
+          <div class="cm-type-desc">Dicas, frameworks, conceitos, passo a passo. Gera seguidores e leads qualificados.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="comparacao" data-color="#D97706" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">⚖️</span><span class="cm-type-tag" style="background:#D9770618;color:#D97706">Alcance</span></div>
+          <div class="cm-type-name">Comparação / Antes &amp; Depois</div>
+          <div class="cm-type-desc">Algo bom vs algo ruim, antes vs depois. Alto alcance e engajamento.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="lista" data-color="#BE185D" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">📋</span><span class="cm-type-tag" style="background:#BE185D18;color:#BE185D">Alcance</span></div>
+          <div class="cm-type-name">Lista Valiosa</div>
+          <div class="cm-type-desc">Fácil de consumir e guardar. Alto potencial de alcance e partilhas.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="prova_social" data-color="#7C2D12" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">🌟</span><span class="cm-type-tag" style="background:#7C2D1218;color:#7C2D12">Conversão</span></div>
+          <div class="cm-type-name">Prova Social</div>
+          <div class="cm-type-desc">Resultados de clientes e conquistas. Ótimo para conversão e vendas.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="oferta" data-color="#1D4ED8" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">🎯</span><span class="cm-type-tag" style="background:#1D4ED818;color:#1D4ED8">Conversão</span></div>
+          <div class="cm-type-name">Oferta</div>
+          <div class="cm-type-desc">Apresenta produto ou serviço envolto em valor. Use em momentos de lançamento.</div>
+        </button>
+        <button class="cm-type-btn" data-tipo="dump" data-color="#4B5563" onclick="selectCMType(this)">
+          <div class="cm-type-header"><span class="cm-type-emoji">📸</span><span class="cm-type-tag" style="background:#4B556318;color:#4B5563">Comunidade</span></div>
+          <div class="cm-type-name">Dump / Bastidores</div>
+          <div class="cm-type-desc">Fotos e momentos do dia a dia. Cria relacionamento com quem já segue.</div>
+        </button>
+      </div>
+    </div>
+
+    <div id="cmInputPanel" style="display:none;">
+      <div class="card">
+        <div class="card-title" id="cmInputTitle">✍️ Tema do carrossel</div>
+        <div id="cmTypeInfo" style="font-size:.8rem;color:var(--mid);margin:-8px 0 16px;padding:10px 14px;background:var(--pale);border-radius:8px;border-left:3px solid var(--magenta);"></div>
+        <div class="form-group">
+          <label class="form-label">Tema central</label>
+          <textarea class="textarea" id="cmTema" rows="4" placeholder="Ex: Como a Nubank conquistou 90 milhões de clientes sem agência tradicional..."></textarea>
+          <div style="font-size:.72rem;color:var(--mid);margin-top:4px;">Quanto mais específico o tema, melhor o resultado.</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-secondary" onclick="resetCMType()">← Voltar</button>
+          <button class="btn btn-primary" id="btnGenerateCM" onclick="generateContentMachine()" style="flex:1">⚡ Gerar copy com GPT-4o</button>
+        </div>
+        <div id="cmError" style="display:none;margin-top:10px;padding:10px 14px;background:#FEF2F2;border-radius:8px;font-size:.82rem;color:#DC2626;"></div>
+      </div>
+    </div>
+
+    <div id="cmResultPanel" style="display:none;">
+      <div class="grid-2">
+        <div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span id="cmResultEmoji" style="font-size:18px;"></span>
+                  <span id="cmResultTipoLabel" style="font-size:14px;font-weight:700;color:var(--dark);"></span>
+                  <span id="cmResultTag" style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;"></span>
+                </div>
+                <div style="font-size:11px;color:var(--mid);margin-top:3px;">Tema: <strong id="cmResultTema"></strong></div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="resetCM()">+ Novo</button>
+            </div>
+            <div id="cmSlideNumbers" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px;"></div>
+            <div id="cmSlideCard" style="background:var(--pale);border-radius:var(--radius);overflow:hidden;border:1.5px solid var(--light);">
+              <div id="cmSlideCardHeader" style="padding:9px 14px;border-bottom:1px solid var(--light);display:flex;align-items:center;gap:8px;">
+                <span id="cmSlideNum" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);"></span>
+                <span id="cmSlideTitulo" style="font-size:11px;color:var(--mid);"></span>
+              </div>
+              <div id="cmSlideTexto" style="padding:18px;font-size:15px;line-height:1.7;color:var(--dark);white-space:pre-wrap;min-height:80px;"></div>
+              <div id="cmSlideWordCount" style="padding:6px 14px 10px;border-top:1px solid var(--light);font-size:11px;color:var(--light);"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-secondary btn-sm" id="btnCMPrev" onclick="navCMSlide(-1)" style="flex:1">← Anterior</button>
+              <button class="btn btn-secondary btn-sm" id="btnCMNext" onclick="navCMSlide(1)" style="flex:1">Próximo →</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">📋 Todos os slides</div>
+            <div id="cmAllSlides" style="display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding-right:4px;"></div>
+          </div>
+          <div class="card" style="margin-top:0;">
+            <div class="card-title">🚀 Ações</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <button class="btn btn-primary" onclick="copyCMSlides()" style="width:100%">📋 Copiar todos os slides</button>
+              <button class="btn btn-secondary" onclick="saveCMToLibrary()" style="width:100%">💾 Ver na biblioteca</button>
+            </div>
+            <div id="cmCopyConfirm" style="display:none;margin-top:8px;font-size:.8rem;color:#065F46;text-align:center;">✅ Copiado!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="cmHistory" style="display:none;margin-top:24px;">
+      <div style="font-size:.75rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Gerados nesta sessão</div>
+      <div id="cmHistoryList" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
   </section>
 
@@ -1363,7 +1500,8 @@ function showSection(id, navBtn) {
   document.getElementById('section-' + id).classList.add('active');
   if (navBtn) setNavActive(id, navBtn);
 
-  const titles = { dashboard:'Dashboard', library:'Biblioteca', carousel:'Carrossel', feed:'Post Feed', calendar:'Calendário', photos:'Banco de Fotos' };
+  const titles = { dashboard:'Dashboard', library:'Biblioteca', carousel:'Carrossel', feed:'Post Feed', calendar:'Calendário', photos:'Banco de Fotos', contentmachine:'Content Machine' };
+  if (id === 'calendar') setTimeout(loadSavedCalendar, 100);
   document.getElementById('topbarTitle').textContent = titles[id] || id;
 
   if (id === 'dashboard') loadDashboard();
@@ -2165,84 +2303,274 @@ function initCalendarMonths() {
   });
 }
 
-function saveCalendarPostEdit(day, postIndex) {
-  if (!currentCalendarData) return;
-  const dayEntry = currentCalendarData.calendar.find(e => e.day === day);
-  if (!dayEntry || !dayEntry.posts[postIndex]) return;
+const CM_TYPES = {
+  tendencia:    { label: 'Análise de Tendência',       emoji: '📡', tag: 'Motor de Awareness', color: '#7C3AED' },
+  case:         { label: 'Case de Sucesso',             emoji: '🏆', tag: 'Motor de Awareness', color: '#059669' },
+  educativo:    { label: 'Educativo / Framework',       emoji: '📚', tag: 'Autoridade',          color: '#0369A1' },
+  comparacao:   { label: 'Comparação / Antes & Depois', emoji: '⚖️', tag: 'Alcance',             color: '#D97706' },
+  lista:        { label: 'Lista Valiosa',               emoji: '📋', tag: 'Alcance',             color: '#BE185D' },
+  prova_social: { label: 'Prova Social',                emoji: '🌟', tag: 'Conversão',           color: '#7C2D12' },
+  oferta:       { label: 'Oferta',                      emoji: '🎯', tag: 'Conversão',           color: '#1D4ED8' },
+  dump:         { label: 'Dump / Bastidores',           emoji: '📸', tag: 'Comunidade',          color: '#4B5563' },
+};
 
-  const newTopic = document.getElementById('calEditTopic')?.value?.trim();
-  const newType  = document.getElementById('calEditType')?.value;
-  const newTime  = document.getElementById('calEditTime')?.value;
+let cmSelectedType = null, cmCurrentSlides = [], cmCurrentSlideIdx = 0;
+let cmSessionHistory = [], cmCurrentContentId = null, calendarApproved = false;
 
-  if (newTopic) dayEntry.posts[postIndex].topic = newTopic;
-  if (newType)  dayEntry.posts[postIndex].type  = newType;
-  if (newTime)  dayEntry.posts[postIndex].time  = newTime;
-
-  // Actualizar também currentCalendarPost
-  if (currentCalendarPost && currentCalendarPost.day === day) {
-    currentCalendarPost.topic = dayEntry.posts[postIndex].topic;
-    currentCalendarPost.type  = dayEntry.posts[postIndex].type;
-    currentCalendarPost.time  = dayEntry.posts[postIndex].time;
-  }
-
-  // Re-render o calendário com as alterações
-  const month = parseInt(document.getElementById('calMonth').value);
-  const year  = parseInt(document.getElementById('calYear').value);
-  renderCalendar(currentCalendarData, month, year);
-
-  closeModal('calPostModal');
-  toast('Post actualizado!', 'success');
+function selectCMType(btn) {
+  cmSelectedType = btn.dataset.tipo;
+  document.querySelectorAll('.cm-type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const t = CM_TYPES[cmSelectedType];
+  document.getElementById('cmTypeSelector').style.display = 'none';
+  document.getElementById('cmInputPanel').style.display   = 'block';
+  document.getElementById('cmResultPanel').style.display  = 'none';
+  document.getElementById('cmInputTitle').textContent = `${t.emoji} ${t.label}`;
+  document.getElementById('cmTypeInfo').innerHTML = `<strong>${t.tag}</strong> · ${btn.querySelector('.cm-type-desc').textContent}`;
+  document.getElementById('cmTema').value = '';
+  document.getElementById('cmError').style.display = 'none';
+  document.getElementById('cmTema').focus();
 }
+function resetCMType() {
+  cmSelectedType = null;
+  document.getElementById('cmTypeSelector').style.display = 'block';
+  document.getElementById('cmInputPanel').style.display   = 'none';
+  document.getElementById('cmResultPanel').style.display  = 'none';
+}
+function resetCM() { resetCMType(); }
 
-let calendarApproved = false;
-
-async function generateCalendar() {
-  const month = parseInt(document.getElementById('calMonth').value);
-  const year  = parseInt(document.getElementById('calYear').value);
-  const postsPerDay = parseInt(document.getElementById('calPostsPerDay').value);
-
-  document.getElementById('calendarLoading').style.display = 'flex';
-  document.getElementById('calendarContainer').style.display = 'none';
-  document.getElementById('calendarPreviewBar').style.display = 'none';
-  document.getElementById('calApprovedBadge').style.display = 'none';
-  calendarApproved = false;
-
-  const btn = document.getElementById('btnGenCalendar');
+async function generateContentMachine() {
+  const tema = document.getElementById('cmTema').value.trim();
+  if (!tema) return toast('Escreve o tema do carrossel', 'error');
+  if (!cmSelectedType) return toast('Escolhe um tipo primeiro', 'error');
+  const btn = document.getElementById('btnGenerateCM');
+  const errEl = document.getElementById('cmError');
   btn.disabled = true; btn.textContent = '⏳ A gerar...';
-
+  errEl.style.display = 'none';
+  const msgs = ['⏳ Analisando o tema...','⚙️ Construindo tensão narrativa...','✍️ Afiando o hook...','🔍 Desenvolvendo os slides...'];
+  let mi = 0;
+  const interval = setInterval(() => { mi=(mi+1)%msgs.length; btn.textContent=msgs[mi]; }, 2200);
   try {
-    const r = await fetch(`${API}/api/calendar/generate`, {
+    const r = await fetch(`${API}/api/content-machine/generate`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ month, year, profile: currentProfile, postsPerDay }),
+      body: JSON.stringify({ tipo: cmSelectedType, tema, profile: currentProfile }),
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    currentCalendarData = d;
-    renderCalendar(d, month, year);
-    // Mostrar barra de preview — aguarda aprovação
-    document.getElementById('calendarPreviewBar').style.display = 'block';
-    toast('Sugestão gerada! Revê e aprova o calendário.', 'info');
+    cmCurrentSlides = d.slides || [];
+    cmCurrentSlideIdx = 0;
+    cmCurrentContentId = d.contentId || null;
+    cmSessionHistory.unshift({ tipo: cmSelectedType, tema, slides: cmCurrentSlides, contentId: cmCurrentContentId, ts: new Date() });
+    renderCMHistory();
+    renderCMResult(d);
   } catch(e) {
-    toast('Erro: ' + e.message, 'error');
+    errEl.textContent = 'Erro: ' + e.message;
+    errEl.style.display = 'block';
   } finally {
-    document.getElementById('calendarLoading').style.display = 'none';
-    btn.disabled = false; btn.textContent = '✨ Gerar calendário';
+    clearInterval(interval);
+    btn.disabled = false; btn.textContent = '⚡ Gerar copy com GPT-4o';
+  }
+}
+
+function cmSlideTexto1(s) { return (s.textos&&s.textos.length>0) ? s.textos[0].texto||'' : s.heading||s.texto||''; }
+function cmSlideTexto2(s) { return (s.textos&&s.textos.length>1) ? s.textos[1].texto||'' : s.body||''; }
+function cmSlideFuncao(s) { return s.funcao||s.titulo||''; }
+function cmSlideNumLabel(s,i) { return s.slide||(i+1); }
+function cmSlideIsCapa(s,i)  { return s.funcao==='CAPA'||i===0; }
+
+function renderCMResult(data) {
+  const tipo = data.tipo||cmSelectedType;
+  const t = CM_TYPES[tipo]||{label:tipo,emoji:'📄',tag:'',color:'#6B7280'};
+  document.getElementById('cmInputPanel').style.display  = 'none';
+  document.getElementById('cmResultPanel').style.display = 'block';
+  document.getElementById('cmTypeSelector').style.display = 'none';
+  document.getElementById('cmResultEmoji').textContent     = t.emoji;
+  document.getElementById('cmResultTipoLabel').textContent = t.label;
+  document.getElementById('cmResultTema').textContent      = data.tema||'';
+  const tagEl = document.getElementById('cmResultTag');
+  tagEl.textContent=t.tag; tagEl.style.background=t.color+'18'; tagEl.style.color=t.color;
+  const numContainer = document.getElementById('cmSlideNumbers');
+  numContainer.innerHTML = cmCurrentSlides.map((s,i)=>`
+    <button onclick="goToCMSlide(${i})" id="cmSlideNum_${i}"
+      style="width:28px;height:28px;border-radius:6px;font-size:11px;cursor:pointer;
+             border:1.5px solid var(--light);background:var(--white);color:var(--mid);
+             transition:all .12s;font-family:var(--font-body);">${cmSlideNumLabel(s,i)}</button>`).join('');
+  const allContainer = document.getElementById('cmAllSlides');
+  allContainer.innerHTML = cmCurrentSlides.map((s,i)=>{
+    const t1=cmSlideTexto1(s), isCapa=cmSlideIsCapa(s,i);
+    const txCount=(s.textos||[t1]).filter(x=>(x.texto||x)!=='').length;
+    return `<div onclick="goToCMSlide(${i})" id="cmAllSlide_${i}"
+      style="background:var(--pale);border-radius:8px;padding:10px 12px;cursor:pointer;
+             border-left:3px solid ${isCapa?t.color:'var(--light)'};transition:all .12s;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div style="font-size:10px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.06em;">
+          Slide ${cmSlideNumLabel(s,i)} · ${cmSlideFuncao(s)}</div>
+        ${txCount>1?`<span style="font-size:9px;background:${t.color}18;color:${t.color};padding:1px 6px;border-radius:10px;font-weight:700;">${txCount} textos</span>`:''}
+      </div>
+      <div style="font-size:12px;color:var(--dark);line-height:1.5;
+                  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${t1}</div>
+    </div>`;
+  }).join('');
+  goToCMSlide(0);
+}
+
+function goToCMSlide(idx) {
+  if(idx<0||idx>=cmCurrentSlides.length) return;
+  cmCurrentSlideIdx=idx;
+  const s=cmCurrentSlides[idx], tipo=cmSelectedType;
+  const t=CM_TYPES[tipo]||{color:'#6B7280'}, isCapa=cmSlideIsCapa(s,idx);
+  const t1=cmSlideTexto1(s), t2=cmSlideTexto2(s), textos=s.textos||[];
+  document.getElementById('cmSlideNum').textContent    = `Slide ${cmSlideNumLabel(s,idx)}`;
+  document.getElementById('cmSlideTitulo').textContent = cmSlideFuncao(s);
+  document.getElementById('cmSlideCard').style.borderColor = isCapa?t.color:'var(--light)';
+  document.getElementById('cmSlideCardHeader').style.background = isCapa?t.color+'10':'var(--pale)';
+  document.getElementById('cmSlideNum').style.color = isCapa?t.color:'var(--mid)';
+  const textoEl = document.getElementById('cmSlideTexto');
+  if(textos.length>1) {
+    textoEl.innerHTML = textos.map((tx,ti)=>`
+      <div style="margin-bottom:${ti<textos.length-1?'14px':'0'}">
+        <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${isCapa?t.color:'var(--mid)'};margin-bottom:4px;">
+          ${tx.tipo||'texto'}${tx.posicao?' · pos. '+tx.posicao:''}</div>
+        <div style="font-size:15px;line-height:1.7;color:var(--dark);white-space:pre-wrap;">${tx.texto||''}</div>
+        <div style="font-size:10px;color:var(--light);margin-top:3px;">${(tx.texto||'').split(/\s+/).filter(Boolean).length} palavras</div>
+      </div>`).join('<hr style="border:none;border-top:1px solid var(--light);margin:0 0 14px;">')
+  } else {
+    textoEl.innerHTML = `<div style="font-size:15px;line-height:1.7;color:var(--dark);white-space:pre-wrap;">${t1}</div>`;
+  }
+  const total=(t1+' '+t2).split(/\s+/).filter(Boolean).length;
+  document.getElementById('cmSlideWordCount').textContent = `${total} palavras neste slide`;
+  document.querySelectorAll('[id^="cmSlideNum_"]').forEach((btn,i)=>{
+    if(i===idx){btn.style.borderColor=t.color;btn.style.background=t.color+'18';btn.style.color=t.color;btn.style.fontWeight='700';}
+    else{btn.style.borderColor='var(--light)';btn.style.background='var(--white)';btn.style.color='var(--mid)';btn.style.fontWeight='400';}
+  });
+  document.querySelectorAll('[id^="cmAllSlide_"]').forEach((el,i)=>{
+    el.style.background=i===idx?t.color+'10':'var(--pale)';
+  });
+  document.getElementById('btnCMPrev').disabled=idx===0;
+  document.getElementById('btnCMNext').disabled=idx===cmCurrentSlides.length-1;
+}
+function navCMSlide(dir) { goToCMSlide(cmCurrentSlideIdx+dir); }
+
+function copyCMSlides() {
+  const text = cmCurrentSlides.map((s,i)=>{
+    const num=cmSlideNumLabel(s,i), funcao=cmSlideFuncao(s), textos=s.textos||[];
+    if(textos.length>1) return `SLIDE ${num} — ${funcao}
+`+textos.map(tx=>`[${tx.tipo||'texto'}] ${tx.texto||''}`).join('
+
+');
+    return `SLIDE ${num} — ${funcao}
+${cmSlideTexto1(s)}`;
+  }).join('
+
+---
+
+');
+  navigator.clipboard?.writeText(text).then(()=>{
+    const el=document.getElementById('cmCopyConfirm');
+    el.style.display='block'; setTimeout(()=>el.style.display='none',2500);
+  });
+}
+function saveCMToLibrary() { showSection('library',null); setNavActive('library'); loadLibrary(); toast('A abrir a biblioteca...','info'); }
+function renderCMHistory() {
+  if(!cmSessionHistory.length) return;
+  document.getElementById('cmHistory').style.display='block';
+  document.getElementById('cmHistoryList').innerHTML=cmSessionHistory.map((h,i)=>{
+    const t=CM_TYPES[h.tipo]||{emoji:'📄',label:h.tipo};
+    return `<button onclick="loadCMFromHistory(${i})"
+      style="display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--light);
+             border-radius:10px;padding:10px 14px;text-align:left;cursor:pointer;width:100%;">
+      <span style="font-size:18px;">${t.emoji}</span>
+      <div><div style="font-size:13px;font-weight:700;color:var(--dark);">${t.label}</div>
+      <div style="font-size:11px;color:var(--mid);">${h.tema}</div>
+      <div style="font-size:10px;color:#CBD5E1;">${h.ts.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}</div></div>
+    </button>`;
+  }).join('');
+}
+function loadCMFromHistory(i) {
+  const h=cmSessionHistory[i]; if(!h) return;
+  cmSelectedType=h.tipo; cmCurrentSlides=h.slides; cmCurrentSlideIdx=0; cmCurrentContentId=h.contentId;
+  renderCMResult({tipo:h.tipo,tema:h.tema,slides:h.slides});
+}
+
+function saveCalendarPostEdit(day, postIndex) {
+  if(!currentCalendarData) return;
+  const dayEntry=currentCalendarData.calendar.find(e=>e.day===day);
+  if(!dayEntry||!dayEntry.posts[postIndex]) return;
+  const newTopic=document.getElementById('calEditTopic')?.value?.trim();
+  const newType =document.getElementById('calEditType')?.value;
+  const newTime =document.getElementById('calEditTime')?.value;
+  if(newTopic) dayEntry.posts[postIndex].topic=newTopic;
+  if(newType)  dayEntry.posts[postIndex].type=newType;
+  if(newTime)  dayEntry.posts[postIndex].time=newTime;
+  if(currentCalendarPost&&currentCalendarPost.day===day) {
+    currentCalendarPost.topic=dayEntry.posts[postIndex].topic;
+    currentCalendarPost.type=dayEntry.posts[postIndex].type;
+    currentCalendarPost.time=dayEntry.posts[postIndex].time;
+  }
+  const month=parseInt(document.getElementById('calMonth').value);
+  const year=parseInt(document.getElementById('calYear').value);
+  renderCalendar(currentCalendarData,month,year);
+  closeModal('calPostModal');
+  toast('Post actualizado!','success');
+}
+
+async function generateCalendar() {
+  const month=parseInt(document.getElementById('calMonth').value);
+  const year =parseInt(document.getElementById('calYear').value);
+  const postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);
+  document.getElementById('calendarLoading').style.display='flex';
+  document.getElementById('calendarContainer').style.display='none';
+  document.getElementById('calendarPreviewBar').style.display='none';
+  document.getElementById('calApprovedBadge').style.display='none';
+  calendarApproved=false;
+  const btn=document.getElementById('btnGenCalendar');
+  btn.disabled=true; btn.textContent='⏳ A gerar...';
+  try {
+    const r=await fetch(`${API}/api/calendar/generate`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({month,year,profile:currentProfile,postsPerDay}),
+    });
+    const d=await r.json();
+    if(d.error) throw new Error(d.error);
+    currentCalendarData=d;
+    renderCalendar(d,month,year);
+    document.getElementById('calendarPreviewBar').style.display='block';
+    toast('Sugestão gerada! Revê e aprova o calendário.','info');
+  } catch(e) {
+    toast('Erro: '+e.message,'error');
+  } finally {
+    document.getElementById('calendarLoading').style.display='none';
+    btn.disabled=false; btn.textContent='✨ Gerar calendário';
   }
 }
 
 function approveCalendar() {
-  calendarApproved = true;
-  document.getElementById('calendarPreviewBar').style.display = 'none';
-  document.getElementById('calApprovedBadge').style.display = 'inline-block';
-  toast('Calendário aprovado! Clica num post para gerar o criativo.', 'success');
+  calendarApproved=true;
+  document.getElementById('calendarPreviewBar').style.display='none';
+  document.getElementById('calApprovedBadge').style.display='inline-block';
+  toast('Calendário aprovado! Clica num post para gerar o criativo.','success');
 }
-
 function rejectCalendar() {
-  document.getElementById('calendarPreviewBar').style.display = 'none';
-  document.getElementById('calendarContainer').style.display = 'none';
-  currentCalendarData = null;
-  calendarApproved = false;
-  toast('Calendário rejeitado. Ajusta as opções e gera novamente.', 'info');
+  document.getElementById('calendarPreviewBar').style.display='none';
+  document.getElementById('calendarContainer').style.display='none';
+  currentCalendarData=null; calendarApproved=false;
+  toast('Calendário rejeitado. Ajusta as opções e gera novamente.','info');
+}
+async function loadSavedCalendar() {
+  const month=parseInt(document.getElementById('calMonth').value);
+  const year =parseInt(document.getElementById('calYear').value);
+  try {
+    const r=await fetch(`${API}/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);
+    const d=await r.json();
+    if(d.found&&d.calendar?.length) {
+      currentCalendarData={calendar:d.calendar};
+      renderCalendar(currentCalendarData,month,year);
+      calendarApproved=true;
+      document.getElementById('calApprovedBadge').style.display='inline-block';
+      document.getElementById('calendarPreviewBar').style.display='none';
+      toast('Calendário anterior carregado.','info');
+    }
+  } catch(e) { /* sem calendário guardado */ }
 }
 
 function renderCalendar(data, month, year) {
@@ -2307,20 +2635,21 @@ function openCalendarPost(day, postIndex) {
       <span class="badge" style="background:#F3E8FF;color:var(--purple);">${post.type}</span>
       <span style="font-size:.78rem;color:var(--mid);">📅 Dia ${day}</span>
     </div>
-
     <div class="form-group">
       <label class="form-label">Tema do post</label>
-      <input class="input" id="calEditTopic" value="${(post.topic||'').replace(/"/g,'&quot;')}"
-        placeholder="Ex: Como a Virttus ajudou empresa X a triplicar resultados" />
+      <input class="input" id="calEditTopic" value="${(post.topic||'').replace(/"/g,'&quot;')}" placeholder="Ex: Como a Nubank conquistou 90 milhões de clientes sem agência" />
     </div>
-
     <div style="display:flex;gap:12px;">
       <div class="form-group" style="flex:1;margin-bottom:0;">
         <label class="form-label">Tipo</label>
         <select class="select" id="calEditType">
-          <option value="carrossel" ${post.type==='carrossel'?'selected':''}>Carrossel</option>
-          <option value="feed"      ${post.type==='feed'?'selected':''}>Post Feed</option>
-          <option value="reels"     ${post.type==='reels'?'selected':''}>Reels</option>
+          <option value="tendencia" ${post.type==='tendencia'?'selected':''}>📡 Análise de Tendência</option>
+          <option value="case"      ${post.type==='case'?'selected':''}>🏆 Case de Sucesso</option>
+          <option value="educativo" ${post.type==='educativo'?'selected':''}>📚 Educativo</option>
+          <option value="comparacao"${post.type==='comparacao'?'selected':''}>⚖️ Comparação</option>
+          <option value="lista"     ${post.type==='lista'?'selected':''}>📋 Lista</option>
+          <option value="prova_social"${post.type==='prova_social'?'selected':''}>🌟 Prova Social</option>
+          <option value="oferta"    ${post.type==='oferta'?'selected':''}>🎯 Oferta</option>
         </select>
       </div>
       <div class="form-group" style="width:120px;margin-bottom:0;">
@@ -2328,13 +2657,9 @@ function openCalendarPost(day, postIndex) {
         <input class="input" type="time" id="calEditTime" value="${post.time||'09:00'}" />
       </div>
     </div>
-
     <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day}, ${postIndex})">
-        💾 Guardar alterações
-      </button>
+      <button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day}, ${postIndex})">💾 Guardar alterações</button>
     </div>
-
     ${post.status === 'pendente' ? `
       <hr style="border:none;border-top:1px solid var(--light);margin:16px 0;" />
       <div style="background:var(--pale);border-radius:var(--radius);padding:12px;">
