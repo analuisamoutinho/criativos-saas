@@ -1118,7 +1118,206 @@ Retornar APENAS este JSON:
     res.status(500).json({ error: err.message });
   }
 });
+// ═══════════════════════════════════════════════════════════════════
+// ADICIONAR AO server.js — antes de app.use(express.static('public'))
+// Substituir também o endpoint /api/image existente pela versão abaixo
+// ═══════════════════════════════════════════════════════════════════
 
+// ── Geração de imagem base (mantido para compatibilidade) ─────────
+app.post('/api/image', async (req, res) => {
+  try {
+    const { prompt, size = '1024x1024' } = req.body;
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size, quality: 'high' }),
+    });
+    const data = await response.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    res.json({ url: data.data[0].url, b64: data.data[0].b64_json });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Geração de slide de carrossel com texto integrado e identidade visual ──
+// Este é o endpoint principal — chamado para cada slide do carrossel
+app.post('/api/image/carousel-slide', async (req, res) => {
+  try {
+    const {
+      heading = '',
+      body = '',
+      slideNumber = 1,
+      totalSlides = 10,
+      funcao = '',        // CAPA, TRAÇÃO, AVANÇO, CONSEQUÊNCIA, CTA, etc.
+      topic = '',         // tema geral do carrossel
+      profile = 'marca',
+      imagePromptHint = '', // sugestão gerada pelo Claude na criação dos slides
+    } = req.body;
+
+    // ── 1. Determinar estilo visual por função do slide ───────────────
+    const estilosPorFuncao = {
+      CAPA: {
+        layout: 'Full-bleed dramatic hero layout. Heading text MASSIVE, centered, taking 60% of the frame. Intense cinematic background with deep shadows and dramatic lighting. Magenta accent line or glow beneath the heading.',
+        bg: 'Cinematic, high-contrast, moody. Could be abstract light explosion, ultra-close texture, silhouette against gradient, or dramatic urban scene — chosen to match the topic.',
+        textSize: 'EXTRA LARGE bold heading, maximum impact, white with slight magenta glow or outline for contrast.',
+      },
+      'TRAÇÃO': {
+        layout: 'Editorial magazine layout. Heading bold at top third. Body text in smaller weight below. Background scene supports the concept with 50% dark overlay.',
+        bg: 'Dynamic documentary-style photograph or dramatic illustration matching the topic. Slightly blurred for text legibility.',
+        textSize: 'Large bold heading, medium body text, both white, well-spaced.',
+      },
+      'AVANÇO': {
+        layout: 'Split composition. Strong visual element on one side, text block on the other or overlaid with glassmorphism card. Clean, informative.',
+        bg: 'Contextual scene or data-driven abstract visualization related to the topic.',
+        textSize: 'Bold heading, clear readable body text.',
+      },
+      'TRANSIÇÃO': {
+        layout: 'Minimalist, breathing room. Short punchy text centered with wide margins. Bold accent color element.',
+        bg: 'Abstract gradient, geometric shapes, or texture using brand colors.',
+        textSize: 'Medium-large text, impactful, isolated.',
+      },
+      'CONSEQUÊNCIA': {
+        layout: 'Reveal-style layout. Text positioned as if it\'s the conclusion of something. Could use bold number or stat as hero element.',
+        bg: 'Documentary-style real photograph or editorial composite.',
+        textSize: 'Confident bold text, clear hierarchy.',
+      },
+      'APLICAÇÃO': {
+        layout: 'Actionable, direct layout. Numbered or structured text presentation. Clean grid feel.',
+        bg: 'Professional, aspirational setting related to the action being taken.',
+        textSize: 'Clear structured text, good contrast.',
+      },
+      'FECHAMENTO': {
+        layout: 'Emotional, warm closing layout. Text centered with generous breathing room. Soft but impactful.',
+        bg: 'Aspirational, hopeful visual — sunrise, achievement moment, human connection.',
+        textSize: 'Medium bold text, warm feel.',
+      },
+      'ASSINATURA': {
+        layout: 'CTA slide. Bold call-to-action text. Clear visual hierarchy. Brand-forward design.',
+        bg: 'Brand-colored gradient or strong brand visual. Magenta and purple dominant.',
+        textSize: 'Large CTA text, high contrast, action-driving.',
+      },
+    };
+
+    const estilo = estilosPorFuncao[funcao] || estilosPorFuncao['TRAÇÃO'];
+
+    // ── 2. Montar o prompt visual do contexto ─────────────────────────
+    // Usar Claude para gerar a cena visual ideal para o tema + slide
+    const contextPrompt = `You are a world-class Instagram carousel art director. 
+Given this carousel topic and slide content, describe in ONE sentence (max 20 words) the perfect photographic or illustrative background scene for this slide. 
+Be SPECIFIC and CINEMATIC. Mention concrete visual elements, lighting style, and mood.
+NO text descriptions — only the visual scene.
+
+Carousel topic: "${topic}"
+Slide function: ${funcao} (slide ${slideNumber} of ${totalSlides})
+Slide heading: "${heading}"
+${body ? `Slide body: "${body}"` : ''}
+${imagePromptHint ? `Visual hint: "${imagePromptHint}"` : ''}
+
+Respond with ONLY the scene description, in English, no quotes, no explanation.`;
+
+    let visualScene = imagePromptHint || 'dramatic cinematic scene with deep shadows and dynamic lighting';
+    
+    try {
+      const sceneRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001', // rápido e barato para esta tarefa
+          max_tokens: 100,
+          messages: [{ role: 'user', content: contextPrompt }],
+        }),
+      });
+      const sceneData = await sceneRes.json();
+      if (sceneData.content?.[0]?.text) {
+        visualScene = sceneData.content[0].text.trim();
+      }
+    } catch (e) {
+      console.warn('Scene generation fallback:', e.message);
+    }
+
+    // ── 3. Texto do slide formatado para o prompt ─────────────────────
+    const headingClean = heading.replace(/["""]/g, '"').trim();
+    const bodyClean = body.replace(/["""]/g, '"').trim();
+    
+    // Truncar heading se muito longo para o GPT renderizar bem
+    const headingForPrompt = headingClean.length > 80 
+      ? headingClean.slice(0, 77) + '...' 
+      : headingClean;
+
+    // ── 4. Montar o prompt final para o GPT Image-1 ───────────────────
+    const isCapa = funcao === 'CAPA' || slideNumber === 1;
+    const isCTA = funcao === 'ASSINATURA' || funcao === 'FECHAMENTO';
+
+    const brandBlock = `Brand identity: deep purple #3B0F4C and magenta/hot pink #E4007C. Dark, bold, premium feel.`;
+
+    const layoutBlock = estilo.layout;
+    const bgBlock = `Background: ${visualScene}. ${estilo.bg} Dark overlay (50-70% opacity) to ensure text legibility.`;
+
+    const textBlock = isCopa => {
+      if (isCopa) {
+        return `OVERLAY TEXT — render this text directly on the image in large bold white typography:
+Heading (VERY LARGE, bold, white, centered): "${headingForPrompt}"
+${bodyClean ? `Subtext (smaller, white, below heading): "${bodyClean}"` : ''}`;
+      }
+      return `OVERLAY TEXT — render this text directly on the image:
+${headingForPrompt ? `Bold heading (large, white, high contrast): "${headingForPrompt}"` : ''}
+${bodyClean ? `Body text (medium, white or light gray, readable): "${bodyClean}"` : ''}`;
+    };
+
+    const qualityBlock = `Style: scroll-stopping Instagram carousel slide. Editorial magazine quality. ${estilo.textSize} 
+No watermarks. No lorem ipsum. No placeholder text. Aspect ratio 4:5 vertical (portrait).
+The text must be SHARP, READABLE, and PERFECTLY RENDERED — this is critical.`;
+
+    const slideInfoBlock = isCTA 
+      ? `This is the final CTA slide. Make it feel like a strong conclusion and invitation to act.`
+      : `This is slide ${slideNumber} of ${totalSlides}.`;
+
+    const fullPrompt = [
+      `Instagram carousel slide design.`,
+      brandBlock,
+      layoutBlock,
+      bgBlock,
+      textBlock(isCapa),
+      qualityBlock,
+      slideInfoBlock,
+    ].join('\n');
+
+    // ── 5. Chamar GPT Image-1 ─────────────────────────────────────────
+    const imageRes = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: fullPrompt,
+        n: 1,
+        size: '1024x1536', // 2:3 vertical — melhor para Instagram carrossel
+        quality: 'high',
+      }),
+    });
+
+    const imageData = await imageRes.json();
+    if (imageData.error) return res.status(500).json({ error: imageData.error.message });
+
+    res.json({
+      url: imageData.data[0].url || null,
+      b64: imageData.data[0].b64_json || null,
+      promptUsed: fullPrompt, // útil para debug
+      visualScene,
+    });
+
+  } catch (err) {
+    console.error('carousel-slide image error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 app.use(express.static('public'));
 
 // Rotas /api/* não encontradas → 404 JSON (nunca devolver index.html para API)
