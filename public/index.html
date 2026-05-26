@@ -1909,15 +1909,23 @@ function renderSlidesPreview(slides) {
     </div>`).join('');
 }
 
-async function generateCarouselImages() {
+// Identidade visual por perfil — espelho do servidor
+const BRAND_ACCENT = {
+  marca:   { accent: '#C8A020', bg: '#0A0A0A', handle: '@caseaceleradora' },
+  pessoal: { accent: '#E4007C', bg: '#0D0D0D', handle: '@analuisa.moutinho' },
+  virttus: { accent: '#00D4AA', bg: '#050B18', handle: '@virttus' },
+};
+
+async function generateCarouselImages(autoPublishConfig = null) {
   if (!currentCarouselData) return;
   const engine = document.getElementById('imageEngine').value;
   if (engine === 'none') return toast('Selecciona um gerador de imagens', 'info');
 
-  const slides = currentCarouselData.slides;
-  const topic  = currentCarouselData.title || '';
-  const btn    = document.getElementById('btnGenImages');
-  btn.disabled = true;
+  const slides    = currentCarouselData.slides;
+  const topic     = currentCarouselData.title || currentCarouselData.tema || '';
+  const contentId = currentCarouselContentId;
+  const btn       = document.getElementById('btnGenImages');
+  btn.disabled    = true;
 
   const progressBar  = document.getElementById('imageProgress');
   const progressFill = document.getElementById('imageProgressFill');
@@ -1925,39 +1933,32 @@ async function generateCarouselImages() {
   progressBar.style.display = 'block';
   currentCarouselImages = [];
 
-  // Mensagens de status variadas para feedback mais rico
-  const statusMsgs = [
-    '🎨 Criando composição visual...',
-    '✨ Integrando texto ao design...',
-    '📐 Ajustando hierarquia tipográfica...',
-    '🎭 Aplicando identidade da marca...',
-    '🖼️ Renderizando slide...',
+  const msgs = [
+    '🎨 Compondo layout...',
+    '✒️ Renderizando tipografia...',
+    '🖼️ Integrando identidade visual...',
+    '⚡ Aplicando accent color...',
+    '✨ Finalizando slide...',
   ];
 
   for (let i = 0; i < slides.length; i++) {
-    const s = slides[i];
+    const s   = slides[i];
     const pct = Math.round((i / slides.length) * 100);
     progressFill.style.width = `${pct}%`;
-    statusEl.innerHTML = `
-      <span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span>
-      &nbsp;${statusMsgs[i % statusMsgs.length]}`;
+    statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${msgs[i % msgs.length]}`;
 
-    // Marcar o card como "a carregar"
     const cards = document.querySelectorAll('.slide-card');
-    if (cards[i]) {
-      cards[i].style.opacity = '0.6';
-      cards[i].style.outline = '2px solid var(--magenta)';
-    }
+    if (cards[i]) { cards[i].style.opacity = '0.55'; cards[i].style.outline = '2px solid var(--magenta)'; }
 
     try {
-      // Determinar função do slide para o endpoint
       const funcao = s.funcao ||
-        (i === 0 ? 'CAPA' :
-         i === slides.length - 1 ? 'ASSINATURA' :
-         i < 3 ? 'TRAÇÃO' :
-         i < 6 ? 'AVANÇO' : 'CONSEQUÊNCIA');
+        (i === 0 ? 'CAPA' : i === slides.length - 1 ? 'ASSINATURA' :
+         i < 3 ? 'TRAÇÃO' : i < 6 ? 'AVANÇO' : 'CONSEQUÊNCIA');
 
-      // Usar o novo endpoint pro para GPT, fallback para Gemini
+      // Heading: para Content Machine usa s.textos[0].texto
+      const heading = s.heading || s.textos?.[0]?.texto || '';
+      const body    = s.body    || s.textos?.[1]?.texto || '';
+
       let url = null;
 
       if (engine === 'gpt') {
@@ -1965,100 +1966,143 @@ async function generateCarouselImages() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            heading:         s.heading || '',
-            body:            s.body    || s.textos?.[1]?.texto || '',
+            heading, body,
             slideNumber:     i + 1,
             totalSlides:     slides.length,
-            funcao,
-            topic,
+            funcao, topic,
             profile:         currentProfile,
+            contentId,
             imagePromptHint: s.imagePrompt || '',
           }),
         });
         const d = await r.json();
         if (d.error) throw new Error(d.error);
+        // Servidor já salva b64 em disco e retorna URL pública
         url = d.url || (d.b64 ? `data:image/png;base64,${d.b64}` : null);
 
       } else {
-        // Gemini: prompt enriquecido com texto e identidade visual
-        const geminiPrompt = buildGeminiSlidePrompt(s, i, slides.length, topic, funcao);
+        // Gemini fallback — prompt com identidade por perfil
+        const brand = BRAND_ACCENT[currentProfile] || BRAND_ACCENT.marca;
+        const isCapa = i === 0;
+        const geminiPrompt = [
+          `Premium Instagram carousel slide ${i+1}/${slides.length}.`,
+          `Topic: "${topic}". Function: ${funcao}.`,
+          `Brand colors: background ${brand.bg}, accent ${brand.accent}, white text.`,
+          isCapa
+            ? `COVER SLIDE: cinematic hero image. MASSIVE ultra-bold white heading: "${heading}". Words "${heading.split(' ').slice(-2).join(' ')}" in ${brand.accent}. Dramatic dark overlay. Maximum scroll-stopping impact.`
+            : `Editorial layout. Bold heading "${heading}" — key words in ${brand.accent}. Body: "${body}". Clean, premium, readable.`,
+          `Sharp crisp typography. Portrait 4:5. No lorem ipsum. Professional designer quality.`,
+        ].join(' ');
         const r = await fetch(`${API}/api/gemini-image`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: geminiPrompt }),
         });
         const d = await r.json();
-        url = d.url || (d.b64 ? `data:image/png;base64,${d.b64}` : null);
+        const b64 = d.b64 || null;
+        url = d.url || (b64 ? `data:image/png;base64,${b64}` : null);
+
+        // Salvar b64 em disco para ter URL persistente
+        if (b64 && contentId) {
+          try {
+            const sv = await fetch(`${API}/api/image/save-b64`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ b64, contentId, slideIndex: i }),
+            });
+            const svd = await sv.json();
+            if (svd.url) url = svd.url;
+          } catch(e) { /* usa data:url como fallback */ }
+        }
       }
 
       currentCarouselImages.push(url);
 
-      // Atualizar o card com a imagem gerada
+      // Atualizar card com fade-in
       if (cards[i] && url) {
-        // Remover imagem anterior se existir
         const oldImg = cards[i].querySelector('img');
         if (oldImg) oldImg.remove();
-
         const img = document.createElement('img');
         img.src = url;
-        img.style.transition = 'opacity 0.4s ease';
-        img.style.opacity = '0';
+        img.style.cssText = 'opacity:0;transition:opacity 0.5s ease;';
         cards[i].insertBefore(img, cards[i].firstChild);
-        // Fade in suave
         requestAnimationFrame(() => { img.style.opacity = '1'; });
       }
-
       if (cards[i]) {
         cards[i].style.opacity = '1';
-        cards[i].style.outline = '2px solid #10B981'; // verde = concluído
-        setTimeout(() => { if (cards[i]) cards[i].style.outline = 'none'; }, 1500);
+        cards[i].style.outline = '2px solid #10B981';
+        setTimeout(() => { if (cards[i]) cards[i].style.outline = 'none'; }, 1800);
       }
 
     } catch(e) {
-      console.error(`Slide ${i+1} error:`, e);
+      console.error(`Slide ${i+1}:`, e);
       currentCarouselImages.push(null);
-      if (cards[i]) {
-        cards[i].style.opacity = '1';
-        cards[i].style.outline = '2px solid #EF4444';
-      }
+      if (cards[i]) { cards[i].style.opacity = '1'; cards[i].style.outline = '2px solid #EF4444'; }
     }
   }
 
   progressFill.style.width = '100%';
-  const successCount = currentCarouselImages.filter(Boolean).length;
-  statusEl.innerHTML = `
-    <span style="color:#10B981;font-weight:600;">✅ ${successCount}/${slides.length} slides gerados!</span>
-    ${successCount < slides.length ? `<span style="color:#EF4444;"> (${slides.length - successCount} falharam)</span>` : ''}`;
+  const ok = currentCarouselImages.filter(Boolean).length;
+  statusEl.innerHTML = `<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides gerados!</span>${ok < slides.length ? ` <span style="color:#EF4444;">(${slides.length-ok} falharam)</span>` : ''}`;
   btn.disabled = false;
   btn.textContent = '🔄 Regenerar imagens';
 
-  // Guardar URLs no criativo
-  if (currentCarouselContentId) {
-    await fetch(`${API}/api/content/${currentCarouselContentId}`, {
+  // ── Persistir imageUrls no criativo ──────────────────────────────
+  const validUrls = currentCarouselImages.filter(Boolean);
+  if (contentId && validUrls.length) {
+    await fetch(`${API}/api/content/${contentId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageUrls: currentCarouselImages.filter(Boolean) }),
-    });
+      body: JSON.stringify({ imageUrls: validUrls, status: 'pendente' }),
+    }).catch(e => console.warn('PATCH imageUrls:', e));
   }
 
-  toast(`${successCount} slides gerados com identidade visual! 🎨`, 'success');
+  toast(`${ok} slides gerados! 🎨`, 'success');
+
+  // ── Fluxo automático pós-geração (calendário → publicar) ─────────
+  if (autoPublishConfig) {
+    const { action, scheduledAt, caption, calendarPost } = autoPublishConfig;
+    await _autoPublishAfterImages({ action, scheduledAt, caption, contentId, calendarPost });
+  } else {
+    // Mostrar painel de publicação automaticamente
+    document.getElementById('publishPanel').classList.add('visible');
+    document.getElementById('carouselPreviewCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
-// Prompt rico para Gemini (fallback) — mesmo conceito, adaptado à API
-function buildGeminiSlidePrompt(slide, index, total, topic, funcao) {
-  const heading = slide.heading || '';
-  const body    = slide.body    || slide.textos?.[1]?.texto || '';
-  const isCapa  = funcao === 'CAPA' || index === 0;
+// Publicar/agendar automaticamente após gerar imagens (fluxo calendário)
+async function _autoPublishAfterImages({ action, scheduledAt, caption, contentId, calendarPost }) {
+  const imageUrls = currentCarouselImages.filter(Boolean);
+  if (!imageUrls.length) { toast('Nenhuma imagem gerada para publicar.', 'error'); return; }
 
-  return [
-    `Instagram carousel slide ${index + 1} of ${total}.`,
-    `Topic: "${topic}". Function: ${funcao}.`,
-    `Brand: deep purple #3B0F4C background, magenta #E4007C accents, white text.`,
-    isCapa
-      ? `Full-bleed cinematic hero image. MASSIVE bold white heading text overlaid: "${heading}". Dramatic lighting, dark overlay for contrast.`
-      : `Editorial background scene matching topic. Bold white heading: "${heading}". ${body ? `Subtitle: "${body}".` : ''}`,
-    `Scroll-stopping design. High contrast. Sharp readable typography. Portrait 4:5 format. No lorem ipsum.`,
-  ].join(' ');
+  try {
+    if (action === 'now') {
+      const r = await fetch(`${API}/api/instagram/carousel`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrls, caption, profile: currentProfile, contentId }),
+      });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      toast('✅ Carrossel publicado no Instagram!', 'success');
+    } else if (action === 'schedule' && scheduledAt) {
+      const r = await fetch(`${API}/api/instagram/schedule`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentId, scheduledAt,
+          profile: currentProfile,
+          type: 'carrossel',
+          topic: calendarPost?.topic || '',
+          caption, imageUrls,
+        }),
+      });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+      toast(`📆 Agendado para ${formatDate(scheduledAt)}`, 'success');
+    }
+    await refreshContentCache();
+  } catch(e) {
+    toast('Erro ao publicar: ' + e.message, 'error');
+  }
 }
 
 async function publishCarouselDirect() {
@@ -2774,68 +2818,204 @@ function openCalendarPost(day, postIndex) {
   showModal('calPostModal');
 }
 
+// ── Fluxo completo: Calendário → Gerar copy → Gerar imagens → Publicar/Agendar ──
+// generateFromCalendarPost: só gera o texto (copy) e abre o painel de imagens
 async function generateFromCalendarPost() {
   if (!currentCalendarPost) return;
   const p = currentCalendarPost;
-  const caption = document.getElementById('calPostCaption')?.value || p.caption;
 
-  toast('A gerar criativo...', 'info');
+  const genBtn = document.getElementById('modalBtnGenerate');
+  genBtn.disabled = true;
+  genBtn.textContent = '⏳ A gerar copy...';
+
   try {
     const r = await fetch(`${API}/api/carousel/generate-and-save`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        topic: p.topic, profile: currentProfile, slides: 7,
-        caption, hashtags: p.hashtags,
+        topic: p.topic, profile: currentProfile,
         calendarDay: p.day, calendarMonth: p.month, calendarYear: p.year,
       }),
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    toast('Criativo gerado e guardado na biblioteca!', 'success');
+
+    // Guardar dados do carrossel gerado para o fluxo de imagens
+    currentCarouselData      = d;
+    currentCarouselContentId = d.contentId;
+    currentCarouselImages    = [];
+
+    toast('Copy gerada! A preparar painel de imagens...', 'success');
     closeModal('calPostModal');
-    loadDashboard();
+
+    // Ir para a secção Carrossel com os dados pré-preenchidos
+    showSection('carousel', null);
+
+    // Pré-preencher UI do carrossel
+    setTimeout(() => {
+      renderSlidesPreview(d.slides || []);
+      document.getElementById('carouselSlideCount').textContent = `${(d.slides||[]).length} slides — tema: ${p.topic}`;
+      document.getElementById('carouselGeneratedCaption').value = `${d.caption || ''}\n\n${d.hashtags || ''}`;
+      document.getElementById('carouselPreviewTitle').textContent = d.title || p.topic;
+      document.getElementById('carouselPreviewCard').style.display  = 'block';
+
+      // Pré-preencher data/hora do calendário no painel de publicação
+      const scheduledDT = `${String(p.year)}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}T${p.time||'09:00'}`;
+      document.getElementById('publishAction').value = 'schedule';
+      document.getElementById('scheduleDateTime').value = scheduledDT;
+      document.getElementById('scheduleTimeGroup').style.display = 'block';
+      document.getElementById('publishPanel').classList.add('visible');
+
+      // Mostrar banner convidando a gerar imagens
+      _showCalendarFlowBanner(p, d.contentId, d.caption || '', scheduledDT);
+    }, 300);
+
   } catch(e) {
     toast('Erro: ' + e.message, 'error');
+  } finally {
+    genBtn.disabled = false;
+    genBtn.textContent = '✨ Gerar criativo';
   }
 }
 
+// Banner dentro da secção Carrossel que guia o utilizador pelo restante do fluxo
+function _showCalendarFlowBanner(calPost, contentId, caption, scheduledDT) {
+  // Remover banner anterior se existir
+  const old = document.getElementById('calFlowBanner');
+  if (old) old.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'calFlowBanner';
+  banner.style.cssText = `
+    background: linear-gradient(135deg, rgba(59,15,76,.06) 0%, rgba(228,0,124,.06) 100%);
+    border: 1.5px solid rgba(228,0,124,.25);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  `;
+  banner.innerHTML = `
+    <div>
+      <div style="font-family:var(--font-head);font-weight:700;font-size:.95rem;color:var(--dark);">
+        📅 Fluxo do calendário — ${calPost.topic?.slice(0,50) || 'Post'}
+      </div>
+      <div style="font-size:.78rem;color:var(--mid);margin-top:3px;">
+        Dia ${calPost.day}/${calPost.month} · ${calPost.time || '09:00'} · Copy gerada ✅ · 
+        Próximo: gerar imagens → agendar
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="_calFlowGenerateImages('${contentId}','${caption.replace(/'/g,"\\'")}','${scheduledDT}','schedule',${JSON.stringify(calPost).replace(/"/g,'&quot;')})">
+        🎨 Gerar imagens e agendar
+      </button>
+      <button class="btn btn-primary btn-sm" style="background:var(--dark);" onclick="_calFlowGenerateImages('${contentId}','${caption.replace(/'/g,"\\'")}','${scheduledDT}','now',null)">
+        📤 Gerar e publicar agora
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('calFlowBanner').remove()">
+        Só gerar imagens
+      </button>
+    </div>
+  `;
+
+  // Inserir no topo da secção carrossel
+  const section = document.getElementById('section-carousel');
+  section.insertBefore(banner, section.firstChild.nextSibling);
+}
+
+// Accionado pelos botões do banner — gera imagens e depois publica/agenda
+async function _calFlowGenerateImages(contentId, caption, scheduledAt, action, calPostJson) {
+  // Remover banner
+  const banner = document.getElementById('calFlowBanner');
+  if (banner) banner.remove();
+
+  // Verificar que os dados do carrossel estão prontos
+  if (!currentCarouselData || currentCarouselContentId !== contentId) {
+    toast('Dados do carrossel não encontrados. Tenta novamente.', 'error');
+    return;
+  }
+
+  const calPost = calPostJson ? (typeof calPostJson === 'string' ? JSON.parse(calPostJson) : calPostJson) : null;
+
+  // Gerar imagens + auto-publicar/agendar no final
+  await generateCarouselImages({
+    action,
+    scheduledAt,
+    caption,
+    contentId,
+    calendarPost: calPost,
+  });
+}
+
+// publishFromCalendarPost — gera copy + imagens + agenda/publica (fluxo direto do modal)
 async function publishFromCalendarPost() {
   if (!currentCalendarPost) return;
-  const p = currentCalendarPost;
-  const action = document.getElementById('calPostAction')?.value || 'schedule';
-  const dt = document.getElementById('calPostScheduleTime')?.value;
-  const caption = document.getElementById('calPostCaption')?.value || p.caption;
+  const p      = currentCalendarPost;
+  const action = document.getElementById('calPostAction')?.value || 'generate';
+  const dt     = document.getElementById('calPostScheduleTime')?.value;
 
-  toast('A processar...', 'info');
+  const pubBtn = document.getElementById('modalBtnPublish');
+  pubBtn.disabled = true;
+  pubBtn.textContent = '⏳ A processar...';
+
   try {
+    // 1. Gerar copy do carrossel
     const r = await fetch(`${API}/api/carousel/generate-and-save`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ topic: p.topic, profile: currentProfile, slides: 7, caption, hashtags: p.hashtags, calendarDay: p.day, calendarMonth: p.month, calendarYear: p.year }),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic: p.topic, profile: currentProfile,
+        calendarDay: p.day, calendarMonth: p.month, calendarYear: p.year,
+      }),
     });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
 
-    if (action === 'schedule' && dt) {
-      const sr = await fetch(`${API}/api/instagram/schedule`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contentId: d.contentId, scheduledAt: new Date(dt).toISOString(),
-          profile: currentProfile, type: p.type, topic: p.topic, caption, imageUrls: [],
-        }),
-      });
-      const sd = await sr.json();
-      if (sd.error) throw new Error(sd.error);
-      toast('Criativo gerado e agendado! 📆', 'success');
-    } else if (action === 'now') {
-      toast('Criativo gerado! Precisas gerar imagens antes de publicar.', 'info');
-    } else {
-      toast('Criativo gerado e guardado!', 'success');
-    }
+    currentCarouselData      = d;
+    currentCarouselContentId = d.contentId;
+    currentCarouselImages    = [];
 
     closeModal('calPostModal');
-    generateCalendar();
+
+    if (action === 'generate') {
+      // Só abrir no carrossel para o utilizador ver e depois gerar imagens manualmente
+      showSection('carousel', null);
+      setTimeout(() => {
+        renderSlidesPreview(d.slides || []);
+        document.getElementById('carouselSlideCount').textContent = `${(d.slides||[]).length} slides`;
+        document.getElementById('carouselGeneratedCaption').value = `${d.caption||''}\n\n${d.hashtags||''}`;
+        document.getElementById('carouselPreviewCard').style.display = 'block';
+        document.getElementById('publishPanel').classList.add('visible');
+      }, 300);
+      toast('Copy gerada! Clica em "Gerar imagens" para continuar.', 'success');
+
+    } else {
+      // Ir para carrossel, gerar imagens E automaticamente agendar/publicar
+      showSection('carousel', null);
+      setTimeout(async () => {
+        renderSlidesPreview(d.slides || []);
+        document.getElementById('carouselSlideCount').textContent = `${(d.slides||[]).length} slides`;
+        document.getElementById('carouselGeneratedCaption').value = `${d.caption||''}\n\n${d.hashtags||''}`;
+        document.getElementById('carouselPreviewCard').style.display = 'block';
+
+        const scheduledAt = dt ? new Date(dt).toISOString() : null;
+        toast(`A gerar ${(d.slides||[]).length} slides com identidade visual...`, 'info');
+        await generateCarouselImages({
+          action:       action === 'now' ? 'now' : 'schedule',
+          scheduledAt,
+          caption:      d.caption || '',
+          contentId:    d.contentId,
+          calendarPost: p,
+        });
+      }, 400);
+    }
+
   } catch(e) {
     toast('Erro: ' + e.message, 'error');
+  } finally {
+    pubBtn.disabled = false;
+    pubBtn.textContent = '🚀 Agendar / Publicar';
   }
 }
 
