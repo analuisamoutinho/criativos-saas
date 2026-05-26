@@ -1,30 +1,33 @@
 const express = require('express');
-const cors = require('cors');
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+const cors    = require('cors');
+const multer  = require('multer');
+const fs      = require('fs');
+const path    = require('path');
+const os      = require('os');
+const fetch   = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-// express.static registado no final, depois das rotas /api/*
 
-// ── Storage ──────────────────────────────────────────────────────────────────
+// ── Storage ───────────────────────────────────────────────────────────────
 const upload = multer({ dest: 'uploads/' });
 
-// No Railway o filesystem da raiz é read-only em alguns planos; usar /tmp como fallback
-const DATA_DIR = fs.existsSync('/tmp') ? '/tmp' : '.';
+const DATA_DIR      = fs.existsSync('/tmp') ? '/tmp' : '.';
 const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_posts.json');
 const GENERATED_FILE = path.join(DATA_DIR, 'generated_content.json');
 const CALENDAR_FILE  = path.join(DATA_DIR, 'calendar_data.json');
 const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
+const IMAGES_DIR     = path.join(DATA_DIR, 'carousel_images');
 
-// ── Supabase ──────────────────────────────────────────────────────────────────
-// npm install @supabase/supabase-js
-// Variáveis: SUPABASE_URL + SUPABASE_SERVICE_KEY
+try { fs.mkdirSync('uploads/',         { recursive: true }); } catch(e) {}
+try { fs.mkdirSync(MANUALS_DIR,        { recursive: true }); } catch(e) {}
+try { fs.mkdirSync(IMAGES_DIR,         { recursive: true }); } catch(e) {}
+try { fs.mkdirSync('uploads/photos/',  { recursive: true }); } catch(e) {}
+
+// ── Supabase ──────────────────────────────────────────────────────────────
 let supabase = null;
 try {
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
@@ -32,47 +35,19 @@ try {
     supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
     console.log('✅ Supabase conectado');
   } else {
-    console.log('⚠️  Supabase não configurado — usando ficheiros locais como fallback');
+    console.log('⚠️  Supabase não configurado — usando ficheiros locais');
   }
 } catch(e) {
   console.log('⚠️  @supabase/supabase-js não instalado — usando ficheiros locais');
 }
 
-// ── Helpers Supabase com fallback para JSON local ─────────────────────────────
-async function dbUpsert(table, row) {
-  if (supabase) {
-    const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
-    if (error) throw error;
-  }
-}
-async function dbSelect(table, filters = {}) {
-  if (supabase) {
-    let q = supabase.from(table).select('*');
-    for (const [col, val] of Object.entries(filters)) q = q.eq(col, val);
-    const { data, error } = await q;
-    if (error) throw error;
-    return data || [];
-  }
-  return [];
-}
-async function dbDelete(table, id) {
-  if (supabase) {
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) throw error;
-  }
-}
-
-// Garantir dirs de upload (readJSON/writeJSON cuidam dos JSON automaticamente)
-try { fs.mkdirSync('uploads/', { recursive: true }); } catch(e) {}
-try { fs.mkdirSync(MANUALS_DIR, { recursive: true }); } catch(e) {}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function ensureFile(file, defaultContent = '[]') {
+// ── Helpers JSON ──────────────────────────────────────────────────────────
+function ensureFile(file, def = '[]') {
   try {
     const dir = path.dirname(file);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    if (!fs.existsSync(file)) fs.writeFileSync(file, defaultContent, 'utf-8');
-  } catch(e) { console.error('ensureFile error:', file, e.message); }
+    if (!fs.existsSync(file)) fs.writeFileSync(file, def, 'utf-8');
+  } catch(e) { console.error('ensureFile:', file, e.message); }
 }
 
 function readJSON(file) {
@@ -81,60 +56,46 @@ function readJSON(file) {
     const raw = fs.readFileSync(file, 'utf-8').trim();
     if (!raw) return [];
     return JSON.parse(raw);
-  } catch(e) {
-    console.error('readJSON error:', file, e.message);
-    return [];
-  }
+  } catch(e) { console.error('readJSON:', file, e.message); return []; }
 }
 
 function writeJSON(file, data) {
   try {
     ensureFile(file);
     fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
-  } catch(e) {
-    console.error('writeJSON error:', file, e.message);
-  }
+  } catch(e) { console.error('writeJSON:', file, e.message); }
 }
 
-// Salva criativo na base geral
+// ── Conteúdo gerado ───────────────────────────────────────────────────────
 function saveGeneratedContent(item) {
-  // Local fallback
   const all = readJSON(GENERATED_FILE);
   all.unshift(item);
   writeJSON(GENERATED_FILE, all);
-  // Supabase (fire-and-forget)
   if (supabase) {
     supabase.from('generated_content').upsert({
-      id:                  item.id,
-      profile:             item.profile,
-      type:                item.type,
-      status:              item.status,
-      topic:               item.topic || null,
-      caption:             item.caption || null,
-      hashtags:            item.hashtags || null,
-      carousel_data:       item.carouselData ? JSON.stringify(item.carouselData) : null,
+      id: item.id, profile: item.profile, type: item.type,
+      status: item.status, topic: item.topic || null,
+      caption: item.caption || null, hashtags: item.hashtags || null,
+      carousel_data: item.carouselData ? JSON.stringify(item.carouselData) : null,
       content_machine_type: item.contentMachineType || null,
-      calendar_day:        item.calendarDay || null,
-      calendar_month:      item.calendarMonth || null,
-      calendar_year:       item.calendarYear || null,
-      created_at:          item.createdAt,
+      calendar_day: item.calendarDay || null,
+      calendar_month: item.calendarMonth || null,
+      calendar_year: item.calendarYear || null,
+      created_at: item.createdAt,
     }, { onConflict: 'id' }).then(({ error }) => {
-      if (error) console.error('Supabase save error:', error.message);
+      if (error) console.error('Supabase save:', error.message);
     });
   }
   return item;
 }
 
-// Atualiza status de um criativo
 function updateContentStatus(id, status, extra = {}) {
-  // Local
   const all = readJSON(GENERATED_FILE);
   const idx = all.findIndex(i => i.id === id);
   if (idx !== -1) { all[idx] = { ...all[idx], status, ...extra }; writeJSON(GENERATED_FILE, all); }
-  // Supabase
   if (supabase) {
     supabase.from('generated_content').update({ status, ...extra }).eq('id', id)
-      .then(({ error }) => { if (error) console.error('Supabase update error:', error.message); });
+      .then(({ error }) => { if (error) console.error('Supabase update:', error.message); });
   }
 }
 
@@ -148,24 +109,97 @@ async function loadGeneratedContent(profile) {
         topic: r.topic, caption: r.caption, hashtags: r.hashtags,
         carouselData: r.carousel_data ? JSON.parse(r.carousel_data) : null,
         contentMachineType: r.content_machine_type,
-        calendarDay: r.calendar_day, calendarMonth: r.calendar_month, calendarYear: r.calendar_year,
-        createdAt: r.created_at,
+        calendarDay: r.calendar_day, calendarMonth: r.calendar_month,
+        calendarYear: r.calendar_year, createdAt: r.created_at,
+        imageUrls: r.image_urls || [],
       }));
     }
   }
   return readJSON(GENERATED_FILE).filter(i => !profile || i.profile === profile);
 }
 
-// ── Accounts ─────────────────────────────────────────────────────────────────
+// ── Accounts ──────────────────────────────────────────────────────────────
 const ACCOUNTS = {
-  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,    token: process.env.INSTAGRAM_TOKEN_MARCA,    name: 'Case Aceleradora', handle: '@caseaceleradora'   },
-  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL,  token: process.env.INSTAGRAM_TOKEN_PESSOAL,  name: 'Ana Moutinho',      handle: '@analuisa.moutinho' },
-  virttus: { id: process.env.INSTAGRAM_ACCOUNT_ID_VIRTTUS,  token: process.env.INSTAGRAM_TOKEN_VIRTTUS,  name: 'Virttus',           handle: '@virttus'           },
+  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,   token: process.env.INSTAGRAM_TOKEN_MARCA,   name: 'Case Aceleradora', handle: '@caseaceleradora'   },
+  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL, token: process.env.INSTAGRAM_TOKEN_PESSOAL, name: 'Ana Moutinho',     handle: '@analuisa.moutinho' },
+  virttus: { id: process.env.INSTAGRAM_ACCOUNT_ID_VIRTTUS, token: process.env.INSTAGRAM_TOKEN_VIRTTUS, name: 'Virttus',          handle: '@virttus'           },
 };
-
 function getAccount(profile) { return ACCOUNTS[profile] || ACCOUNTS.marca; }
 
-// ── Manual upload ─────────────────────────────────────────────────────────────
+function getManualText(profile) {
+  const p = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
+  if (!fs.existsSync(p)) return '';
+  return '[Manual do cliente carregado — aplicar diretrizes de tom, identidade visual e linguagem definidas no PDF]';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IDENTIDADES VISUAIS POR PERFIL
+// CASE: baseado no manual — sóbrio, premium, sem hype, arquitetura & decisão
+// Paleta: preto profundo + branco + gold âmbar (sofisticação, maturidade)
+// ═══════════════════════════════════════════════════════════════════════════
+const BRAND_IDENTITIES = {
+  marca: {
+    accent:      '#C8A020',
+    accentAlt:   '#FFFFFF',
+    bgDark:      '#0A0A0A',
+    bgLight:     '#F5F4F0',
+    bgBrand:     '#0A0A0A',
+    textOnDark:  '#FFFFFF',
+    textOnLight: '#0A0A0A',
+    handle:      '@caseaceleradora',
+    name:        'CASE',
+    moods: [
+      'HERO_DARK', 'EDITORIAL_LIGHT', 'TYPE_LIGHT', 'SPLIT_LIGHT',
+      'TABLE_LIGHT', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'BRAND_PUNCH', 'CTA_LIGHT',
+    ],
+    aestheticDNA: `Premium B2B editorial design. Think The Economist cover meets McKinsey Digital report.
+TYPOGRAPHY: Geometric sans-serif (Inter or Neue Haas Grotesk equivalent), weight 700-900 for headings. Clean, structured, authoritative.
+NEVER: hype graphics, rockets, explosions, cartoonish elements, neon colors, aggressive design, excessive decoration.
+ALWAYS convey: structure, clarity, strategic intelligence, premium quality, data-driven thinking, architectural precision.
+PHOTOGRAPHY when used: executive boardroom, data screens, architectural details, precise editorial composition. Desaturated or cool tones.
+GRAPHIC ELEMENTS: clean grid lines, data column motifs (tall thin rectangles suggesting bar charts), subtle ascending line patterns.`,
+  },
+  pessoal: {
+    accent:      '#E4007C',
+    accentAlt:   '#FF6B35',
+    bgDark:      '#0D0D0D',
+    bgLight:     '#FFFFFF',
+    bgBrand:     '#3B0F4C',
+    textOnDark:  '#FFFFFF',
+    textOnLight: '#111111',
+    handle:      '@analuisa.moutinho',
+    name:        'Ana Moutinho',
+    moods: [
+      'HERO_DARK', 'EDITORIAL_LIGHT', 'TYPE_LIGHT', 'HERO_DARK',
+      'TABLE_LIGHT', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'BRAND_PUNCH', 'CTA_LIGHT',
+    ],
+    aestheticDNA: `Personal brand editorial design. Warm, human, authentic energy.
+TYPOGRAPHY: Modern humanist sans-serif, bold weight 700-900, approachable and dynamic.
+PHOTOGRAPHY: Real authentic moments, warm tones, human connection, lifestyle editorial feel.
+GRAPHIC ELEMENTS: clean bold layouts, magenta accent lines, strong contrast between type and image.`,
+  },
+  virttus: {
+    accent:      '#00D4AA',
+    accentAlt:   '#7B2FFF',
+    bgDark:      '#050B18',
+    bgLight:     '#F0F4FF',
+    bgBrand:     '#0A1628',
+    textOnDark:  '#FFFFFF',
+    textOnLight: '#050B18',
+    handle:      '@virttus',
+    name:        'Virttus',
+    moods: [
+      'HERO_DARK', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'HERO_DARK',
+      'TABLE_LIGHT', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'BRAND_PUNCH', 'CTA_LIGHT',
+    ],
+    aestheticDNA: `Tech B2B precision design. Sharp, forward-looking, data-driven.
+TYPOGRAPHY: Geometric tech sans-serif, precise and clean, weight 700-900.
+VISUALS: Abstract data visualizations, digital interfaces, circuit-inspired patterns, tech product renders.
+NEVER: clipart, generic stock, cartoonish elements.`,
+  },
+};
+
+// ── Manual upload ─────────────────────────────────────────────────────────
 app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
   const { profile } = req.body;
   if (!req.file) return res.status(400).json({ error: 'Nenhum ficheiro enviado' });
@@ -174,44 +208,31 @@ app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
   res.json({ success: true, message: `Manual do perfil "${profile}" guardado.` });
 });
 
-function getManualText(profile) {
-  const p = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
-  if (!fs.existsSync(p)) return '';
-  return '[Manual do cliente carregado — usar diretrizes de tom, cores e linguagem definidas no PDF]';
-}
-
-// ── Banco de fotos pessoais ───────────────────────────────────────────────────
-const PHOTOS_DIR  = path.join(DATA_DIR, 'photos');
+// ── Banco de fotos ────────────────────────────────────────────────────────
 const PHOTOS_FILE = path.join(DATA_DIR, 'photos_meta.json');
+const PHOTOS_DIR  = path.join(DATA_DIR, 'photos');
+try { fs.mkdirSync(PHOTOS_DIR, { recursive: true }); } catch(e) {}
+if (!fs.existsSync(PHOTOS_FILE)) fs.writeFileSync(PHOTOS_FILE, '[]');
+
 const photoUpload = multer({
   dest: 'uploads/photos/',
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Apenas imagens são permitidas'));
+    else cb(new Error('Apenas imagens'));
   },
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 20 * 1024 * 1024 },
 });
 
-if (!fs.existsSync(PHOTOS_DIR))  fs.mkdirSync(PHOTOS_DIR, { recursive: true });
-if (!fs.existsSync(PHOTOS_FILE)) fs.writeFileSync(PHOTOS_FILE, '[]');
-if (!fs.existsSync('uploads/photos/')) fs.mkdirSync('uploads/photos/', { recursive: true });
-
-// Upload de foto
 app.post('/api/photos/upload', photoUpload.single('photo'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'Nenhum ficheiro enviado' });
+    if (!req.file) return res.status(400).json({ error: 'Nenhum ficheiro' });
     const { profile = 'pessoal', tags = '', description = '' } = req.body;
-
     const ext  = path.extname(req.file.originalname) || '.jpg';
     const id   = `photo_${Date.now()}`;
     const dest = path.join(PHOTOS_DIR, `${id}${ext}`);
     fs.renameSync(req.file.path, dest);
-
-    // Ler como base64 para servir no frontend
-    const b64 = fs.readFileSync(dest).toString('base64');
-    const mime = req.file.mimetype || 'image/jpeg';
-    const dataUrl = `data:${mime};base64,${b64}`;
-
+    const b64     = fs.readFileSync(dest).toString('base64');
+    const dataUrl = `data:${req.file.mimetype || 'image/jpeg'};base64,${b64}`;
     const meta = {
       id, profile,
       filename: `${id}${ext}`,
@@ -221,18 +242,13 @@ app.post('/api/photos/upload', photoUpload.single('photo'), async (req, res) => 
       uploadedAt: new Date().toISOString(),
       dataUrl,
     };
-
     const all = readJSON(PHOTOS_FILE);
     all.unshift(meta);
     writeJSON(PHOTOS_FILE, all);
-
     res.json({ success: true, photo: meta });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// Listar fotos
 app.get('/api/photos', (req, res) => {
   const { profile, tag } = req.query;
   let all = readJSON(PHOTOS_FILE);
@@ -241,146 +257,442 @@ app.get('/api/photos', (req, res) => {
   res.json(all.map(({ dataUrl, ...rest }) => rest));
 });
 
-// !! DEVE VIR ANTES DE /api/photos/:id — senão "suggest" é tratado como um :id
-// Sugerir fotos relevantes para um tema (Claude analisa tags/descrições)
 app.post('/api/photos/suggest', async (req, res) => {
   try {
     const { topic, profile = 'pessoal', limit = 3 } = req.body;
     const all = readJSON(PHOTOS_FILE).filter(p => p.profile === profile);
     if (!all.length) return res.json({ suggestions: [] });
-
     const photoList = all.map(p => `ID: ${p.id} | Tags: ${p.tags.join(', ')} | Descrição: ${p.description}`).join('\n');
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 512,
-        messages: [{ role: 'user', content: `Dado este tema de post para Instagram: "${topic}"\n\nEstas são as fotos disponíveis no banco:\n${photoList}\n\nSeleciona até ${limit} IDs de fotos que melhor se encaixam com o tema. Responde APENAS com JSON: {"suggestions": ["id1", "id2"]}` }],
+        model: 'claude-haiku-4-5-20251001', max_tokens: 512,
+        messages: [{ role: 'user', content: `Tema: "${topic}"\nFotos:\n${photoList}\nSeleciona até ${limit} IDs. JSON: {"suggestions":["id1"]}` }],
       }),
     });
-    const d = await r.json();
+    const d    = await r.json();
     const text = d.content[0].text;
-    const match = text.match(/\{[\s\S]*\}/);
+    const match  = text.match(/\{[\s\S]*\}/);
     const parsed = match ? JSON.parse(match[0]) : { suggestions: [] };
-
     const allFull = readJSON(PHOTOS_FILE);
-    const photos = parsed.suggestions
-      .map(id => allFull.find(p => p.id === id))
-      .filter(Boolean);
-
-    res.json({ suggestions: photos });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({ suggestions: parsed.suggestions.map(id => allFull.find(p => p.id === id)).filter(Boolean) });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// Servir foto por id  (rotas com :id SEMPRE depois das rotas literais)
 app.get('/api/photos/:id', (req, res) => {
-  const all = readJSON(PHOTOS_FILE);
-  const photo = all.find(p => p.id === req.params.id);
-  if (!photo) return res.status(404).json({ error: 'Foto não encontrada' });
+  const photo = readJSON(PHOTOS_FILE).find(p => p.id === req.params.id);
+  if (!photo) return res.status(404).json({ error: 'Não encontrada' });
   res.json(photo);
 });
 
-// Apagar foto
 app.delete('/api/photos/:id', (req, res) => {
-  let all = readJSON(PHOTOS_FILE);
+  let all   = readJSON(PHOTOS_FILE);
   const photo = all.find(p => p.id === req.params.id);
-  if (!photo) return res.status(404).json({ error: 'Foto não encontrada' });
-  const filePath = path.join(PHOTOS_DIR, photo.filename);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  all = all.filter(p => p.id !== req.params.id);
-  writeJSON(PHOTOS_FILE, all);
+  if (!photo) return res.status(404).json({ error: 'Não encontrada' });
+  const fp = path.join(PHOTOS_DIR, photo.filename);
+  if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  writeJSON(PHOTOS_FILE, all.filter(p => p.id !== req.params.id));
   res.json({ success: true });
 });
 
-// ── Claude API ────────────────────────────────────────────────────────────────
+// ── Claude API ────────────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
   try {
     const { prompt, profile, systemExtra } = req.body;
     const manualNote = getManualText(profile);
-    const systemMsg = `Você é especialista em marketing digital e criação de conteúdo para Instagram.
+    const systemMsg  = `Você é especialista em marketing digital e criação de conteúdo para Instagram.
 Responda sempre em português de Portugal.
 ${manualNote ? `\n## Manual do cliente\n${manualNote}` : ''}
 ${systemExtra || ''}`;
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
-        system: systemMsg,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4096, system: systemMsg, messages: [{ role: 'user', content: prompt }] }),
     });
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
     res.json({ content: data.content[0].text });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Image generation — GPT Image-1 ───────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// GERAÇÃO DE IMAGENS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Salvar b64 em disco e retornar URL pública ────────────────────────────
+app.post('/api/image/save-b64', (req, res) => {
+  try {
+    const { b64, contentId, slideIndex } = req.body;
+    if (!b64) return res.status(400).json({ error: 'No b64 data' });
+    const filename = `${contentId || 'img'}_slide${slideIndex || 0}_${Date.now()}.png`;
+    const filepath = path.join(IMAGES_DIR, filename);
+    fs.writeFileSync(filepath, Buffer.from(b64, 'base64'));
+    const publicUrl = `${process.env.PUBLIC_URL || ''}/api/image/file/${filename}`;
+    res.json({ success: true, url: publicUrl, filename });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/image/file/:filename', (req, res) => {
+  const fp = path.join(IMAGES_DIR, req.params.filename);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Not found' });
+  res.sendFile(fp);
+});
+
+// ── GPT Image-1 base (compatibilidade) ───────────────────────────────────
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt, size = '1024x1024' } = req.body;
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
+    const r = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size }),
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size, quality: 'high' }),
     });
-    const data = await response.json();
+    const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
-    res.json({ url: data.data[0].url, b64: data.data[0].b64_json });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({ url: data.data[0].url || null, b64: data.data[0].b64_json || null });
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Image generation — Gemini Imagen ─────────────────────────────────────────
+// ── Gemini Imagen ─────────────────────────────────────────────────────────
 app.post('/api/gemini-image', async (req, res) => {
   try {
     const { prompt } = req.body;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${process.env.GEMINI_API_KEY}`;
-    const response = await fetch(url, {
+    const r = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ instances: [{ prompt }], parameters: { sampleCount: 1 } }),
     });
-    const data = await response.json();
+    const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
-    const b64 = data.predictions[0].bytesBase64Encoded;
-    res.json({ b64 });
-  } catch (err) {
+    res.json({ b64: data.predictions[0].bytesBase64Encoded });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Slide de carrossel com identidade visual real ─────────────────────────
+app.post('/api/image/carousel-slide', async (req, res) => {
+  try {
+    const {
+      heading         = '',
+      body            = '',
+      slideNumber     = 1,
+      totalSlides     = 9,
+      funcao          = '',
+      topic           = '',
+      profile         = 'marca',
+      imagePromptHint = '',
+      contentId       = null,
+    } = req.body;
+
+    const brand      = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
+    const mood       = brand.moods[Math.min(slideNumber - 1, brand.moods.length - 1)];
+    const manualCtx  = getManualText(profile);
+
+    const h = heading.replace(/"/g, "'").replace(/—/g, '-').trim();
+    const b = body.replace(/"/g, "'").replace(/—/g, '-').trim().slice(0, 140);
+
+    // Palavras-chave para accent inline (últimas palavras significativas)
+    const hWords      = h.split(/\s+/).filter(w => w.length > 2);
+    const accentPhrase = hWords.length >= 3
+      ? hWords.slice(-Math.min(2, Math.ceil(hWords.length / 3))).join(' ')
+      : hWords[hWords.length - 1] || '';
+
+    // Cena visual via Claude Haiku (só para slides com imagem)
+    let scene       = imagePromptHint || '';
+    const needsScene = ['HERO_DARK', 'EDITORIAL_LIGHT', 'SPLIT_LIGHT'].includes(mood);
+
+    if (needsScene && !scene) {
+      try {
+        const sr = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001', max_tokens: 90,
+            messages: [{ role: 'user', content: `Art director for ${brand.name}. ${brand.aestheticDNA.split('\n')[0]}\nTopic: "${topic}" | Slide ${slideNumber}: "${h}"\nDescribe in max 12 words the PERFECT background visual. Ultra-specific. No text. English only.` }],
+          }),
+        });
+        const sd = await sr.json();
+        if (sd.content?.[0]?.text) scene = sd.content[0].text.trim().replace(/^["']|["']$/g, '');
+      } catch(e) { scene = `${topic}, editorial photography, professional lighting`; }
+    }
+
+    const slideRef  = `Slide ${slideNumber} of ${totalSlides}`;
+    const brandLine = `Handle top-left: "${brand.handle}" — 11px, ${brand.accent}, opacity 65%.`;
+    const footLine  = `Bottom edge: 3px horizontal line, color ${brand.accent}, full width.`;
+    const labelLine = funcao ? `Category label below handle: "${funcao}" — 9px uppercase letter-spacing 2px, color ${brand.accent}.` : '';
+
+    let prompt = '';
+
+    if (mood === 'HERO_DARK') {
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND LAYER:
+- Full-bleed cinematic image: ${scene || `dramatic scene related to "${topic}"`}
+- Image occupies TOP 55% of canvas
+- From 55% downward: gradient fade to solid ${brand.bgDark}
+- Dark atmospheric treatment — deep shadows, moody lighting
+
+TOP ELEMENTS (y=3-5%):
+- ${brandLine}
+- ${labelLine}
+
+HEADLINE BLOCK (y=58-88%, left margin 6%):
+- MAIN HEADING: Inter Black / Helvetica Neue 900 weight
+  Font size: ~80-90px, multiple lines OK
+  Color: ${brand.textOnDark}
+  Text: "${h}"
+  EXCEPTION: words "${accentPhrase}" rendered in ${brand.accent}
+  Line height: 1.1, tight tracking
+- SUBTEXT: "${b}" — 22px, weight 400, color ${brand.accent}, margin-top 16px
+
+FOOTER: ${footLine}
+
+QUALITY: Magazine cover quality. Every letter perfectly legible. No blur. No distortion. Vertical 4:5.`;
+
+    } else if (mood === 'EDITORIAL_LIGHT') {
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND: Solid ${brand.bgLight}. Clean editorial white.
+
+TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+
+IMAGE BLOCK (y=10-45%, centered):
+- Contained image (NOT full-bleed): ${scene || `editorial scene for "${topic}"`}
+- Slight border-radius 8px, fills ~80% canvas width
+
+TEXT BLOCK (y=50-88%, left margin 6%):
+- HEADING: Inter Black ~68px weight 900
+  Color: ${brand.textOnLight}
+  Text: "${h}" — words "${accentPhrase}" in ${brand.accent}
+- BODY: "${b}" — 20px weight 400, ${brand.textOnLight} opacity 80%, line-height 1.6
+
+FOOTER: ${footLine}
+
+QUALITY: Crisp editorial magazine. Perfect text rendering. Vertical 4:5.`;
+
+    } else if (mood === 'TYPE_LIGHT') {
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND: Pure ${brand.bgLight}. NO image. Typography-only slide.
+
+SUBTLE DECORATION: Very faint vertical lines (2px, ${brand.accent}, opacity 8%) as background grid
+OR single decorative data-column motif (tall thin rectangle, ${brand.accent}, opacity 6%).
+
+TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+
+MAIN TEXT (y=18-82%, left margin 7%):
+- LARGE HEADING: Inter Black 900, ~85-100px
+  Color: ${brand.textOnLight}
+  Text: "${h}" — words "${accentPhrase}" in ${brand.accent}
+  Line-height: 1.05, tight
+- BODY: "${b}" — 22px weight 400, ${brand.textOnLight} opacity 75%, margin-top 28px
+
+FOOTER: ${footLine}
+
+QUALITY: Typography IS the design. Perfect kerning. No distortion. Vertical 4:5.`;
+
+    } else if (mood === 'TYPE_DARK') {
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND: Solid ${brand.bgDark}. Completely flat. Optional: 3% noise texture for depth.
+
+TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+
+MAIN TEXT (y=20-80%, left margin 7%):
+- MASSIVE HEADING: Inter Black 900, ~88-105px
+  Color: ${brand.textOnDark}
+  Text: "${h}" — words "${accentPhrase}" MUST be in ${brand.accent}
+  Line-height: 1.0, ultra-tight, letter-spacing -1px
+- BODY: "${b}" — 22px weight 400, white opacity 70%, margin-top 32px
+
+ACCENT ELEMENT:
+- Small decorative bar motif or underline in ${brand.accent} near heading
+
+FOOTER: ${footLine}
+
+QUALITY: Maximum typographic impact. Perfect rendering. Vertical 4:5.`;
+
+    } else if (mood === 'BRAND_PUNCH') {
+      const punchBg = profile === 'marca' ? brand.bgDark : brand.bgBrand;
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND: Solid ${punchBg}. Emotional pivot slide — bold, punchy, memorable.
+Optional: very subtle large geometric pattern in ${brand.accent} at 6% opacity.
+
+TOP: Small label "${funcao || 'A VIRADA'}" — 9px uppercase, color ${brand.accent}.
+
+MAIN TEXT (y=15-75%, left margin 7%):
+- CATEGORY LABEL: "${funcao}" — 14px ${brand.accent} uppercase letter-spacing 3px, margin-bottom 20px
+- MASSIVE HEADING: Inter Black 900, ~95-115px
+  Color: ${brand.textOnDark}
+  Text: "${h}" — words "${accentPhrase}" in ${brand.accent}
+  Line-height: 0.95, ultra-tight
+- BODY: "${b}" — 24px weight 400, ${brand.textOnDark} opacity 80%, margin-top 28px
+
+FOOTER: ${footLine}
+
+QUALITY: STOP-THE-SCROLL slide. Maximum visual weight. Perfect text. Vertical 4:5.`;
+
+    } else if (mood === 'TABLE_LIGHT') {
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND: ${brand.bgLight}. Clean editorial.
+
+TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+
+TEXT BLOCK (y=8-30%):
+- HEADING: Inter Black ~62px, ${brand.textOnLight}
+  "${h}" — words "${accentPhrase}" in ${brand.accent}
+- Intro: "${b}" — 20px weight 400, ${brand.textOnLight} opacity 75%
+
+COMPARISON TABLE (y=38-80%, width with 5% margins):
+- Two-column table, 3-4 rows
+- LEFT header: "SEM SISTEMA" — bg #E8E8E8, text #666666, 16px bold
+- RIGHT header: "COM ${brand.name.toUpperCase()}" — bg ${brand.accent}, text ${brand.bgDark}, 16px bold
+- Rows: neutral left, bold ${brand.accent} right
+- Content related to: "${topic}"
+- Row dividers: 1px #E0E0E0
+
+FOOTER: ${footLine}
+
+QUALITY: Clean, structured, premium data design. Vertical 4:5.`;
+
+    } else if (mood === 'CTA_LIGHT') {
+      const ctaWord = accentPhrase.toUpperCase() || brand.name.toUpperCase();
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}. FINAL SLIDE — CTA.
+
+BACKGROUND: ${brand.bgLight}. Clean white.
+
+TOP TEXT (y=8%, left 6%):
+- "${b || 'Gostou do conteúdo?'}" — 20px weight 400, ${brand.textOnLight} opacity 80%
+
+HEADLINE (y=20-42%, left 6%):
+- LARGE HEADING: Inter Black ~72px
+  Color: ${brand.textOnLight}
+  "${h}" — words "${accentPhrase}" in ${brand.accent}
+
+CTA BOX (y=50-70%, centered, width 88%):
+- Rounded rectangle border-radius 12px, bg: #ECEAE4
+- Border: 1.5px solid ${brand.accent} opacity 30%
+- Inside:
+  "Comenta a palavra abaixo:" — 15px weight 500, ${brand.textOnLight} opacity 60%
+  LARGE: "${ctaWord}" — 52px weight 900, ${brand.accent}
+  "e recebe no DM" — 14px weight 400, ${brand.textOnLight} opacity 50%
+
+BOTTOM (y=82-88%):
+- "${brand.handle}" — 13px ${brand.accent} weight 600
+
+FOOTER: ${footLine}
+
+QUALITY: Conversion-optimized. Clear hierarchy. Perfect text. Vertical 4:5.`;
+
+    } else {
+      // SPLIT_LIGHT fallback
+      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+
+${brand.aestheticDNA}
+${manualCtx}
+
+CANVAS: 1024×1536px portrait. ${slideRef}.
+
+BACKGROUND: ${brand.bgLight}. Editorial layout.
+
+TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+
+VISUAL ELEMENT (y=10-42%, centered, max 85% width):
+- ${scene || `data visualization or editorial image for "${topic}"`}
+- Clean crop, slight shadow or border-radius
+
+TEXT BLOCK (y=48-85%, left 6%):
+- HEADING: Inter Black ~70px, ${brand.textOnLight}
+  "${h}" — words "${accentPhrase}" in ${brand.accent}
+- BODY: "${b}" — 21px weight 400, ${brand.textOnLight} opacity 78%
+
+FOOTER: ${footLine}
+
+QUALITY: Editorial magazine quality. Perfect rendering. Vertical 4:5.`;
+    }
+
+    // Chamar GPT Image-1
+    const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1536', quality: 'high' }),
+    });
+
+    const imgData = await imgRes.json();
+    if (imgData.error) return res.status(500).json({ error: imgData.error.message });
+
+    const b64out = imgData.data[0].b64_json || null;
+    let   urlOut = imgData.data[0].url      || null;
+
+    // Auto-salvar b64 em disco se contentId fornecido
+    if (b64out && contentId) {
+      try {
+        const filename = `${contentId}_slide${slideNumber}_${Date.now()}.png`;
+        const filepath = path.join(IMAGES_DIR, filename);
+        fs.writeFileSync(filepath, Buffer.from(b64out, 'base64'));
+        urlOut = `${process.env.PUBLIC_URL || ''}/api/image/file/${filename}`;
+      } catch(e) { console.warn('Auto-save failed:', e.message); }
+    }
+
+    res.json({ url: urlOut, b64: b64out, mood, scene, promptUsed: prompt });
+
+  } catch(err) {
+    console.error('carousel-slide error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── Base de criativos gerados ─────────────────────────────────────────────────
-app.get('/api/content', (req, res) => {
-  const all = readJSON(GENERATED_FILE);
+// ── Base de conteúdos gerados ─────────────────────────────────────────────
+app.get('/api/content', async (req, res) => {
   const { profile, type, status } = req.query;
-  let filtered = all;
-  if (profile) filtered = filtered.filter(i => i.profile === profile);
-  if (type)    filtered = filtered.filter(i => i.type    === type);
-  if (status)  filtered = filtered.filter(i => i.status  === status);
-  res.json(filtered);
+  try {
+    let items = await loadGeneratedContent(profile);
+    if (type)   items = items.filter(i => i.type   === type);
+    if (status) items = items.filter(i => i.status === status);
+    res.json(items);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/content/save', (req, res) => {
-  const item = {
-    id: `cnt_${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    status: 'pendente',   // pendente | agendado | publicado
-    ...req.body,
-  };
+  const item = { id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente', ...req.body };
   saveGeneratedContent(item);
   res.json({ success: true, item });
 });
@@ -388,27 +700,32 @@ app.post('/api/content/save', (req, res) => {
 app.patch('/api/content/:id', (req, res) => {
   const all = readJSON(GENERATED_FILE);
   const idx = all.findIndex(i => i.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Criativo não encontrado' });
+  if (idx === -1) return res.status(404).json({ error: 'Não encontrado' });
   all[idx] = { ...all[idx], ...req.body };
   writeJSON(GENERATED_FILE, all);
+  // Sync Supabase
+  if (supabase) {
+    const updates = {};
+    if (req.body.imageUrls) updates.image_urls = req.body.imageUrls;
+    if (req.body.status)    updates.status      = req.body.status;
+    if (Object.keys(updates).length) {
+      supabase.from('generated_content').update(updates).eq('id', req.params.id)
+        .then(({ error }) => { if (error) console.error('Supabase patch:', error.message); });
+    }
+  }
   res.json({ success: true, item: all[idx] });
 });
 
-// ── Instagram — publicação imediata ──────────────────────────────────────────
+// ── Instagram — publicação ────────────────────────────────────────────────
 async function publishSingle(account, imageUrl, caption) {
   const { id: accountId, token } = account;
-  // 1. criar container
   const containerRes = await fetch(
     `https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(caption)}&access_token=${token}`,
     { method: 'POST' }
   );
   const { id: containerId, error } = await containerRes.json();
   if (error) throw new Error(error.message);
-
-  // 2. aguardar processamento
   await new Promise(r => setTimeout(r, 5000));
-
-  // 3. publicar
   const pubRes = await fetch(
     `https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${containerId}&access_token=${token}`,
     { method: 'POST' }
@@ -418,7 +735,6 @@ async function publishSingle(account, imageUrl, caption) {
 
 async function publishCarousel(account, imageUrls, caption) {
   const { id: accountId, token } = account;
-  // 1. criar item containers
   const childIds = [];
   for (const url of imageUrls) {
     const r = await fetch(
@@ -429,17 +745,13 @@ async function publishCarousel(account, imageUrls, caption) {
     if (error) throw new Error(error.message);
     childIds.push(id);
   }
-
-  // 2. container do carrossel
   const carouselRes = await fetch(
     `https://graph.facebook.com/v19.0/${accountId}/media?media_type=CAROUSEL&children=${childIds.join(',')}&caption=${encodeURIComponent(caption)}&access_token=${token}`,
     { method: 'POST' }
   );
   const { id: carouselId, error: cerr } = await carouselRes.json();
   if (cerr) throw new Error(cerr.message);
-
   await new Promise(r => setTimeout(r, 8000));
-
   const pubRes = await fetch(
     `https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${carouselId}&access_token=${token}`,
     { method: 'POST' }
@@ -450,65 +762,54 @@ async function publishCarousel(account, imageUrls, caption) {
 app.post('/api/instagram/post', async (req, res) => {
   try {
     const { imageUrl, caption, profile, contentId } = req.body;
-    const account = getAccount(profile);
-    const result = await publishSingle(account, imageUrl, caption);
+    const result = await publishSingle(getAccount(profile), imageUrl, caption);
     if (result.error) return res.status(500).json({ error: result.error.message });
     if (contentId) updateContentStatus(contentId, 'publicado', { publishedAt: new Date().toISOString(), instagramId: result.id });
     res.json({ success: true, id: result.id });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/instagram/carousel', async (req, res) => {
   try {
     const { imageUrls, caption, profile, contentId } = req.body;
-    const account = getAccount(profile);
-    const result = await publishCarousel(account, imageUrls, caption);
+    const result = await publishCarousel(getAccount(profile), imageUrls, caption);
     if (result.error) return res.status(500).json({ error: result.error.message });
     if (contentId) updateContentStatus(contentId, 'publicado', { publishedAt: new Date().toISOString(), instagramId: result.id });
     res.json({ success: true, id: result.id });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Agendamento ───────────────────────────────────────────────────────────────
+// ── Agendamento ───────────────────────────────────────────────────────────
 app.post('/api/instagram/schedule', (req, res) => {
   try {
     const { scheduledAt, contentId, ...rest } = req.body;
-    const posts = readJSON(SCHEDULED_FILE);
-    const newPost = { id: `sch_${Date.now()}`, contentId, scheduledAt, status: 'pending', ...rest };
+    const posts    = readJSON(SCHEDULED_FILE);
+    const newPost  = { id: `sch_${Date.now()}`, contentId, scheduledAt, status: 'pending', ...rest };
     posts.push(newPost);
     writeJSON(SCHEDULED_FILE, posts);
-
-    if (contentId) updateContentStatus(contentId, 'agendado', {
-      scheduledAt,
-      scheduleId: newPost.id,
-    });
-
+    if (contentId) updateContentStatus(contentId, 'agendado', { scheduledAt, scheduleId: newPost.id });
     res.json({ success: true, scheduledPost: newPost });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/api/instagram/scheduled', (req, res) => {
-  const posts = readJSON(SCHEDULED_FILE);
-  res.json(posts);
+  res.json(readJSON(SCHEDULED_FILE));
 });
 
-// ── Processador de posts agendados (roda a cada minuto) ───────────────────────
-setInterval(async () => {
-  const posts = readJSON(SCHEDULED_FILE);
-  const now = new Date();
-  let changed = false;
+app.delete('/api/instagram/scheduled/:id', (req, res) => {
+  const posts = readJSON(SCHEDULED_FILE).filter(p => p.id !== req.params.id);
+  writeJSON(SCHEDULED_FILE, posts);
+  res.json({ success: true });
+});
 
+// Processador de agendamentos (a cada minuto)
+setInterval(async () => {
+  const posts   = readJSON(SCHEDULED_FILE);
+  const now     = new Date();
+  let changed   = false;
   for (const post of posts) {
     if (post.status !== 'pending') continue;
-    const scheduled = new Date(post.scheduledAt);
-    if (scheduled > now) continue;
-
+    if (new Date(post.scheduledAt) > now) continue;
     try {
       const account = getAccount(post.profile);
       let result;
@@ -517,245 +818,153 @@ setInterval(async () => {
       } else {
         result = await publishSingle(account, post.imageUrl || post.imageUrls?.[0], post.caption);
       }
-      post.status = result.error ? 'error' : 'published';
+      post.status      = result.error ? 'error' : 'published';
       post.publishedAt = new Date().toISOString();
       post.instagramId = result.id;
       if (post.contentId) updateContentStatus(post.contentId, 'publicado', { publishedAt: post.publishedAt, instagramId: result.id });
       changed = true;
-    } catch (err) {
+    } catch(err) {
       post.status = 'error';
-      post.error = err.message;
-      changed = true;
+      post.error  = err.message;
+      changed     = true;
     }
   }
-
   if (changed) writeJSON(SCHEDULED_FILE, posts);
 }, 60_000);
 
-// ── Calendário editorial ──────────────────────────────────────────────────────
-// Sem limite de 7/semana — o utilizador configura maxPerDay (padrão 3)
+// ── Calendário editorial ──────────────────────────────────────────────────
 app.post('/api/calendar/generate', async (req, res) => {
   try {
     const { month, year, profile, postsPerDay = 2 } = req.body;
-    const manualNote = getManualText(profile);
-    const account = getAccount(profile);
+    const manualNote  = getManualText(profile);
+    const account     = getAccount(profile);
     const daysInMonth = new Date(year, month, 0).getDate();
-
-    // Gerar em blocos de 10 dias para evitar truncamento do JSON
-    const BLOCK = 10;
-    const allDays = [];
+    const BLOCK       = 10;
+    const allDays     = [];
 
     for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
       const blockEnd = Math.min(blockStart + BLOCK - 1, daysInMonth);
+      const blockPrompt = `Você é o estrategista de conteúdo criando o calendário editorial de ${account.name} (${account.handle}) para ${month}/${year}.
 
-      const blockPrompt = `Você é o estrategista de conteúdo da BrandsDecoded criando o calendário editorial de ${account.name} (${account.handle}) para ${month}/${year}.
-
-METODOLOGIA BRANDECODED — SEGUIR OBRIGATORIAMENTE:
-
-O Instagram em 2026 é uma plataforma de DESCOBERTA. Todo post deve funcionar para quem NUNCA viu o perfil.
-As métricas que importam: tempo de retenção, compartilhamentos, saves. Curtidas são secundárias.
+METODOLOGIA BRANDSDECODED — SEGUIR OBRIGATORIAMENTE:
+O Instagram em 2026 é plataforma de DESCOBERTA. Todo post deve funcionar para quem NUNCA viu o perfil.
+Métricas que importam: retenção, compartilhamentos, saves.
 
 TIPOS DE POST (usar APENAS estes):
-- "tendencia": Análise de Tendência — pega movimento cultural/mercado em alta e analisa com profundidade. É o tipo mais poderoso para alcance orgânico. Ex: mudança de comportamento da Gen Z, tendência de mercado emergente, fenômeno cultural.
-- "case": Case de Sucesso — conta a história de uma marca/pessoa/empresa explicando por que deu certo OU deu errado. Alto compartilhamento porque as pessoas querem repostar. Mencionar marcas conhecidas gera collab espontâneo.
-- "educativo": Framework ou conceito aplicado com passo a passo. Não dicas genéricas — um método específico com nome.
-- "comparacao": Antes/depois, certo/errado, velho/novo. Alto alcance, bom para saves.
-- "lista": Lista de insights, erros ou verdades sobre um tema. Fácil de consumir.
-- "prova_social": Resultado de cliente real ou conquista da marca. Bom para conversão, menor alcance orgânico.
-- "oferta": Apresentação de produto/serviço envolto em valor. Usar no máximo 1x por semana.
+- "tendencia": Análise de Tendência — movimento cultural/mercado em alta
+- "case": Case de Sucesso — história de marca/pessoa explicando o ponto de virada
+- "educativo": Framework com método específico e nome
+- "comparacao": Antes/depois, certo/errado — alto alcance
+- "lista": Lista de insights — fácil de consumir
+- "prova_social": Resultado real de cliente — bom para conversão
+- "oferta": Produto/serviço envolto em valor — máximo 1x/semana
 
 PERFIL: ${account.name} (${account.handle})
 ${manualNote ? 'DIRETRIZES DO CLIENTE:\n' + manualNote : ''}
 
-DISTRIBUIÇÃO DE TIPOS NO BLOCO (dias ${blockStart}–${blockEnd}):
-- 40% tendencia
-- 30% case
-- 15% educativo + comparacao + lista (variar entre eles)
-- 15% prova_social + oferta (nunca dois seguidos)
+DISTRIBUIÇÃO: 40% tendencia, 30% case, 15% educativo+comparacao+lista, 15% prova_social+oferta
+HORÁRIOS: 09:00, 12:00, 18:00
 
-REGRAS DE HORÁRIO E DISTRIBUIÇÃO:
-- Terça, quarta, quinta: até ${postsPerDay} posts/dia
-- Segunda, sexta: 1-2 posts
-- Sábado, domingo: 1 post máximo
-- Horários: 09:00, 12:00, 18:00 (escolher os mais adequados ao tipo)
-
-REGRA DE QUALIDADE DO TOPIC — CRÍTICO:
-O "topic" é o tema central que será desenvolvido no carrossel. Deve ser:
+REGRA CRÍTICA DO TOPIC — deve ser:
 ✅ ESPECÍFICO — nomear empresa, pessoa, fenômeno ou dado concreto
-✅ COM ÂNGULO — não só o tema, mas o ponto de vista sobre ele
-✅ PARA DESCONHECIDOS — qualquer pessoa deve querer ver mesmo sem conhecer o perfil
+✅ COM ÂNGULO — não só o tema, mas o ponto de vista
+✅ PROIBIDO: "Dicas de marketing", "Como crescer no Instagram", frases genéricas
 
-EXEMPLOS DE TOPICS QUE FUNCIONAM:
-- "Por que a Shein destruiu o varejo físico brasileiro enquanto as marcas dormiam"
-- "O método que a Nubank usou para transformar reclamação em fidelização — e o que toda empresa pode copiar"
-- "A geração Z trocou o emprego pelo PJ — e os RHs ainda não entenderam o que mudou"
-- "Como o Corinthians virou o clube mais seguido do Brasil sem gastar R$1 em influencer"
-- "O erro que quebrou a [marca conhecida] e a lição que nenhum empresário quer ouvir"
-
-EXEMPLOS DE TOPICS QUE NÃO FUNCIONAM (PROIBIDOS):
-- "Dicas de marketing digital"
-- "Como crescer no Instagram"
-- "Motivação para empreendedores"
-- "A importância do planejamento"
-- "Post sobre nossos valores"
-
-Responde APENAS com JSON válido — sem texto antes ou depois, sem truncar:
+Responde APENAS com JSON válido:
 {
   "days": [
-    {
-      "day": ${blockStart},
-      "posts": [
-        { "time": "09:00", "type": "tendencia", "topic": "tema específico com ângulo claro" }
-      ]
-    }
+    { "day": ${blockStart}, "posts": [{ "time": "09:00", "type": "tendencia", "topic": "tema específico" }] }
   ]
 }
-
-Inclui TODOS os dias de ${blockStart} a ${blockEnd}. JSON completo e válido.`;
+Inclui TODOS os dias de ${blockStart} a ${blockEnd}.`;
 
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 3000,
-          messages: [{ role: 'user', content: blockPrompt }],
-        }),
+        headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages: [{ role: 'user', content: blockPrompt }] }),
       });
-
       const blockData = await blockRes.json();
       if (blockData.error) throw new Error(blockData.error.message);
-
       let blockText = blockData.content[0].text.trim();
-      const blockMatch = blockText.match(/\{[\s\S]*\}/);
-      if (blockMatch) blockText = blockMatch[0];
-      const blockParsed = JSON.parse(blockText);
-      allDays.push(...(blockParsed.days || []));
+      const bm = blockText.match(/\{[\s\S]*\}/);
+      if (bm) blockText = bm[0];
+      allDays.push(...(JSON.parse(blockText).days || []));
     }
 
-    // Montar calendário final
-    const calendar = { calendar: allDays };
-
-    // Cruzar com criativos já gerados/agendados/publicados
+    const calendar  = { calendar: allDays };
     const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
     calendar.calendar = calendar.calendar.map(dayEntry => ({
       ...dayEntry,
       posts: (dayEntry.posts || []).map(post => {
-        const postDate = new Date(year, month - 1, dayEntry.day);
-        const dateStr  = postDate.toISOString().split('T')[0];
-        const match    = generated.find(g =>
-          g.calendarDay === dayEntry.day &&
-          g.calendarMonth === month &&
-          g.calendarYear  === year
+        const match = generated.find(g =>
+          g.calendarDay === dayEntry.day && g.calendarMonth === month && g.calendarYear === year
         );
         return {
           ...post,
-          date: dateStr,
-          contentId:   match?.id || null,
+          date:        `${year}-${String(month).padStart(2,'0')}-${String(dayEntry.day).padStart(2,'0')}`,
+          contentId:   match?.id     || null,
           status:      match?.status || 'pendente',
           scheduledAt: match?.scheduledAt || null,
         };
       }),
     }));
 
-    // Persistir calendário para sobreviver a restarts
     writeJSON(CALENDAR_FILE, { profile, month, year, ...calendar });
     if (supabase) {
       supabase.from('calendars').upsert({
-        id: `${profile}_${year}_${month}`,
-        profile, month, year,
-        data: JSON.stringify(calendar.calendar),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' }).then(({ error }) => {
-        if (error) console.error('Supabase calendar save error:', error.message);
-      });
+        id: `${profile}_${year}_${month}`, profile, month, year,
+        data: JSON.stringify(calendar.calendar), updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' }).then(({ error }) => { if (error) console.error('Supabase calendar:', error.message); });
     }
 
     res.json(calendar);
-  } catch (err) {
+  } catch(err) {
     console.error('Calendar error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── Carregar calendário guardado ─────────────────────────────────────────────
 app.get('/api/calendar/saved', async (req, res) => {
   try {
     const { profile, month, year } = req.query;
     if (supabase) {
       const { data, error } = await supabase.from('calendars')
         .select('data').eq('id', `${profile}_${year}_${month}`).single();
-      if (!error && data?.data) {
-        return res.json({ found: true, calendar: JSON.parse(data.data) });
-      }
+      if (!error && data?.data) return res.json({ found: true, calendar: JSON.parse(data.data) });
     }
-    // Fallback local
     const saved = readJSON(CALENDAR_FILE);
     if (saved?.profile === profile && String(saved.month) === String(month) && String(saved.year) === String(year)) {
       return res.json({ found: true, calendar: saved.calendar });
     }
     res.json({ found: false });
-  } catch(e) {
-    res.json({ found: false });
-  }
+  } catch(e) { res.json({ found: false }); }
 });
 
-
-// ── Gerar + Salvar carrossel na base ─────────────────────────────────────────
-// Modos:
-//   - "blocks": o utilizador cola blocos de texto prontos (ex: # Bloco 1 ... # Bloco 2)
-//               a IA organiza cada bloco em 1 slide, sem alterar o conteúdo
-//   - "topic":  o utilizador dá só um tema/tópico e a IA cria tudo do zero
-// Sem limite de slides — a IA decide quantos fazem sentido para o conteúdo
+// ── Gerar + Salvar carrossel ──────────────────────────────────────────────
 app.post('/api/carousel/generate-and-save', async (req, res) => {
   try {
     const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags, contentMachineType } = req.body;
     const manualNote = getManualText(profile);
-    const account = getAccount(profile);
-    const mode = blocks ? 'blocks' : 'topic';
+    const account    = getAccount(profile);
+    const mode       = blocks ? 'blocks' : 'topic';
 
-    // ── SYSTEM PROMPT: BrandsDecoded Methodology ──────────────────────────────
     const systemPrompt = `Você é o gerador de carrosseis da BrandsDecoded — o padrão mais alto de copy para Instagram no Brasil.
 
 PRINCÍPIOS FUNDAMENTAIS:
-1. O Instagram é uma plataforma de DESCOBERTA. Cada carrossel deve funcionar para quem NUNCA viu o perfil.
-2. Carrossel não é design. É copy. O que move o dedo para o próximo slide é a tensão narrativa, não a paleta de cores.
-3. O carrossel funciona como funil interno: capa para o desconhecido → tração → avanço → CTA.
+1. O Instagram é plataforma de DESCOBERTA. Cada carrossel funciona para quem NUNCA viu o perfil.
+2. Carrossel não é design. É copy. O que move o dedo é a tensão narrativa.
+3. Funil interno: capa para o desconhecido → tração → avanço → CTA.
 
-CONTRATO DA CAPA (slides 1 e 2) — O MAIS IMPORTANTE:
-Slide 1 (hook): 14-18 palavras. Estrutura preferencial: afirmação provocativa + dois-pontos + pergunta. Deve parar o scroll de um estranho. Ativar tensão, curiosidade, identidade ou alerta. NUNCA começar com Descubra/Saiba/Aprenda/Conheça.
-Slide 2 (sub-hook): 8-12 palavras. Aprofunda ou tensiona o slide 1. Não entrega a resolução. Funciona isoladamente. Não começa com conectivo (E, Mas, Porém, Então).
-
-PADRÕES DE HEADLINE DE ALTA PERFORMANCE:
-1. Brasil/contexto nacional — conectar à identidade ou fenômeno brasileiro
-2. Fim/Morte/Crise — mudança estrutural, colapso, transformação cultural
-3. Geracional — Gen Z, Millennials, comportamento por faixa etária
-4. Novidade — nova tendência, nova lógica, fenômeno emergente
-5. Investigando — tom jornalístico, documental, analítico
-6. Contraste — velho vs novo, status vs saúde, algoritmo vs autenticidade
-7. Nome próprio/Referência pop — marca ou fenômeno como âncora de atenção
-
-PROGRESSÃO NARRATIVA OBRIGATÓRIA:
-- Slides 1-2: CAPA — parar o scroll
-- Slides 3-4: TRAÇÃO — contextualizar a tensão, mais argumentos para continuar
-- Slides 5-7: AVANÇO — mecanismo, evidências observáveis, por que acontece
-- Slides 8-9: CONSEQUÊNCIA — implicação, o que muda, lição transferível
-- Slide final: CTA — convite específico (comentar palavra-chave, seguir, guardar)
+CONTRATO DA CAPA (slides 1 e 2):
+Slide 1 (hook): 14-18 palavras. Afirmação provocativa + dois-pontos + pergunta. NUNCA começar com Descubra/Saiba/Aprenda.
+Slide 2 (sub-hook): 8-12 palavras. Aprofunda o slide 1. Não começa com conectivo.
 
 PROIBIDO em qualquer slide:
-- Travessão (—)
-- "virou" em headline
-- "a ascensão de", "o impacto de", "não é X, é Y"
-- "e isso muda tudo", "no fim das contas", "o ponto é", "colapso silencioso"
+- Travessão (—), "virou" em headline, "a ascensão de", "colapso silencioso"
 - Frases genéricas com cara de IA
-- 2ª pessoa nos slides de desenvolvimento (só no CTA)
 - Inventar fatos, números, datas ou fontes
 
-Retornar APENAS JSON válido, sem markdown, sem texto antes ou depois.`;
+Retornar APENAS JSON válido, sem markdown.`;
 
     let prompt;
 
@@ -764,141 +973,63 @@ Retornar APENAS JSON válido, sem markdown, sem texto antes ou depois.`;
 Perfil: ${account.name} (${account.handle})
 ${manualNote ? 'Diretrizes: ' + manualNote : ''}
 
-Os blocos abaixo devem virar exatamente 1 slide cada. Preservar o texto original de cada bloco — apenas gerar o imagePrompt para cada um.
-
-BLOCOS:
+Blocos a converter (1 slide cada, preservar texto original):
 ${blocks}
 
-Retornar APENAS JSON:
+JSON:
 {
-  "title": "título interno (não aparece no post)",
-  "slideCount": <número>,
-  "slides": [
-    {
-      "slideNumber": 1,
-      "heading": "texto principal preservado do bloco",
-      "body": "texto secundário se houver (vazio se não houver)",
-      "imagePrompt": "prompt em inglês para imagem de fundo: ambiente, luz, composição, paleta de cores — alinhado ao tom do texto. Absolutamente sem texto na imagem."
-    }
-  ],
-  "caption": "legenda completa para Instagram com emojis, contexto e CTA claro",
-  "hashtags": "#hashtag1 #hashtag2 #hashtag3"
+  "title": "título interno",
+  "slideCount": <n>,
+  "slides": [{ "slideNumber": 1, "heading": "...", "body": "...", "imagePrompt": "cena em inglês, sem texto" }],
+  "caption": "legenda completa com emojis e CTA",
+  "hashtags": "#tag1 #tag2"
 }`;
-
     } else {
-      // Modo tópico com tipo BrandsDecoded
       const tipoInstrucoes = {
-        tendencia: `TIPO: ANÁLISE DE TENDÊNCIA
-Objetivo: pegar movimento cultural/mercado em alta e analisar com profundidade jornalística.
-A capa deve tratar o tema como fenômeno, não como notícia.
-Slides 3-4: por que essa tendência está acontecendo agora, evidências observáveis.
-Slides 5-7: implicações para o mercado/comportamento.
-Slides 8-9: o que isso significa para o leitor.`,
-
-        case: `TIPO: CASE DE SUCESSO
-Objetivo: contar a história de uma empresa/pessoa/marca explicando o ponto de virada.
-A capa deve tratar o case como fenômeno cultural, não como perfil empresarial.
-Slides 3-4: contexto — quem é, situação de partida.
-Slides 5-6: O PONTO DE VIRADA — a decisão que transformou tudo.
-Slides 7-8: resultados e números verificáveis.
-Slide 9: lição prática transferível para o leitor.`,
-
-        educativo: `TIPO: EDUCATIVO / FRAMEWORK
-Objetivo: ensinar um método específico com nome, não dicas genéricas.
-A capa deve prometer um aprendizado concreto e acionável.
-Slides 3-9: um passo ou princípio por slide, com exemplo concreto.`,
-
-        comparacao: `TIPO: COMPARAÇÃO / ANTES & DEPOIS
-Objetivo: mostrar contraste real entre dois cenários.
-A capa deve ativar o contraste imediatamente.
-Slides 3-5: Lado A (cenário ruim/antigo), com detalhes reais.
-Slide 6: o ponto de virada — o que separa os dois lados.
-Slides 7-9: Lado B (cenário bom/novo), com resultados concretos.`,
-
-        lista: `TIPO: LISTA VALIOSA
-Objetivo: entregar valor comprimido em itens acionáveis.
-A capa deve ter número específico e promessa de valor real.
-Slides 3-9: um item por slide, com 2-3 frases de desenvolvimento cada.`,
-
-        prova_social: `TIPO: PROVA SOCIAL
-Objetivo: mostrar resultado de cliente real ou conquista da marca.
-A capa deve focar no resultado conquistado, não na marca.
-Slide 3: situação antes — dor e frustração.
-Slides 4-6: o processo — o que foi feito.
-Slides 7-8: resultados com números verificáveis.
-Slide 9: lição universal extraível.`,
-
-        oferta: `TIPO: OFERTA
-Objetivo: apresentar produto/serviço envolto em valor real, não em pitch.
-A capa deve ativar desejo sem soar como anúncio.
-Slides 3-4: o problema que resolve.
-Slides 5-6: a solução e benefícios (não features).
-Slide 7: para quem é.
-Slide 8: prova.
-Slide 9: o que inclui.`,
+        tendencia:    `TIPO: ANÁLISE DE TENDÊNCIA. Capa como fenômeno. Slides 3-4: por que acontece agora. Slides 5-7: implicações. Slides 8-9: o que muda.`,
+        case:         `TIPO: CASE DE SUCESSO. Capa como fenômeno cultural. Slides 3-4: contexto. Slides 5-6: ponto de virada. Slides 7-8: resultados verificáveis. Slide 9: lição.`,
+        educativo:    `TIPO: EDUCATIVO/FRAMEWORK. Capa promete método específico com nome. Slides 3-9: um passo por slide com exemplo concreto.`,
+        comparacao:   `TIPO: COMPARAÇÃO. Capa activa contraste. Slides 3-5: Lado A. Slide 6: ponto de virada. Slides 7-9: Lado B.`,
+        lista:        `TIPO: LISTA. Capa com número específico e promessa real. Slides 3-9: um item por slide.`,
+        prova_social: `TIPO: PROVA SOCIAL. Capa foca no resultado. Slide 3: antes. Slides 4-6: processo. Slides 7-8: números. Slide 9: lição.`,
+        oferta:       `TIPO: OFERTA. Capa activa desejo sem soar como anúncio. Slides 3-4: problema. Slides 5-6: solução. Slide 7: para quem. Slide 8: prova. Slide 9: o que inclui.`,
       };
 
-      const instrucaoTipo = contentMachineType && tipoInstrucoes[contentMachineType]
-        ? tipoInstrucoes[contentMachineType]
-        : tipoInstrucoes.tendencia;
-
       prompt = `Perfil: ${account.name} (${account.handle})
-${manualNote ? 'Diretrizes do cliente: ' + manualNote + '\n' : ''}
+${manualNote ? 'Diretrizes: ' + manualNote + '\n' : ''}
 Tema central: "${topic}"
 
-${instrucaoTipo}
+${contentMachineType && tipoInstrucoes[contentMachineType] ? tipoInstrucoes[contentMachineType] : tipoInstrucoes.tendencia}
 
-PROCESSO INTERNO ANTES DE GERAR OS SLIDES:
-1. TRIAGEM: identificar a fricção central do tema (tensão real, não só resumo), o ângulo narrativo mais forte, evidências observáveis.
-2. HEADLINE: gerar internamente a capa mais forte possível com o tema. Verificar: 14-18 palavras, padrão de alta performance usado, checklist de interrupção/relevância/clareza/tensão.
-3. ESPINHA DORSAL: definir internamente hook (slides 3-4), mecanismo (slides 5-6), prova (slides 7-8), aplicação (slide 9), CTA (slide 10).
-4. RENDER: gerar os slides com progressão — cada um abre micro-tensão que o próximo resolve parcialmente.
+PROCESSO INTERNO: 1) Identificar fricção central 2) Gerar headline mais forte (14-18 palavras) 3) Definir espinha dorsal 4) Render com progressão narrativa.
 
-Total de slides: 10 (seguir a estrutura de 18 textos em 10-15 slides).
-Slide 1 + Slide 2 = capa (hook 14-18 palavras + sub-hook 8-12 palavras).
+Total: 10 slides.
 
-Retornar APENAS JSON:
+JSON:
 {
   "title": "título interno",
   "slideCount": 10,
   "slides": [
-    { "slideNumber": 1, "heading": "hook 14-18 palavras", "body": "", "imagePrompt": "prompt em inglês para imagem de fundo, sem texto na imagem" },
-    { "slideNumber": 2, "heading": "sub-hook 8-12 palavras", "body": "", "imagePrompt": "..." },
-    { "slideNumber": 3, "heading": "título da secção 11-15 palavras", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
-    { "slideNumber": 4, "heading": "", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
-    { "slideNumber": 5, "heading": "título da secção 11-15 palavras", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
-    { "slideNumber": 6, "heading": "", "body": "parágrafo curto 22-26 palavras", "imagePrompt": "..." },
-    { "slideNumber": 7, "heading": "título da secção 11-15 palavras", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
-    { "slideNumber": 8, "heading": "", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
-    { "slideNumber": 9, "heading": "", "body": "fechamento 26-30 palavras", "imagePrompt": "..." },
-    { "slideNumber": 10, "heading": "CTA específico com palavra-chave para comentar", "body": "", "imagePrompt": "..." }
+    { "slideNumber": 1, "heading": "hook 14-18 palavras", "body": "", "imagePrompt": "cena em inglês" },
+    { "slideNumber": 2, "heading": "sub-hook 8-12 palavras", "body": "", "imagePrompt": "..." }
   ],
-  "caption": "legenda completa com emojis, contexto e CTA claro",
+  "caption": "legenda completa com emojis, contexto e CTA",
   "hashtags": "#hashtag1 #hashtag2 #hashtag3"
 }`;
     }
 
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 8192,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8192, system: systemPrompt, messages: [{ role: 'user', content: prompt }] }),
     });
 
     const d = await r.json();
     if (d.error) return res.status(500).json({ error: d.error.message });
 
     let text = d.content[0].text.trim();
-    const matchJson = text.match(/\{[\s\S]*\}/);
-    if (matchJson) text = matchJson[0];
+    const mj = text.match(/\{[\s\S]*\}/);
+    if (mj) text = mj[0];
     const carouselData = JSON.parse(text);
 
     const item = saveGeneratedContent({
@@ -906,36 +1037,30 @@ Retornar APENAS JSON:
       createdAt: new Date().toISOString(),
       status: 'pendente',
       type: 'carrossel',
-      mode,
-      profile,
+      mode, profile,
       topic: topic || `Carrossel ${carouselData.slideCount} slides`,
       caption: caption || carouselData.caption,
       hashtags: hashtags || carouselData.hashtags,
       contentMachineType: contentMachineType || null,
       carouselData,
-      calendarDay: calendarDay || null,
+      calendarDay:   calendarDay   || null,
       calendarMonth: calendarMonth || null,
-      calendarYear: calendarYear || null,
+      calendarYear:  calendarYear  || null,
+      imageUrls: [],
     });
 
     res.json({ success: true, contentId: item.id, ...carouselData });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-
-// ── Ficheiros estáticos (SEMPRE depois das rotas /api/*) ─────────────────────
-// Se o static vier antes, o Express serve index.html para rotas /api/* não encontradas
-// causando "Unexpected token '<'" ao tentar fazer JSON.parse do HTML
-// ── Content Machine — geração de copy via GPT-4o (BrandsDecoded) ─────────────
+// ── Content Machine ───────────────────────────────────────────────────────
 app.post('/api/content-machine/generate', async (req, res) => {
   try {
     const { tipo, tema, profile } = req.body;
-    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema são obrigatórios.' });
+    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema.' });
 
     const manualNote = getManualText(profile);
-    const account = getAccount(profile);
+    const account    = getAccount(profile);
 
     const tipoLabels = {
       tendencia:'Análise de Tendência', case:'Case de Sucesso',
@@ -943,85 +1068,54 @@ app.post('/api/content-machine/generate', async (req, res) => {
       lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta', dump:'Dump / Bastidores',
     };
 
-    const systemPrompt = `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded, combinando o Content Machine 5.4 e o Headline Generator.
-
-MISSÃO: gerar carrosseis com headlines que capturam atenção no feed, progressão narrativa coesa entre slides e copy que não parece produzida por IA.
+    const systemPrompt = `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded.
 
 REGRAS GLOBAIS:
-- Nunca inventar fatos, números, datas, locais ou fontes.
+- Nunca inventar fatos, números, datas ou fontes.
 - Proibido travessão (—) em qualquer saída.
-- Proibido em headline: "quando X vira Y", "a ascensão de", "o impacto de", "não é X, é Y", "virou".
-- Proibido como abertura: "Descubra", "Saiba", "Conheça", "Aprenda".
-- Proibido AI slop: frases genéricas, jargão corporativo, abstrações vazias, "e isso muda tudo", "no fim das contas", "o ponto é", "colapso silencioso", "menos X, mais Y".
+- Proibido em headline: "quando X vira Y", "a ascensão de", "virou".
+- Proibido como abertura: "Descubra", "Saiba", "Conheça".
 - Sem 2ª pessoa nos slides de desenvolvimento. Apenas no CTA.
-- Sem bullets dentro dos textos dos slides.
 - Sempre em português do Brasil.
-- Apenas fatos verificáveis e observáveis.
 
 CONTRATO DA CAPA:
-Slide 1 (hook): 14-18 palavras. Estrutura: afirmação provocativa + dois-pontos + pergunta. Abrir tensão, não resolver. Funcionar isoladamente.
-Slide 2 (sub-hook): 8-12 palavras. Tensionar ou concretizar o slide 1. Não entregar resolução. Não começar com conectivo (E, Mas, Porém, Então).
-
-PADRÕES DE ALTA PERFORMANCE (priorizar quando o tema permitir):
-1. Brasil/contexto nacional, 2. Fim/Morte/Crise, 3. Geracional, 4. Novidade,
-5. Investigando (tom jornalístico), 6. Contraste/Antítese, 7. Pergunta Geracional, 8. Nome próprio/Referência pop
-
-GATILHOS EMOCIONAIS: ativar pelo menos 2 em simultâneo: nostalgia, medo/alerta, indignação, identidade, curiosidade, aspiração.
-
-EXEMPLOS ÂNCORA (referência de forma, não copiar):
-- A Morte do Gosto Pessoal: Como a Dopamina Digital Nos Tornou Indiferentes
-- Por que a Gen Z Parou de Vestir a Camisa e Começou a Tratar Emprego Como Contrato
-- Investigando o Grupo de Pais que Está Criando Seus Filhos com Telefone Fixo
-- O fim do complexo de vira-lata: por que a estética brasileira virou a nova referência global?
+Slide 1 (hook): 14-18 palavras. Afirmação provocativa + dois-pontos + pergunta.
+Slide 2 (sub-hook): 8-12 palavras. Tensionar o slide 1. Não começa com conectivo.
 
 ESTRUTURA DE 18 TEXTOS EM 10-13 SLIDES:
-Os 18 textos são unidades de copy — não são 18 slides. Múltiplos textos podem ocupar o mesmo slide.
-textos 1-2 = capa (sempre no slide 1, juntos)
-textos 3,7,11,14 = títulos de secção (11-15 palavras)
+textos 1-2 = capa | textos 3,7,11,14 = títulos de secção (11-15 palavras)
 textos 4,5,8,9,12,13,15,16 = parágrafos (25-32 palavras)
 textos 6,10 = parágrafos curtos de transição (22-26 palavras)
-texto 17 = fechamento real (26-30 palavras)
+texto 17 = fechamento (26-30 palavras)
 texto 18 = assinatura fixa
 
-ASSINATURA FIXA (texto 18 — sempre exatamente assim):
+ASSINATURA FIXA (texto 18):
 Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente "CASE" que nossa equipe te chama.
 
-PROGRESSÃO NARRATIVA:
-Textos 1-2: CAPA. Textos 3-5: TRAÇÃO. Textos 6-10: AVANÇO/MECANISMO. Textos 11-16: CONSEQUÊNCIA/APLICAÇÃO. Texto 17: FECHAMENTO. Texto 18: ASSINATURA.
-Cada texto abre micro-tensão que o próximo resolve parcialmente. Nunca repetir ideia do texto anterior.
-
-RETORNAR APENAS JSON VÁLIDO, sem markdown, sem texto antes ou depois.`;
+Retornar APENAS JSON válido, sem markdown.`;
 
     const tipoInstrucoes = {
-      tendencia:`TIPO: ANÁLISE DE TENDÊNCIA. Capa trata o movimento como fenômeno. Slides 3-4: por que acontece agora. Slides 5-7: implicações. Slides 8-9: o que muda para o leitor.`,
-      case:`TIPO: CASE DE SUCESSO. Capa trata como fenômeno cultural. Slides 3-4: contexto e ponto de partida. Slides 5-6: o ponto de virada. Slides 7-8: resultados verificáveis. Slide 9: lição transferível.`,
-      educativo:`TIPO: EDUCATIVO/FRAMEWORK. Capa promete método específico com nome. Slides 3-9: um passo ou princípio por slide com exemplo concreto.`,
-      comparacao:`TIPO: COMPARAÇÃO. Capa activa contraste. Slides 3-5: Lado A (cenário ruim). Slide 6: ponto de virada. Slides 7-9: Lado B (cenário bom com resultados).`,
-      lista:`TIPO: LISTA VALIOSA. Capa com número específico e promessa real. Slides 3-9: um item por slide com 2-3 frases de desenvolvimento.`,
-      prova_social:`TIPO: PROVA SOCIAL. Capa foca no resultado. Slide 3: situação antes. Slides 4-6: processo. Slides 7-8: resultados com números. Slide 9: lição universal.`,
-      oferta:`TIPO: OFERTA. Capa activa desejo sem soar como anúncio. Slides 3-4: problema. Slides 5-6: solução/benefícios. Slide 7: para quem é. Slide 8: prova. Slide 9: o que inclui.`,
-      dump:`TIPO: DUMP/BASTIDORES. Capa humaniza e gera curiosidade. Slides 3-7: momentos com narrativa. Slide 8: reflexão. Slide 9: conexão com missão.`,
+      tendencia:`TIPO: ANÁLISE DE TENDÊNCIA. Capa trata como fenômeno. Slides 3-4: por que acontece. Slides 5-7: implicações. Slides 8-9: o que muda.`,
+      case:`TIPO: CASE DE SUCESSO. Capa como fenômeno cultural. Slides 3-4: contexto. Slides 5-6: ponto de virada. Slides 7-8: resultados. Slide 9: lição.`,
+      educativo:`TIPO: EDUCATIVO/FRAMEWORK. Capa promete método com nome. Slides 3-9: um passo por slide com exemplo.`,
+      comparacao:`TIPO: COMPARAÇÃO. Capa activa contraste. Slides 3-5: Lado A. Slide 6: virada. Slides 7-9: Lado B.`,
+      lista:`TIPO: LISTA. Capa com número e promessa. Slides 3-9: um item por slide.`,
+      prova_social:`TIPO: PROVA SOCIAL. Capa foca resultado. Slide 3: antes. Slides 4-6: processo. Slides 7-8: números. Slide 9: lição.`,
+      oferta:`TIPO: OFERTA. Capa activa desejo. Slides 3-4: problema. Slides 5-6: solução. Slide 7: para quem. Slide 8: prova. Slide 9: o que inclui.`,
+      dump:`TIPO: DUMP/BASTIDORES. Capa humaniza. Slides 3-7: momentos com narrativa. Slide 8: reflexão. Slide 9: conexão com missão.`,
     };
 
-    const userPrompt = `Tipo: ${tipoLabels[tipo]||tipo}
+    const userPrompt = `Tipo: ${tipoLabels[tipo] || tipo}
 Perfil: ${account.name} (${account.handle})
 ${manualNote ? `Diretrizes: ${manualNote}` : ''}
 Tema: "${tema}"
 
-${tipoInstrucoes[tipo]||tipoInstrucoes.tendencia}
+${tipoInstrucoes[tipo] || tipoInstrucoes.tendencia}
 
-PROCESSO INTERNO (executar antes de gerar o JSON):
-1. TRIAGEM: identificar fricção central, ângulo narrativo dominante, evidências observáveis A/B/C.
-2. HEADLINE: gerar internamente a headline mais forte. Verificar padrão usado, contagem de palavras (14-18 / 8-12), checklist interrupção/relevância/clareza/tensão. Se morno, reescrever.
-3. ESPINHA DORSAL: hook (textos 3-5), mecanismo (textos 6-10), aplicação (textos 11-16), fechamento (texto 17).
-4. RENDER: gerar os 18 textos agrupados em slides.
-
-REGRA DO JSON: cada objeto em "slides" = 1 imagem real. Cada slide tem "textos" com 1 ou 2 entradas. Slide 1 sempre com textos 1+2. Total de slides: 10-13. Total de textos: exatamente 18.
-
-Retornar APENAS este JSON:
+JSON:
 {
   "tipo": "${tipo}",
-  "tipo_label": "${tipoLabels[tipo]||tipo}",
+  "tipo_label": "${tipoLabels[tipo] || tipo}",
   "tema": "${tema}",
   "profile": "${profile}",
   "slides": [
@@ -1033,54 +1127,18 @@ Retornar APENAS este JSON:
         { "posicao": 3, "tipo": "titulo",    "texto": "..." },
         { "posicao": 4, "tipo": "paragrafo", "texto": "..." }
     ]},
-    { "slide": 3, "funcao": "TRAÇÃO", "textos": [
-        { "posicao": 5, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 4, "funcao": "TRANSIÇÃO", "textos": [
-        { "posicao": 6, "tipo": "curto", "texto": "..." }
-    ]},
-    { "slide": 5, "funcao": "AVANÇO", "textos": [
-        { "posicao": 7, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 8, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 6, "funcao": "AVANÇO", "textos": [
-        { "posicao": 9, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 7, "funcao": "TRANSIÇÃO", "textos": [
-        { "posicao": 10, "tipo": "curto", "texto": "..." }
-    ]},
-    { "slide": 8, "funcao": "CONSEQUÊNCIA", "textos": [
-        { "posicao": 11, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 12, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 9, "funcao": "CONSEQUÊNCIA", "textos": [
-        { "posicao": 13, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 10, "funcao": "APLICAÇÃO", "textos": [
-        { "posicao": 14, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 15, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 11, "funcao": "APLICAÇÃO", "textos": [
-        { "posicao": 16, "tipo": "paragrafo", "texto": "..." }
-    ]},
-    { "slide": 12, "funcao": "FECHAMENTO", "textos": [
-        { "posicao": 17, "tipo": "fechamento", "texto": "..." }
-    ]},
     { "slide": 13, "funcao": "ASSINATURA", "textos": [
-        { "posicao": 18, "tipo": "assinatura", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \"CASE\" que nossa equipe te chama." }
+        { "posicao": 18, "tipo": "assinatura", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \\"CASE\\" que nossa equipe te chama." }
     ]}
   ]
 }`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'gpt-4o', temperature: 1.0, max_tokens: 4500,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user',   content: userPrompt   },
-        ],
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
       }),
     });
 
@@ -1088,16 +1146,14 @@ Retornar APENAS este JSON:
     if (data.error) return res.status(500).json({ error: data.error.message });
 
     let text = data.choices[0].message.content.trim();
-    text = text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim();
+    text = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
     const parsed = JSON.parse(text);
 
-    // Normalizar slides para heading/body (compatibilidade biblioteca)
-    const slidesNorm = (parsed.slides||[]).map(s => {
-      const txs = s.textos||[];
+    const slidesNorm = (parsed.slides || []).map(s => {
+      const txs = s.textos || [];
       return {
-        slideNumber: s.slide, funcao: s.funcao||'',
-        heading: txs[0]?.texto||'', body: txs[1]?.texto||'',
-        tipoTexto1: txs[0]?.tipo||'', tipoTexto2: txs[1]?.tipo||'',
+        slideNumber: s.slide, funcao: s.funcao || '',
+        heading: txs[0]?.texto || '', body: txs[1]?.texto || '',
         textos: txs,
       };
     });
@@ -1107,226 +1163,32 @@ Retornar APENAS este JSON:
       createdAt: new Date().toISOString(),
       status: 'pendente', type: 'carrossel',
       contentMachineType: tipo,
-      contentMachineTypeLabel: tipoLabels[tipo]||tipo,
-      profile, topic: tema,
-      carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption:'', hashtags:'' },
+      contentMachineTypeLabel: tipoLabels[tipo] || tipo,
+      profile, topic: tema, imageUrls: [],
+      carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption: '', hashtags: '' },
     });
 
-    res.json({ success:true, contentId:item.id, ...parsed, slidesNormalizados:slidesNorm });
-  } catch (err) {
+    res.json({ success: true, contentId: item.id, ...parsed, slidesNormalizados: slidesNorm });
+  } catch(err) {
     console.error('Content Machine error:', err);
     res.status(500).json({ error: err.message });
   }
 });
-// ═══════════════════════════════════════════════════════════════════
-// ADICIONAR AO server.js — antes de app.use(express.static('public'))
-// Substituir também o endpoint /api/image existente pela versão abaixo
-// ═══════════════════════════════════════════════════════════════════
 
-// ── Geração de imagem base (mantido para compatibilidade) ─────────
-app.post('/api/image', async (req, res) => {
-  try {
-    const { prompt, size = '1024x1024' } = req.body;
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size, quality: 'high' }),
-    });
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-    res.json({ url: data.data[0].url, b64: data.data[0].b64_json });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+// ── Health check ──────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', ts: new Date().toISOString() });
 });
 
-// ── Geração de slide de carrossel com texto integrado e identidade visual ──
-// Este é o endpoint principal — chamado para cada slide do carrossel
-app.post('/api/image/carousel-slide', async (req, res) => {
-  try {
-    const {
-      heading = '',
-      body = '',
-      slideNumber = 1,
-      totalSlides = 10,
-      funcao = '',        // CAPA, TRAÇÃO, AVANÇO, CONSEQUÊNCIA, CTA, etc.
-      topic = '',         // tema geral do carrossel
-      profile = 'marca',
-      imagePromptHint = '', // sugestão gerada pelo Claude na criação dos slides
-    } = req.body;
-
-    // ── 1. Determinar estilo visual por função do slide ───────────────
-    const estilosPorFuncao = {
-      CAPA: {
-        layout: 'Full-bleed dramatic hero layout. Heading text MASSIVE, centered, taking 60% of the frame. Intense cinematic background with deep shadows and dramatic lighting. Magenta accent line or glow beneath the heading.',
-        bg: 'Cinematic, high-contrast, moody. Could be abstract light explosion, ultra-close texture, silhouette against gradient, or dramatic urban scene — chosen to match the topic.',
-        textSize: 'EXTRA LARGE bold heading, maximum impact, white with slight magenta glow or outline for contrast.',
-      },
-      'TRAÇÃO': {
-        layout: 'Editorial magazine layout. Heading bold at top third. Body text in smaller weight below. Background scene supports the concept with 50% dark overlay.',
-        bg: 'Dynamic documentary-style photograph or dramatic illustration matching the topic. Slightly blurred for text legibility.',
-        textSize: 'Large bold heading, medium body text, both white, well-spaced.',
-      },
-      'AVANÇO': {
-        layout: 'Split composition. Strong visual element on one side, text block on the other or overlaid with glassmorphism card. Clean, informative.',
-        bg: 'Contextual scene or data-driven abstract visualization related to the topic.',
-        textSize: 'Bold heading, clear readable body text.',
-      },
-      'TRANSIÇÃO': {
-        layout: 'Minimalist, breathing room. Short punchy text centered with wide margins. Bold accent color element.',
-        bg: 'Abstract gradient, geometric shapes, or texture using brand colors.',
-        textSize: 'Medium-large text, impactful, isolated.',
-      },
-      'CONSEQUÊNCIA': {
-        layout: 'Reveal-style layout. Text positioned as if it\'s the conclusion of something. Could use bold number or stat as hero element.',
-        bg: 'Documentary-style real photograph or editorial composite.',
-        textSize: 'Confident bold text, clear hierarchy.',
-      },
-      'APLICAÇÃO': {
-        layout: 'Actionable, direct layout. Numbered or structured text presentation. Clean grid feel.',
-        bg: 'Professional, aspirational setting related to the action being taken.',
-        textSize: 'Clear structured text, good contrast.',
-      },
-      'FECHAMENTO': {
-        layout: 'Emotional, warm closing layout. Text centered with generous breathing room. Soft but impactful.',
-        bg: 'Aspirational, hopeful visual — sunrise, achievement moment, human connection.',
-        textSize: 'Medium bold text, warm feel.',
-      },
-      'ASSINATURA': {
-        layout: 'CTA slide. Bold call-to-action text. Clear visual hierarchy. Brand-forward design.',
-        bg: 'Brand-colored gradient or strong brand visual. Magenta and purple dominant.',
-        textSize: 'Large CTA text, high contrast, action-driving.',
-      },
-    };
-
-    const estilo = estilosPorFuncao[funcao] || estilosPorFuncao['TRAÇÃO'];
-
-    // ── 2. Montar o prompt visual do contexto ─────────────────────────
-    // Usar Claude para gerar a cena visual ideal para o tema + slide
-    const contextPrompt = `You are a world-class Instagram carousel art director. 
-Given this carousel topic and slide content, describe in ONE sentence (max 20 words) the perfect photographic or illustrative background scene for this slide. 
-Be SPECIFIC and CINEMATIC. Mention concrete visual elements, lighting style, and mood.
-NO text descriptions — only the visual scene.
-
-Carousel topic: "${topic}"
-Slide function: ${funcao} (slide ${slideNumber} of ${totalSlides})
-Slide heading: "${heading}"
-${body ? `Slide body: "${body}"` : ''}
-${imagePromptHint ? `Visual hint: "${imagePromptHint}"` : ''}
-
-Respond with ONLY the scene description, in English, no quotes, no explanation.`;
-
-    let visualScene = imagePromptHint || 'dramatic cinematic scene with deep shadows and dynamic lighting';
-    
-    try {
-      const sceneRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001', // rápido e barato para esta tarefa
-          max_tokens: 100,
-          messages: [{ role: 'user', content: contextPrompt }],
-        }),
-      });
-      const sceneData = await sceneRes.json();
-      if (sceneData.content?.[0]?.text) {
-        visualScene = sceneData.content[0].text.trim();
-      }
-    } catch (e) {
-      console.warn('Scene generation fallback:', e.message);
-    }
-
-    // ── 3. Texto do slide formatado para o prompt ─────────────────────
-    const headingClean = heading.replace(/["""]/g, '"').trim();
-    const bodyClean = body.replace(/["""]/g, '"').trim();
-    
-    // Truncar heading se muito longo para o GPT renderizar bem
-    const headingForPrompt = headingClean.length > 80 
-      ? headingClean.slice(0, 77) + '...' 
-      : headingClean;
-
-    // ── 4. Montar o prompt final para o GPT Image-1 ───────────────────
-    const isCapa = funcao === 'CAPA' || slideNumber === 1;
-    const isCTA = funcao === 'ASSINATURA' || funcao === 'FECHAMENTO';
-
-    const brandBlock = `Brand identity: deep purple #3B0F4C and magenta/hot pink #E4007C. Dark, bold, premium feel.`;
-
-    const layoutBlock = estilo.layout;
-    const bgBlock = `Background: ${visualScene}. ${estilo.bg} Dark overlay (50-70% opacity) to ensure text legibility.`;
-
-    const textBlock = isCopa => {
-      if (isCopa) {
-        return `OVERLAY TEXT — render this text directly on the image in large bold white typography:
-Heading (VERY LARGE, bold, white, centered): "${headingForPrompt}"
-${bodyClean ? `Subtext (smaller, white, below heading): "${bodyClean}"` : ''}`;
-      }
-      return `OVERLAY TEXT — render this text directly on the image:
-${headingForPrompt ? `Bold heading (large, white, high contrast): "${headingForPrompt}"` : ''}
-${bodyClean ? `Body text (medium, white or light gray, readable): "${bodyClean}"` : ''}`;
-    };
-
-    const qualityBlock = `Style: scroll-stopping Instagram carousel slide. Editorial magazine quality. ${estilo.textSize} 
-No watermarks. No lorem ipsum. No placeholder text. Aspect ratio 4:5 vertical (portrait).
-The text must be SHARP, READABLE, and PERFECTLY RENDERED — this is critical.`;
-
-    const slideInfoBlock = isCTA 
-      ? `This is the final CTA slide. Make it feel like a strong conclusion and invitation to act.`
-      : `This is slide ${slideNumber} of ${totalSlides}.`;
-
-    const fullPrompt = [
-      `Instagram carousel slide design.`,
-      brandBlock,
-      layoutBlock,
-      bgBlock,
-      textBlock(isCapa),
-      qualityBlock,
-      slideInfoBlock,
-    ].join('\n');
-
-    // ── 5. Chamar GPT Image-1 ─────────────────────────────────────────
-    const imageRes = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: fullPrompt,
-        n: 1,
-        size: '1024x1536', // 2:3 vertical — melhor para Instagram carrossel
-        quality: 'high',
-      }),
-    });
-
-    const imageData = await imageRes.json();
-    if (imageData.error) return res.status(500).json({ error: imageData.error.message });
-
-    res.json({
-      url: imageData.data[0].url || null,
-      b64: imageData.data[0].b64_json || null,
-      promptUsed: fullPrompt, // útil para debug
-      visualScene,
-    });
-
-  } catch (err) {
-    console.error('carousel-slide image error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
+// ── Ficheiros estáticos (SEMPRE depois das rotas /api/*) ──────────────────
 app.use(express.static('public'));
 
-// Rotas /api/* não encontradas → 404 JSON (nunca devolver index.html para API)
 app.use('/api', (req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
 });
-// SPA catch-all
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo na porta ${PORT}`));
