@@ -928,6 +928,198 @@ Retornar APENAS JSON:
 // ── Ficheiros estáticos (SEMPRE depois das rotas /api/*) ─────────────────────
 // Se o static vier antes, o Express serve index.html para rotas /api/* não encontradas
 // causando "Unexpected token '<'" ao tentar fazer JSON.parse do HTML
+// ── Content Machine — geração de copy via GPT-4o (BrandsDecoded) ─────────────
+app.post('/api/content-machine/generate', async (req, res) => {
+  try {
+    const { tipo, tema, profile } = req.body;
+    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema são obrigatórios.' });
+
+    const manualNote = getManualText(profile);
+    const account = getAccount(profile);
+
+    const tipoLabels = {
+      tendencia:'Análise de Tendência', case:'Case de Sucesso',
+      educativo:'Educativo / Framework', comparacao:'Comparação / Antes & Depois',
+      lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta', dump:'Dump / Bastidores',
+    };
+
+    const systemPrompt = `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded, combinando o Content Machine 5.4 e o Headline Generator.
+
+MISSÃO: gerar carrosseis com headlines que capturam atenção no feed, progressão narrativa coesa entre slides e copy que não parece produzida por IA.
+
+REGRAS GLOBAIS:
+- Nunca inventar fatos, números, datas, locais ou fontes.
+- Proibido travessão (—) em qualquer saída.
+- Proibido em headline: "quando X vira Y", "a ascensão de", "o impacto de", "não é X, é Y", "virou".
+- Proibido como abertura: "Descubra", "Saiba", "Conheça", "Aprenda".
+- Proibido AI slop: frases genéricas, jargão corporativo, abstrações vazias, "e isso muda tudo", "no fim das contas", "o ponto é", "colapso silencioso", "menos X, mais Y".
+- Sem 2ª pessoa nos slides de desenvolvimento. Apenas no CTA.
+- Sem bullets dentro dos textos dos slides.
+- Sempre em português do Brasil.
+- Apenas fatos verificáveis e observáveis.
+
+CONTRATO DA CAPA:
+Slide 1 (hook): 14-18 palavras. Estrutura: afirmação provocativa + dois-pontos + pergunta. Abrir tensão, não resolver. Funcionar isoladamente.
+Slide 2 (sub-hook): 8-12 palavras. Tensionar ou concretizar o slide 1. Não entregar resolução. Não começar com conectivo (E, Mas, Porém, Então).
+
+PADRÕES DE ALTA PERFORMANCE (priorizar quando o tema permitir):
+1. Brasil/contexto nacional, 2. Fim/Morte/Crise, 3. Geracional, 4. Novidade,
+5. Investigando (tom jornalístico), 6. Contraste/Antítese, 7. Pergunta Geracional, 8. Nome próprio/Referência pop
+
+GATILHOS EMOCIONAIS: ativar pelo menos 2 em simultâneo: nostalgia, medo/alerta, indignação, identidade, curiosidade, aspiração.
+
+EXEMPLOS ÂNCORA (referência de forma, não copiar):
+- A Morte do Gosto Pessoal: Como a Dopamina Digital Nos Tornou Indiferentes
+- Por que a Gen Z Parou de Vestir a Camisa e Começou a Tratar Emprego Como Contrato
+- Investigando o Grupo de Pais que Está Criando Seus Filhos com Telefone Fixo
+- O fim do complexo de vira-lata: por que a estética brasileira virou a nova referência global?
+
+ESTRUTURA DE 18 TEXTOS EM 10-13 SLIDES:
+Os 18 textos são unidades de copy — não são 18 slides. Múltiplos textos podem ocupar o mesmo slide.
+textos 1-2 = capa (sempre no slide 1, juntos)
+textos 3,7,11,14 = títulos de secção (11-15 palavras)
+textos 4,5,8,9,12,13,15,16 = parágrafos (25-32 palavras)
+textos 6,10 = parágrafos curtos de transição (22-26 palavras)
+texto 17 = fechamento real (26-30 palavras)
+texto 18 = assinatura fixa
+
+ASSINATURA FIXA (texto 18 — sempre exatamente assim):
+Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente "CASE" que nossa equipe te chama.
+
+PROGRESSÃO NARRATIVA:
+Textos 1-2: CAPA. Textos 3-5: TRAÇÃO. Textos 6-10: AVANÇO/MECANISMO. Textos 11-16: CONSEQUÊNCIA/APLICAÇÃO. Texto 17: FECHAMENTO. Texto 18: ASSINATURA.
+Cada texto abre micro-tensão que o próximo resolve parcialmente. Nunca repetir ideia do texto anterior.
+
+RETORNAR APENAS JSON VÁLIDO, sem markdown, sem texto antes ou depois.`;
+
+    const tipoInstrucoes = {
+      tendencia:`TIPO: ANÁLISE DE TENDÊNCIA. Capa trata o movimento como fenômeno. Slides 3-4: por que acontece agora. Slides 5-7: implicações. Slides 8-9: o que muda para o leitor.`,
+      case:`TIPO: CASE DE SUCESSO. Capa trata como fenômeno cultural. Slides 3-4: contexto e ponto de partida. Slides 5-6: o ponto de virada. Slides 7-8: resultados verificáveis. Slide 9: lição transferível.`,
+      educativo:`TIPO: EDUCATIVO/FRAMEWORK. Capa promete método específico com nome. Slides 3-9: um passo ou princípio por slide com exemplo concreto.`,
+      comparacao:`TIPO: COMPARAÇÃO. Capa activa contraste. Slides 3-5: Lado A (cenário ruim). Slide 6: ponto de virada. Slides 7-9: Lado B (cenário bom com resultados).`,
+      lista:`TIPO: LISTA VALIOSA. Capa com número específico e promessa real. Slides 3-9: um item por slide com 2-3 frases de desenvolvimento.`,
+      prova_social:`TIPO: PROVA SOCIAL. Capa foca no resultado. Slide 3: situação antes. Slides 4-6: processo. Slides 7-8: resultados com números. Slide 9: lição universal.`,
+      oferta:`TIPO: OFERTA. Capa activa desejo sem soar como anúncio. Slides 3-4: problema. Slides 5-6: solução/benefícios. Slide 7: para quem é. Slide 8: prova. Slide 9: o que inclui.`,
+      dump:`TIPO: DUMP/BASTIDORES. Capa humaniza e gera curiosidade. Slides 3-7: momentos com narrativa. Slide 8: reflexão. Slide 9: conexão com missão.`,
+    };
+
+    const userPrompt = `Tipo: ${tipoLabels[tipo]||tipo}
+Perfil: ${account.name} (${account.handle})
+${manualNote ? 'Diretrizes: ' + manualNote + '
+' : ''}
+Tema: "${tema}"
+
+${tipoInstrucoes[tipo]||tipoInstrucoes.tendencia}
+
+PROCESSO INTERNO (executar antes de gerar o JSON):
+1. TRIAGEM: identificar fricção central, ângulo narrativo dominante, evidências observáveis A/B/C.
+2. HEADLINE: gerar internamente a headline mais forte. Verificar padrão usado, contagem de palavras (14-18 / 8-12), checklist interrupção/relevância/clareza/tensão. Se morno, reescrever.
+3. ESPINHA DORSAL: hook (textos 3-5), mecanismo (textos 6-10), aplicação (textos 11-16), fechamento (texto 17).
+4. RENDER: gerar os 18 textos agrupados em slides.
+
+REGRA DO JSON: cada objeto em "slides" = 1 imagem real. Cada slide tem "textos" com 1 ou 2 entradas. Slide 1 sempre com textos 1+2. Total de slides: 10-13. Total de textos: exatamente 18.
+
+Retornar APENAS este JSON:
+{
+  "tipo": "${tipo}",
+  "tipo_label": "${tipoLabels[tipo]||tipo}",
+  "tema": "${tema}",
+  "profile": "${profile}",
+  "slides": [
+    { "slide": 1, "funcao": "CAPA", "textos": [
+        { "posicao": 1, "tipo": "hook",     "texto": "..." },
+        { "posicao": 2, "tipo": "sub-hook", "texto": "..." }
+    ]},
+    { "slide": 2, "funcao": "TRAÇÃO", "textos": [
+        { "posicao": 3, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 4, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 3, "funcao": "TRAÇÃO", "textos": [
+        { "posicao": 5, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 4, "funcao": "TRANSIÇÃO", "textos": [
+        { "posicao": 6, "tipo": "curto", "texto": "..." }
+    ]},
+    { "slide": 5, "funcao": "AVANÇO", "textos": [
+        { "posicao": 7, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 8, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 6, "funcao": "AVANÇO", "textos": [
+        { "posicao": 9, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 7, "funcao": "TRANSIÇÃO", "textos": [
+        { "posicao": 10, "tipo": "curto", "texto": "..." }
+    ]},
+    { "slide": 8, "funcao": "CONSEQUÊNCIA", "textos": [
+        { "posicao": 11, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 12, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 9, "funcao": "CONSEQUÊNCIA", "textos": [
+        { "posicao": 13, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 10, "funcao": "APLICAÇÃO", "textos": [
+        { "posicao": 14, "tipo": "titulo",    "texto": "..." },
+        { "posicao": 15, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 11, "funcao": "APLICAÇÃO", "textos": [
+        { "posicao": 16, "tipo": "paragrafo", "texto": "..." }
+    ]},
+    { "slide": 12, "funcao": "FECHAMENTO", "textos": [
+        { "posicao": 17, "tipo": "fechamento", "texto": "..." }
+    ]},
+    { "slide": 13, "funcao": "ASSINATURA", "textos": [
+        { "posicao": 18, "tipo": "assinatura", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \"CASE\" que nossa equipe te chama." }
+    ]}
+  ]
+}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-4o', temperature: 1.0, max_tokens: 4500,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt   },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+
+    let text = data.choices[0].message.content.trim();
+    text = text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim();
+    const parsed = JSON.parse(text);
+
+    // Normalizar slides para heading/body (compatibilidade biblioteca)
+    const slidesNorm = (parsed.slides||[]).map(s => {
+      const txs = s.textos||[];
+      return {
+        slideNumber: s.slide, funcao: s.funcao||'',
+        heading: txs[0]?.texto||'', body: txs[1]?.texto||'',
+        tipoTexto1: txs[0]?.tipo||'', tipoTexto2: txs[1]?.tipo||'',
+        textos: txs,
+      };
+    });
+
+    const item = saveGeneratedContent({
+      id: `cnt_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'pendente', type: 'carrossel',
+      contentMachineType: tipo,
+      contentMachineTypeLabel: tipoLabels[tipo]||tipo,
+      profile, topic: tema,
+      carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption:'', hashtags:'' },
+    });
+
+    res.json({ success:true, contentId:item.id, ...parsed, slidesNormalizados:slidesNorm });
+  } catch (err) {
+    console.error('Content Machine error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static('public'));
 
 // Rotas /api/* não encontradas → 404 JSON (nunca devolver index.html para API)
