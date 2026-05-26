@@ -447,7 +447,7 @@ body {
 .slide-heading { font-family: var(--font-head); font-size: .85rem; font-weight: 700; line-height: 1.2; }
 .slide-body { font-size: .7rem; opacity: .8; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-/* Publish panel — aparece após gerar carrossel */
+/* Publish panel */
 .publish-panel {
   background: linear-gradient(135deg, rgba(59,15,76,.04) 0%, rgba(228,0,124,.04) 100%);
   border: 1.5px solid rgba(228,0,124,.2);
@@ -824,29 +824,30 @@ body {
 
   <nav class="nav">
     <div class="nav-section-title">Visão Geral</div>
-    <button class="nav-item active" onclick="showSection('dashboard', this)">
+    <!-- ✅ FIX: data-section adicionado em todos os nav-items -->
+    <button class="nav-item active" data-section="dashboard" onclick="showSection('dashboard', this)">
       <span class="nav-icon">⚡</span> Dashboard
     </button>
-    <button class="nav-item" onclick="showSection('library', this)">
+    <button class="nav-item" data-section="library" onclick="showSection('library', this)">
       <span class="nav-icon">🗂️</span> Biblioteca
     </button>
 
     <div class="nav-section-title">Criar</div>
-    <button class="nav-item" onclick="showSection('carousel', this)">
+    <button class="nav-item" data-section="carousel" onclick="showSection('carousel', this)">
       <span class="nav-icon">🎠</span> Carrossel
     </button>
-    <button class="nav-item" onclick="showSection('feed', this)">
+    <button class="nav-item" data-section="feed" onclick="showSection('feed', this)">
       <span class="nav-icon">🖼️</span> Post Feed
     </button>
-    <button class="nav-item" onclick="showSection('calendar', this)">
+    <button class="nav-item" data-section="calendar" onclick="showSection('calendar', this)">
       <span class="nav-icon">📅</span> Calendário
     </button>
 
     <div class="nav-section-title">Recursos</div>
-    <button class="nav-item" onclick="showSection('photos', this)">
+    <button class="nav-item" data-section="photos" onclick="showSection('photos', this)">
       <span class="nav-icon">📸</span> Banco de Fotos
     </button>
-    <button class="nav-item" id="navContentMachine" onclick="showSection('contentmachine', this)">
+    <button class="nav-item" data-section="contentmachine" onclick="showSection('contentmachine', this)">
       <span class="nav-icon">⚡</span> Content Machine
     </button>
   </nav>
@@ -871,7 +872,8 @@ body {
     <div class="topbar-title" id="topbarTitle">Dashboard</div>
     <div class="topbar-actions">
       <span id="activeProfileBadge" style="font-size:.78rem;color:var(--mid);">Case Aceleradora</span>
-      <button class="btn btn-primary btn-sm" onclick="showSection('carousel'); setNavActive('carousel')">
+      <!-- ✅ FIX: removido setNavActive separado — showSection trata internamente -->
+      <button class="btn btn-primary btn-sm" onclick="showSection('carousel', null)">
         + Criar conteúdo
       </button>
     </div>
@@ -956,7 +958,6 @@ body {
         <div class="card">
           <div class="card-title">✍️ Configuração</div>
 
-          <!-- Toggle modo -->
           <div class="mode-toggle">
             <button class="mode-btn active" id="modeBtnBlocks" onclick="setCarouselMode('blocks')">
               📋 Blocos de texto
@@ -966,7 +967,6 @@ body {
             </button>
           </div>
 
-          <!-- Modo blocos -->
           <div id="modeBlocks">
             <div class="form-group">
               <label class="form-label">Cole os blocos de texto</label>
@@ -976,7 +976,6 @@ body {
             </div>
           </div>
 
-          <!-- Modo tópico -->
           <div id="modeTopic" style="display:none;">
             <div class="form-group">
               <label class="form-label">Tema / Tópico</label>
@@ -1014,7 +1013,6 @@ body {
           </div>
           <div id="imageGenStatus" style="font-size:.78rem;color:var(--mid);margin:6px 0;"></div>
 
-          <!-- Sugestão de fotos do banco pessoal (só perfil pessoal) -->
           <div id="photoSuggestArea" style="display:none;margin:10px 0;">
             <div style="font-size:.75rem;color:var(--mid);margin-bottom:6px;">📸 Fotos do banco que podem encaixar:</div>
             <div class="photo-suggestions" id="photoSuggestions"></div>
@@ -1033,7 +1031,6 @@ body {
           </div>
         </div>
 
-        <!-- PAINEL DE PUBLICAÇÃO -->
         <div class="publish-panel" id="publishPanel">
           <div class="publish-panel-title">🚀 Publicar no Instagram</div>
           <div class="publish-row">
@@ -1378,7 +1375,6 @@ body {
       </div>
     </div>
 
-    <!-- Filtros e galeria -->
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
         <div class="card-title" style="margin:0;">📷 Galeria</div>
@@ -1400,10 +1396,10 @@ body {
     </div>
   </section>
 
-</main><!-- /main -->
+</main>
 
 <!-- ══════════════════════════════════════════════════
-     MODAL — Detalhe post calendário
+     MODALS
 ══════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="calPostModal">
   <div class="modal" style="max-width:600px;">
@@ -1411,11 +1407,7 @@ body {
       <h3 id="calPostModalTitle">Post do Calendário</h3>
       <button class="modal-close" onclick="closeModal('calPostModal')">×</button>
     </div>
-
-    <div id="calPostModalBody">
-      <!-- preenchido dinamicamente -->
-    </div>
-
+    <div id="calPostModalBody"></div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('calPostModal')">Fechar</button>
       <button class="btn btn-outline" id="modalBtnGenerate" onclick="generateFromCalendarPost()">✨ Gerar criativo</button>
@@ -1424,9 +1416,6 @@ body {
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════
-     MODAL — Detalhe criativo biblioteca
-══════════════════════════════════════════════════ -->
 <div class="modal-overlay" id="contentModal">
   <div class="modal" style="max-width:640px;">
     <div class="modal-header">
@@ -1448,18 +1437,16 @@ body {
 ═══════════════════════════════════════════════ */
 let currentProfile = 'marca';
 let currentCalendarData = null;
-let currentCalendarPost = null;  // post do calendário seleccionado
-let currentCarouselData = null;  // dados do carrossel gerado
-let currentCarouselImages = [];  // imagens geradas (base64 ou URL)
+let currentCalendarPost = null;
+let currentCarouselData = null;
+let currentCarouselImages = [];
 let currentCarouselContentId = null;
 let currentFeedImageUrl = null;
 let currentFeedContentId = null;
 let currentModalContent = null;
 
-const API = '';   // mesmo origin
+const API = '';
 
-// Helper: garante que só faz JSON.parse quando o servidor devolve application/json
-// Evita o erro "Unexpected token '<'" quando o servidor devolve HTML de erro
 async function safeJson(response) {
   const ct = response.headers.get('content-type') || '';
   if (!ct.includes('application/json')) {
@@ -1493,28 +1480,47 @@ function typeIcon(type) {
 }
 
 /* ═══════════════════════════════════════════════
-   NAV
+   NAV — ✅ CORRIGIDO
 ═══════════════════════════════════════════════ */
 function showSection(id, navBtn) {
+  // Esconder todas as secções
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.getElementById('section-' + id).classList.add('active');
-  if (navBtn) setNavActive(id, navBtn);
 
-  const titles = { dashboard:'Dashboard', library:'Biblioteca', carousel:'Carrossel', feed:'Post Feed', calendar:'Calendário', photos:'Banco de Fotos', contentmachine:'Content Machine' };
-  if (id === 'calendar') setTimeout(loadSavedCalendar, 100);
+  // Mostrar a secção alvo
+  const target = document.getElementById('section-' + id);
+  if (target) target.classList.add('active');
+
+  // Actualizar nav activo
+  setNavActive(id, navBtn);
+
+  // Actualizar título do topbar
+  const titles = {
+    dashboard: 'Dashboard',
+    library: 'Biblioteca',
+    carousel: 'Carrossel',
+    feed: 'Post Feed',
+    calendar: 'Calendário',
+    photos: 'Banco de Fotos',
+    contentmachine: 'Content Machine'
+  };
   document.getElementById('topbarTitle').textContent = titles[id] || id;
 
+  // Acções específicas por secção
+  if (id === 'calendar') setTimeout(loadSavedCalendar, 100);
   if (id === 'dashboard') loadDashboard();
   if (id === 'library')   loadLibrary();
   if (id === 'photos')    loadPhotos();
 }
 
+// ✅ FIX PRINCIPAL: usa data-section para match fiável, independente do texto do botão
 function setNavActive(id, btn) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  if (btn) { btn.classList.add('active'); return; }
-  document.querySelectorAll('.nav-item').forEach(b => {
-    if (b.textContent.toLowerCase().includes(id.toLowerCase())) b.classList.add('active');
-  });
+  if (btn) {
+    btn.classList.add('active');
+  } else {
+    const match = document.querySelector(`.nav-item[data-section="${id}"]`);
+    if (match) match.classList.add('active');
+  }
 }
 
 function setProfile(profile, btn) {
@@ -1537,10 +1543,14 @@ async function uploadManual() {
   fd.append('pdf', file);
   fd.append('profile', currentProfile);
   toast('A carregar manual...', 'info');
-  const r = await fetch(`${API}/api/manual/upload`, { method:'POST', body:fd });
-  const d = await r.json();
-  if (d.success) toast('Manual carregado com sucesso!', 'success');
-  else toast('Erro: ' + d.error, 'error');
+  try {
+    const r = await fetch(`${API}/api/manual/upload`, { method:'POST', body:fd });
+    const d = await r.json();
+    if (d.success) toast('Manual carregado com sucesso!', 'success');
+    else toast('Erro: ' + d.error, 'error');
+  } catch(e) {
+    toast('Erro ao carregar manual: ' + e.message, 'error');
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -1556,14 +1566,13 @@ async function loadDashboard() {
       if (sr.ok && (sr.headers.get('content-type')||'').includes('application/json')) {
         scheduled = await sr.json();
       }
-    } catch(e) { console.error('scheduled fetch error', e); }
+    } catch(e) { console.warn('scheduled fetch error', e); }
 
     document.getElementById('statTotal').textContent = all.length;
     document.getElementById('statPendente').textContent = all.filter(i=>i.status==='pendente').length;
     document.getElementById('statAgendado').textContent = all.filter(i=>i.status==='agendado').length;
     document.getElementById('statPublicado').textContent = all.filter(i=>i.status==='publicado').length;
 
-    // Recent
     const feed = document.getElementById('dashRecentFeed');
     feed.innerHTML = '';
     if (!all.length) {
@@ -1574,7 +1583,6 @@ async function loadDashboard() {
       });
     }
 
-    // Scheduled
     const sFeed = document.getElementById('dashScheduledFeed');
     sFeed.innerHTML = '';
     const pending = scheduled.filter(s=>s.status==='pending').sort((a,b)=>new Date(a.scheduledAt)-new Date(b.scheduledAt));
@@ -1592,7 +1600,7 @@ async function loadDashboard() {
           </div>`);
       });
     }
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error('loadDashboard error:', e); }
 }
 
 function contentItemHTML(item) {
@@ -1677,10 +1685,8 @@ function renderLibrary() {
 }
 
 /* ═══════════════════════════════════════════════
-   CONTENT MODAL (biblioteca)
+   CONTENT CACHE & MODAL
 ═══════════════════════════════════════════════ */
-
-// Cache global — evita chamadas repetidas e erros de parse
 let contentCache = [];
 
 async function refreshContentCache() {
@@ -1691,7 +1697,7 @@ async function refreshContentCache() {
     if (!ct.includes('application/json')) throw new Error('Resposta não é JSON');
     contentCache = await r.json();
   } catch(e) {
-    console.error('Erro ao carregar conteúdos:', e);
+    console.warn('Erro ao carregar conteúdos:', e);
     contentCache = [];
   }
 }
@@ -1854,7 +1860,6 @@ async function generateCarousel() {
     document.getElementById('carouselPreviewCard').style.display = 'block';
     document.getElementById('publishPanel').classList.add('visible');
 
-    // Sugerir fotos do banco se perfil pessoal
     if (currentProfile === 'pessoal') {
       loadPhotoSuggestions(body.topic || body.blocks?.slice(0,100));
     }
@@ -1931,11 +1936,10 @@ async function generateCarouselImages() {
         body: JSON.stringify({ prompt: slides[i].imagePrompt || slides[i].heading }),
       });
       const d = await r.json();
-      const b64 = d.b64 || (d.url ? null : null);
+      const b64 = d.b64 || null;
       const url = d.url || (b64 ? `data:image/png;base64,${b64}` : null);
       currentCarouselImages.push(url);
 
-      // Atualizar slide card com imagem
       const cards = document.querySelectorAll('.slide-card');
       if (cards[i] && url) {
         const img = document.createElement('img');
@@ -1951,7 +1955,6 @@ async function generateCarouselImages() {
   statusEl.textContent = `✅ ${slides.length} imagens geradas!`;
   btn.disabled = false;
 
-  // Guardar imageUrls no criativo
   if (currentCarouselContentId) {
     await fetch(`${API}/api/content/${currentCarouselContentId}`, {
       method:'PATCH',
@@ -2041,7 +2044,6 @@ async function generateFeedPost() {
   toast('A gerar imagem...', 'info');
 
   try {
-    // Gerar legenda se não fornecida
     let caption = userCaption;
     if (!caption) {
       const cr = await fetch(`${API}/api/claude`, {
@@ -2052,7 +2054,6 @@ async function generateFeedPost() {
       caption = cd.content || promptText;
     }
 
-    // Gerar imagem
     const endpoint = engine === 'gpt' ? '/api/image' : '/api/gemini-image';
     const r = await fetch(`${API}${endpoint}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -2064,7 +2065,6 @@ async function generateFeedPost() {
     const url = d.url || (d.b64 ? `data:image/png;base64,${d.b64}` : null);
     currentFeedImageUrl = url;
 
-    // Salvar na base
     const saveR = await fetch(`${API}/api/content/save`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ type:'feed', profile: currentProfile, topic: promptText.slice(0,60), caption, imageUrl: url }),
@@ -2146,7 +2146,6 @@ function handlePhotoDrop(event) {
 
 function processPendingPhoto(file) {
   pendingPhotoFile = file;
-  // Preview na zona de upload
   const reader = new FileReader();
   reader.onload = (e) => {
     const zone = document.getElementById('photoDropZone');
@@ -2183,7 +2182,6 @@ async function uploadPhoto() {
     document.getElementById('photoDesc').value = '';
     document.getElementById('photoTags').value = '';
     pendingPhotoFile = null;
-    // Reset drop zone
     document.getElementById('photoDropZone').innerHTML = `
       <div class="photo-upload-icon">📸</div>
       <div class="photo-upload-text"><strong>Clica para selecionar</strong> ou arrasta aqui<br>JPG, PNG, HEIC até 20MB</div>`;
@@ -2203,7 +2201,7 @@ async function loadPhotos() {
     allPhotos = await r.json();
     renderPhotosGrid(allPhotos);
   } catch(e) {
-    console.error(e);
+    console.warn('loadPhotos error:', e);
   }
 }
 
@@ -2225,7 +2223,6 @@ async function renderPhotosGrid(photos) {
 
   grid.innerHTML = '<div style="color:var(--mid);font-size:.82rem;grid-column:1/-1;padding:8px 0;">A carregar imagens...</div>';
 
-  // Carregar imagens em paralelo (com dataUrl)
   const withImages = await Promise.all(photos.map(async p => {
     try {
       const r = await fetch(`${API}/api/photos/${p.id}`);
@@ -2454,23 +2451,15 @@ function navCMSlide(dir) { goToCMSlide(cmCurrentSlideIdx+dir); }
 function copyCMSlides() {
   const text = cmCurrentSlides.map((s,i)=>{
     const num=cmSlideNumLabel(s,i), funcao=cmSlideFuncao(s), textos=s.textos||[];
-    if(textos.length>1) return `SLIDE ${num} — ${funcao}
-`+textos.map(tx=>`[${tx.tipo||'texto'}] ${tx.texto||''}`).join('
-
-');
-    return `SLIDE ${num} — ${funcao}
-${cmSlideTexto1(s)}`;
-  }).join('
-
----
-
-');
+    if(textos.length>1) return `SLIDE ${num} — ${funcao}\n`+textos.map(tx=>`[${tx.tipo||'texto'}] ${tx.texto||''}`).join('\n\n');
+    return `SLIDE ${num} — ${funcao}\n${cmSlideTexto1(s)}`;
+  }).join('\n\n---\n\n');
   navigator.clipboard?.writeText(text).then(()=>{
     const el=document.getElementById('cmCopyConfirm');
     el.style.display='block'; setTimeout(()=>el.style.display='none',2500);
   });
 }
-function saveCMToLibrary() { showSection('library',null); setNavActive('library'); loadLibrary(); toast('A abrir a biblioteca...','info'); }
+function saveCMToLibrary() { showSection('library', null); loadLibrary(); toast('A abrir a biblioteca...','info'); }
 function renderCMHistory() {
   if(!cmSessionHistory.length) return;
   document.getElementById('cmHistory').style.display='block';
@@ -2580,12 +2569,10 @@ function renderCalendar(data, month, year) {
   const grid = document.getElementById('calendarGrid');
   grid.innerHTML = '';
 
-  // Cabeçalho dias da semana
   ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d => {
     grid.insertAdjacentHTML('beforeend', `<div class="cal-header">${d}</div>`);
   });
 
-  // Primeiro dia da semana (0=Dom → ajustar para Seg=0)
   const firstDay = new Date(year, month-1, 1).getDay();
   const offset = firstDay === 0 ? 6 : firstDay - 1;
   for (let i = 0; i < offset; i++) {
@@ -2595,7 +2582,6 @@ function renderCalendar(data, month, year) {
   const today = new Date();
   const daysInMonth = new Date(year, month, 0).getDate();
 
-  // Indexar posts por dia
   const postsByDay = {};
   (data.calendar || []).forEach(entry => {
     postsByDay[entry.day] = entry.posts || [];
@@ -2637,7 +2623,7 @@ function openCalendarPost(day, postIndex) {
     </div>
     <div class="form-group">
       <label class="form-label">Tema do post</label>
-      <input class="input" id="calEditTopic" value="${(post.topic||'').replace(/"/g,'&quot;')}" placeholder="Ex: Como a Nubank conquistou 90 milhões de clientes sem agência" />
+      <input class="input" id="calEditTopic" value="${(post.topic||'').replace(/"/g,'&quot;')}" placeholder="Ex: Como a Nubank conquistou 90 milhões de clientes" />
     </div>
     <div style="display:flex;gap:12px;">
       <div class="form-group" style="flex:1;margin-bottom:0;">
@@ -2726,7 +2712,6 @@ async function publishFromCalendarPost() {
 
   toast('A processar...', 'info');
   try {
-    // 1. Gerar criativo
     const r = await fetch(`${API}/api/carousel/generate-and-save`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ topic: p.topic, profile: currentProfile, slides: 7, caption, hashtags: p.hashtags, calendarDay: p.day, calendarMonth: p.month, calendarYear: p.year }),
@@ -2735,7 +2720,6 @@ async function publishFromCalendarPost() {
     if (d.error) throw new Error(d.error);
 
     if (action === 'schedule' && dt) {
-      // 2. Agendar
       const sr = await fetch(`${API}/api/instagram/schedule`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
