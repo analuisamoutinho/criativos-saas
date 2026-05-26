@@ -518,18 +518,8 @@ JSON deve ser válido e completo.`;
       allDays.push(...(blockParsed.days || []));
     }
 
-    // Montar resposta unificada compatível com o resto do código
-    const mockResponse = { ok: true };
-    const data = { content: [{ text: JSON.stringify({ calendar: allDays }) }] };
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-
-    let text = data.content[0].text.trim();
-    // Extrair JSON do texto
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) text = match[0];
-
-    const calendar = JSON.parse(text);
+    // Montar o calendário final a partir dos blocos gerados
+    const calendar = { calendar: allDays };
 
     // Cruzar com criativos já gerados/agendados/publicados
     const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
