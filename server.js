@@ -1005,8 +1005,7 @@ RETORNAR APENAS JSON VÁLIDO, sem markdown, sem texto antes ou depois.`;
 
     const userPrompt = `Tipo: ${tipoLabels[tipo]||tipo}
 Perfil: ${account.name} (${account.handle})
-${manualNote ? 'Diretrizes: ' + manualNote + '
-' : ''}
+${manualNote ? `Diretrizes: ${manualNote}` : ''}
 Tema: "${tema}"
 
 ${tipoInstrucoes[tipo]||tipoInstrucoes.tendencia}
