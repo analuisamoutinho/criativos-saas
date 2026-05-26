@@ -19,7 +19,48 @@ const upload = multer({ dest: 'uploads/' });
 const DATA_DIR = fs.existsSync('/tmp') ? '/tmp' : '.';
 const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_posts.json');
 const GENERATED_FILE = path.join(DATA_DIR, 'generated_content.json');
+const CALENDAR_FILE  = path.join(DATA_DIR, 'calendar_data.json');
 const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
+
+// ── Supabase ──────────────────────────────────────────────────────────────────
+// npm install @supabase/supabase-js
+// Variáveis: SUPABASE_URL + SUPABASE_SERVICE_KEY
+let supabase = null;
+try {
+  if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+    const { createClient } = require('@supabase/supabase-js');
+    supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+    console.log('✅ Supabase conectado');
+  } else {
+    console.log('⚠️  Supabase não configurado — usando ficheiros locais como fallback');
+  }
+} catch(e) {
+  console.log('⚠️  @supabase/supabase-js não instalado — usando ficheiros locais');
+}
+
+// ── Helpers Supabase com fallback para JSON local ─────────────────────────────
+async function dbUpsert(table, row) {
+  if (supabase) {
+    const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
+    if (error) throw error;
+  }
+}
+async function dbSelect(table, filters = {}) {
+  if (supabase) {
+    let q = supabase.from(table).select('*');
+    for (const [col, val] of Object.entries(filters)) q = q.eq(col, val);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  }
+  return [];
+}
+async function dbDelete(table, id) {
+  if (supabase) {
+    const { error } = await supabase.from(table).delete().eq('id', id);
+    if (error) throw error;
+  }
+}
 
 // Garantir dirs de upload (readJSON/writeJSON cuidam dos JSON automaticamente)
 try { fs.mkdirSync('uploads/', { recursive: true }); } catch(e) {}
@@ -57,17 +98,62 @@ function writeJSON(file, data) {
 
 // Salva criativo na base geral
 function saveGeneratedContent(item) {
+  // Local fallback
   const all = readJSON(GENERATED_FILE);
-  all.unshift(item);                 // mais recente primeiro
+  all.unshift(item);
   writeJSON(GENERATED_FILE, all);
+  // Supabase (fire-and-forget)
+  if (supabase) {
+    supabase.from('generated_content').upsert({
+      id:                  item.id,
+      profile:             item.profile,
+      type:                item.type,
+      status:              item.status,
+      topic:               item.topic || null,
+      caption:             item.caption || null,
+      hashtags:            item.hashtags || null,
+      carousel_data:       item.carouselData ? JSON.stringify(item.carouselData) : null,
+      content_machine_type: item.contentMachineType || null,
+      calendar_day:        item.calendarDay || null,
+      calendar_month:      item.calendarMonth || null,
+      calendar_year:       item.calendarYear || null,
+      created_at:          item.createdAt,
+    }, { onConflict: 'id' }).then(({ error }) => {
+      if (error) console.error('Supabase save error:', error.message);
+    });
+  }
   return item;
 }
 
 // Atualiza status de um criativo
 function updateContentStatus(id, status, extra = {}) {
+  // Local
   const all = readJSON(GENERATED_FILE);
   const idx = all.findIndex(i => i.id === id);
   if (idx !== -1) { all[idx] = { ...all[idx], status, ...extra }; writeJSON(GENERATED_FILE, all); }
+  // Supabase
+  if (supabase) {
+    supabase.from('generated_content').update({ status, ...extra }).eq('id', id)
+      .then(({ error }) => { if (error) console.error('Supabase update error:', error.message); });
+  }
+}
+
+async function loadGeneratedContent(profile) {
+  if (supabase) {
+    const { data, error } = await supabase.from('generated_content')
+      .select('*').eq('profile', profile).order('created_at', { ascending: false });
+    if (!error && data?.length) {
+      return data.map(r => ({
+        id: r.id, profile: r.profile, type: r.type, status: r.status,
+        topic: r.topic, caption: r.caption, hashtags: r.hashtags,
+        carouselData: r.carousel_data ? JSON.parse(r.carousel_data) : null,
+        contentMachineType: r.content_machine_type,
+        calendarDay: r.calendar_day, calendarMonth: r.calendar_month, calendarYear: r.calendar_year,
+        createdAt: r.created_at,
+      }));
+    }
+  }
+  return readJSON(GENERATED_FILE).filter(i => !profile || i.profile === profile);
 }
 
 // ── Accounts ─────────────────────────────────────────────────────────────────
@@ -450,49 +536,82 @@ setInterval(async () => {
 // Sem limite de 7/semana — o utilizador configura maxPerDay (padrão 3)
 app.post('/api/calendar/generate', async (req, res) => {
   try {
-    const { month, year, profile, postsPerDay = 2, totalPosts } = req.body;
+    const { month, year, profile, postsPerDay = 2 } = req.body;
     const manualNote = getManualText(profile);
     const account = getAccount(profile);
-
-    // Calcular número de dias úteis no mês (seg-sáb) para distribuição inteligente
     const daysInMonth = new Date(year, month, 0).getDate();
-    const calculatedTotal = totalPosts || Math.min(postsPerDay * daysInMonth, 90); // máx 90/mês
 
-    // Gerar o calendário em blocos de 10 dias para evitar truncamento do JSON
-    const BLOCK_SIZE = 10;
+    // Gerar em blocos de 10 dias para evitar truncamento do JSON
+    const BLOCK = 10;
     const allDays = [];
 
-    for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK_SIZE) {
-      const blockEnd = Math.min(blockStart + BLOCK_SIZE - 1, daysInMonth);
+    for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
+      const blockEnd = Math.min(blockStart + BLOCK - 1, daysInMonth);
 
-      const blockPrompt = `Gera sugestões de calendário editorial para Instagram para ${account.name} (${account.handle}).
+      const blockPrompt = `Você é o estrategista de conteúdo da BrandsDecoded criando o calendário editorial de ${account.name} (${account.handle}) para ${month}/${year}.
 
-Mês: ${month}/${year} — Dias ${blockStart} a ${blockEnd}
-Posts por dia (máx): ${postsPerDay}
-${manualNote ? `\nDiretrizes do cliente:\n${manualNote}` : ''}
+METODOLOGIA BRANDECODED — SEGUIR OBRIGATORIAMENTE:
 
-REGRAS:
-- Terça, quarta, quinta: até ${postsPerDay} posts por dia
+O Instagram em 2026 é uma plataforma de DESCOBERTA. Todo post deve funcionar para quem NUNCA viu o perfil.
+As métricas que importam: tempo de retenção, compartilhamentos, saves. Curtidas são secundárias.
+
+TIPOS DE POST (usar APENAS estes):
+- "tendencia": Análise de Tendência — pega movimento cultural/mercado em alta e analisa com profundidade. É o tipo mais poderoso para alcance orgânico. Ex: mudança de comportamento da Gen Z, tendência de mercado emergente, fenômeno cultural.
+- "case": Case de Sucesso — conta a história de uma marca/pessoa/empresa explicando por que deu certo OU deu errado. Alto compartilhamento porque as pessoas querem repostar. Mencionar marcas conhecidas gera collab espontâneo.
+- "educativo": Framework ou conceito aplicado com passo a passo. Não dicas genéricas — um método específico com nome.
+- "comparacao": Antes/depois, certo/errado, velho/novo. Alto alcance, bom para saves.
+- "lista": Lista de insights, erros ou verdades sobre um tema. Fácil de consumir.
+- "prova_social": Resultado de cliente real ou conquista da marca. Bom para conversão, menor alcance orgânico.
+- "oferta": Apresentação de produto/serviço envolto em valor. Usar no máximo 1x por semana.
+
+PERFIL: ${account.name} (${account.handle})
+${manualNote ? 'DIRETRIZES DO CLIENTE:\n' + manualNote : ''}
+
+DISTRIBUIÇÃO DE TIPOS NO BLOCO (dias ${blockStart}–${blockEnd}):
+- 40% tendencia
+- 30% case
+- 15% educativo + comparacao + lista (variar entre eles)
+- 15% prova_social + oferta (nunca dois seguidos)
+
+REGRAS DE HORÁRIO E DISTRIBUIÇÃO:
+- Terça, quarta, quinta: até ${postsPerDay} posts/dia
 - Segunda, sexta: 1-2 posts
 - Sábado, domingo: 1 post máximo
-- Varia os tipos: "carrossel" (70%), "feed" (20%), "reels" (10%)
-- Cada topic deve ser específico, concreto e diferente dos outros dias
+- Horários: 09:00, 12:00, 18:00 (escolher os mais adequados ao tipo)
 
-Responde APENAS com JSON válido — sem texto antes ou depois:
+REGRA DE QUALIDADE DO TOPIC — CRÍTICO:
+O "topic" é o tema central que será desenvolvido no carrossel. Deve ser:
+✅ ESPECÍFICO — nomear empresa, pessoa, fenômeno ou dado concreto
+✅ COM ÂNGULO — não só o tema, mas o ponto de vista sobre ele
+✅ PARA DESCONHECIDOS — qualquer pessoa deve querer ver mesmo sem conhecer o perfil
+
+EXEMPLOS DE TOPICS QUE FUNCIONAM:
+- "Por que a Shein destruiu o varejo físico brasileiro enquanto as marcas dormiam"
+- "O método que a Nubank usou para transformar reclamação em fidelização — e o que toda empresa pode copiar"
+- "A geração Z trocou o emprego pelo PJ — e os RHs ainda não entenderam o que mudou"
+- "Como o Corinthians virou o clube mais seguido do Brasil sem gastar R$1 em influencer"
+- "O erro que quebrou a [marca conhecida] e a lição que nenhum empresário quer ouvir"
+
+EXEMPLOS DE TOPICS QUE NÃO FUNCIONAM (PROIBIDOS):
+- "Dicas de marketing digital"
+- "Como crescer no Instagram"
+- "Motivação para empreendedores"
+- "A importância do planejamento"
+- "Post sobre nossos valores"
+
+Responde APENAS com JSON válido — sem texto antes ou depois, sem truncar:
 {
   "days": [
     {
       "day": ${blockStart},
       "posts": [
-        { "time": "09:00", "type": "carrossel", "topic": "tema específico do post" }
+        { "time": "09:00", "type": "tendencia", "topic": "tema específico com ângulo claro" }
       ]
     }
   ]
 }
 
-Inclui todos os dias de ${blockStart} a ${blockEnd}.
-O "topic" deve ser uma frase clara sobre o que o post vai abordar.
-JSON deve ser válido e completo.`;
+Inclui TODOS os dias de ${blockStart} a ${blockEnd}. JSON completo e válido.`;
 
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -518,36 +637,43 @@ JSON deve ser válido e completo.`;
       allDays.push(...(blockParsed.days || []));
     }
 
-    // Montar o calendário final a partir dos blocos gerados
+    // Montar calendário final
     const calendar = { calendar: allDays };
 
     // Cruzar com criativos já gerados/agendados/publicados
     const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
-    const scheduled = readJSON(SCHEDULED_FILE);
-
-    // Enriquecer cada post do calendário com status
     calendar.calendar = calendar.calendar.map(dayEntry => ({
       ...dayEntry,
-      posts: dayEntry.posts.map(post => {
+      posts: (dayEntry.posts || []).map(post => {
         const postDate = new Date(year, month - 1, dayEntry.day);
-        const dateStr = postDate.toISOString().split('T')[0];
-
-        // Verificar se existe criativo gerado para este dia/tipo
-        const match = generated.find(g =>
+        const dateStr  = postDate.toISOString().split('T')[0];
+        const match    = generated.find(g =>
           g.calendarDay === dayEntry.day &&
           g.calendarMonth === month &&
-          g.calendarYear === year
+          g.calendarYear  === year
         );
-
         return {
           ...post,
           date: dateStr,
-          contentId: match?.id || null,
-          status: match?.status || 'pendente',  // pendente | agendado | publicado
+          contentId:   match?.id || null,
+          status:      match?.status || 'pendente',
           scheduledAt: match?.scheduledAt || null,
         };
       }),
     }));
+
+    // Persistir calendário para sobreviver a restarts
+    writeJSON(CALENDAR_FILE, { profile, month, year, ...calendar });
+    if (supabase) {
+      supabase.from('calendars').upsert({
+        id: `${profile}_${year}_${month}`,
+        profile, month, year,
+        data: JSON.stringify(calendar.calendar),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' }).then(({ error }) => {
+        if (error) console.error('Supabase calendar save error:', error.message);
+      });
+    }
 
     res.json(calendar);
   } catch (err) {
@@ -555,6 +681,29 @@ JSON deve ser válido e completo.`;
     res.status(500).json({ error: err.message });
   }
 });
+
+// ── Carregar calendário guardado ─────────────────────────────────────────────
+app.get('/api/calendar/saved', async (req, res) => {
+  try {
+    const { profile, month, year } = req.query;
+    if (supabase) {
+      const { data, error } = await supabase.from('calendars')
+        .select('data').eq('id', `${profile}_${year}_${month}`).single();
+      if (!error && data?.data) {
+        return res.json({ found: true, calendar: JSON.parse(data.data) });
+      }
+    }
+    // Fallback local
+    const saved = readJSON(CALENDAR_FILE);
+    if (saved?.profile === profile && String(saved.month) === String(month) && String(saved.year) === String(year)) {
+      return res.json({ found: true, calendar: saved.calendar });
+    }
+    res.json({ found: false });
+  } catch(e) {
+    res.json({ found: false });
+  }
+});
+
 
 // ── Gerar + Salvar carrossel na base ─────────────────────────────────────────
 // Modos:
@@ -564,60 +713,167 @@ JSON deve ser válido e completo.`;
 // Sem limite de slides — a IA decide quantos fazem sentido para o conteúdo
 app.post('/api/carousel/generate-and-save', async (req, res) => {
   try {
-    const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags } = req.body;
+    const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags, contentMachineType } = req.body;
     const manualNote = getManualText(profile);
     const account = getAccount(profile);
     const mode = blocks ? 'blocks' : 'topic';
 
+    // ── SYSTEM PROMPT: BrandsDecoded Methodology ──────────────────────────────
+    const systemPrompt = `Você é o gerador de carrosseis da BrandsDecoded — o padrão mais alto de copy para Instagram no Brasil.
+
+PRINCÍPIOS FUNDAMENTAIS:
+1. O Instagram é uma plataforma de DESCOBERTA. Cada carrossel deve funcionar para quem NUNCA viu o perfil.
+2. Carrossel não é design. É copy. O que move o dedo para o próximo slide é a tensão narrativa, não a paleta de cores.
+3. O carrossel funciona como funil interno: capa para o desconhecido → tração → avanço → CTA.
+
+CONTRATO DA CAPA (slides 1 e 2) — O MAIS IMPORTANTE:
+Slide 1 (hook): 14-18 palavras. Estrutura preferencial: afirmação provocativa + dois-pontos + pergunta. Deve parar o scroll de um estranho. Ativar tensão, curiosidade, identidade ou alerta. NUNCA começar com Descubra/Saiba/Aprenda/Conheça.
+Slide 2 (sub-hook): 8-12 palavras. Aprofunda ou tensiona o slide 1. Não entrega a resolução. Funciona isoladamente. Não começa com conectivo (E, Mas, Porém, Então).
+
+PADRÕES DE HEADLINE DE ALTA PERFORMANCE:
+1. Brasil/contexto nacional — conectar à identidade ou fenômeno brasileiro
+2. Fim/Morte/Crise — mudança estrutural, colapso, transformação cultural
+3. Geracional — Gen Z, Millennials, comportamento por faixa etária
+4. Novidade — nova tendência, nova lógica, fenômeno emergente
+5. Investigando — tom jornalístico, documental, analítico
+6. Contraste — velho vs novo, status vs saúde, algoritmo vs autenticidade
+7. Nome próprio/Referência pop — marca ou fenômeno como âncora de atenção
+
+PROGRESSÃO NARRATIVA OBRIGATÓRIA:
+- Slides 1-2: CAPA — parar o scroll
+- Slides 3-4: TRAÇÃO — contextualizar a tensão, mais argumentos para continuar
+- Slides 5-7: AVANÇO — mecanismo, evidências observáveis, por que acontece
+- Slides 8-9: CONSEQUÊNCIA — implicação, o que muda, lição transferível
+- Slide final: CTA — convite específico (comentar palavra-chave, seguir, guardar)
+
+PROIBIDO em qualquer slide:
+- Travessão (—)
+- "virou" em headline
+- "a ascensão de", "o impacto de", "não é X, é Y"
+- "e isso muda tudo", "no fim das contas", "o ponto é", "colapso silencioso"
+- Frases genéricas com cara de IA
+- 2ª pessoa nos slides de desenvolvimento (só no CTA)
+- Inventar fatos, números, datas ou fontes
+
+Retornar APENAS JSON válido, sem markdown, sem texto antes ou depois.`;
+
     let prompt;
 
     if (mode === 'blocks') {
-      // Modo blocos: cada bloco vira 1 slide, IA só formata + gera imagePrompt
-      prompt = `Tens os seguintes blocos de texto para um carrossel do Instagram do perfil ${account.name} (${account.handle}).
-Cada bloco deve virar exatamente 1 slide. Não alteres o texto dos blocos — apenas formata.
+      prompt = `Modo: BLOCOS DE TEXTO
+Perfil: ${account.name} (${account.handle})
+${manualNote ? 'Diretrizes: ' + manualNote : ''}
+
+Os blocos abaixo devem virar exatamente 1 slide cada. Preservar o texto original de cada bloco — apenas gerar o imagePrompt para cada um.
 
 BLOCOS:
 ${blocks}
 
-${manualNote ? `\nDiretrizes do cliente:\n${manualNote}` : ''}
-
-Responde APENAS com JSON válido:
+Retornar APENAS JSON:
 {
-  "title": "título interno do carrossel (não aparece no post)",
-  "slideCount": <número total de slides>,
+  "title": "título interno (não aparece no post)",
+  "slideCount": <número>,
   "slides": [
     {
       "slideNumber": 1,
-      "heading": "texto principal do bloco (preserva o original)",
-      "body": "texto secundário se houver (pode ser vazio)",
-      "imagePrompt": "prompt detalhado em inglês para gerar imagem de fundo: ambiente, luz, composição, paleta — compatível com o tom do texto. Sem texto na imagem."
+      "heading": "texto principal preservado do bloco",
+      "body": "texto secundário se houver (vazio se não houver)",
+      "imagePrompt": "prompt em inglês para imagem de fundo: ambiente, luz, composição, paleta de cores — alinhado ao tom do texto. Absolutamente sem texto na imagem."
     }
   ],
-  "caption": "legenda completa para o Instagram com emojis e CTA",
+  "caption": "legenda completa para Instagram com emojis, contexto e CTA claro",
   "hashtags": "#hashtag1 #hashtag2 #hashtag3"
 }`;
+
     } else {
-      // Modo tópico: IA cria tudo do zero, decide quantos slides fazem sentido
-      prompt = `Cria um carrossel completo para Instagram sobre: "${topic}".
-Perfil: ${account.name} (${account.handle})
-${manualNote ? `\nDiretrizes:\n${manualNote}` : ''}
+      // Modo tópico com tipo BrandsDecoded
+      const tipoInstrucoes = {
+        tendencia: `TIPO: ANÁLISE DE TENDÊNCIA
+Objetivo: pegar movimento cultural/mercado em alta e analisar com profundidade jornalística.
+A capa deve tratar o tema como fenômeno, não como notícia.
+Slides 3-4: por que essa tendência está acontecendo agora, evidências observáveis.
+Slides 5-7: implicações para o mercado/comportamento.
+Slides 8-9: o que isso significa para o leitor.`,
 
-Decide o número ideal de slides para o tema (sem limite máximo — usa quantos forem necessários para o conteúdo fluir bem).
-Cada slide deve ter uma ideia clara e impactante.
+        case: `TIPO: CASE DE SUCESSO
+Objetivo: contar a história de uma empresa/pessoa/marca explicando o ponto de virada.
+A capa deve tratar o case como fenômeno cultural, não como perfil empresarial.
+Slides 3-4: contexto — quem é, situação de partida.
+Slides 5-6: O PONTO DE VIRADA — a decisão que transformou tudo.
+Slides 7-8: resultados e números verificáveis.
+Slide 9: lição prática transferível para o leitor.`,
 
-Responde APENAS com JSON válido:
+        educativo: `TIPO: EDUCATIVO / FRAMEWORK
+Objetivo: ensinar um método específico com nome, não dicas genéricas.
+A capa deve prometer um aprendizado concreto e acionável.
+Slides 3-9: um passo ou princípio por slide, com exemplo concreto.`,
+
+        comparacao: `TIPO: COMPARAÇÃO / ANTES & DEPOIS
+Objetivo: mostrar contraste real entre dois cenários.
+A capa deve ativar o contraste imediatamente.
+Slides 3-5: Lado A (cenário ruim/antigo), com detalhes reais.
+Slide 6: o ponto de virada — o que separa os dois lados.
+Slides 7-9: Lado B (cenário bom/novo), com resultados concretos.`,
+
+        lista: `TIPO: LISTA VALIOSA
+Objetivo: entregar valor comprimido em itens acionáveis.
+A capa deve ter número específico e promessa de valor real.
+Slides 3-9: um item por slide, com 2-3 frases de desenvolvimento cada.`,
+
+        prova_social: `TIPO: PROVA SOCIAL
+Objetivo: mostrar resultado de cliente real ou conquista da marca.
+A capa deve focar no resultado conquistado, não na marca.
+Slide 3: situação antes — dor e frustração.
+Slides 4-6: o processo — o que foi feito.
+Slides 7-8: resultados com números verificáveis.
+Slide 9: lição universal extraível.`,
+
+        oferta: `TIPO: OFERTA
+Objetivo: apresentar produto/serviço envolto em valor real, não em pitch.
+A capa deve ativar desejo sem soar como anúncio.
+Slides 3-4: o problema que resolve.
+Slides 5-6: a solução e benefícios (não features).
+Slide 7: para quem é.
+Slide 8: prova.
+Slide 9: o que inclui.`,
+      };
+
+      const instrucaoTipo = contentMachineType && tipoInstrucoes[contentMachineType]
+        ? tipoInstrucoes[contentMachineType]
+        : tipoInstrucoes.tendencia;
+
+      prompt = `Perfil: ${account.name} (${account.handle})
+${manualNote ? 'Diretrizes do cliente: ' + manualNote + '\n' : ''}
+Tema central: "${topic}"
+
+${instrucaoTipo}
+
+PROCESSO INTERNO ANTES DE GERAR OS SLIDES:
+1. TRIAGEM: identificar a fricção central do tema (tensão real, não só resumo), o ângulo narrativo mais forte, evidências observáveis.
+2. HEADLINE: gerar internamente a capa mais forte possível com o tema. Verificar: 14-18 palavras, padrão de alta performance usado, checklist de interrupção/relevância/clareza/tensão.
+3. ESPINHA DORSAL: definir internamente hook (slides 3-4), mecanismo (slides 5-6), prova (slides 7-8), aplicação (slide 9), CTA (slide 10).
+4. RENDER: gerar os slides com progressão — cada um abre micro-tensão que o próximo resolve parcialmente.
+
+Total de slides: 10 (seguir a estrutura de 18 textos em 10-15 slides).
+Slide 1 + Slide 2 = capa (hook 14-18 palavras + sub-hook 8-12 palavras).
+
+Retornar APENAS JSON:
 {
-  "title": "título interno do carrossel",
-  "slideCount": <número total de slides>,
+  "title": "título interno",
+  "slideCount": 10,
   "slides": [
-    {
-      "slideNumber": 1,
-      "heading": "texto principal do slide",
-      "body": "texto secundário (pode ser vazio)",
-      "imagePrompt": "prompt detalhado em inglês para imagem de fundo. Sem texto na imagem."
-    }
+    { "slideNumber": 1, "heading": "hook 14-18 palavras", "body": "", "imagePrompt": "prompt em inglês para imagem de fundo, sem texto na imagem" },
+    { "slideNumber": 2, "heading": "sub-hook 8-12 palavras", "body": "", "imagePrompt": "..." },
+    { "slideNumber": 3, "heading": "título da secção 11-15 palavras", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
+    { "slideNumber": 4, "heading": "", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
+    { "slideNumber": 5, "heading": "título da secção 11-15 palavras", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
+    { "slideNumber": 6, "heading": "", "body": "parágrafo curto 22-26 palavras", "imagePrompt": "..." },
+    { "slideNumber": 7, "heading": "título da secção 11-15 palavras", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
+    { "slideNumber": 8, "heading": "", "body": "parágrafo 25-32 palavras", "imagePrompt": "..." },
+    { "slideNumber": 9, "heading": "", "body": "fechamento 26-30 palavras", "imagePrompt": "..." },
+    { "slideNumber": 10, "heading": "CTA específico com palavra-chave para comentar", "body": "", "imagePrompt": "..." }
   ],
-  "caption": "legenda completa com emojis e CTA",
+  "caption": "legenda completa com emojis, contexto e CTA claro",
   "hashtags": "#hashtag1 #hashtag2 #hashtag3"
 }`;
     }
@@ -632,6 +888,7 @@ Responde APENAS com JSON válido:
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 8192,
+        system: systemPrompt,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -654,6 +911,7 @@ Responde APENAS com JSON válido:
       topic: topic || `Carrossel ${carouselData.slideCount} slides`,
       caption: caption || carouselData.caption,
       hashtags: hashtags || carouselData.hashtags,
+      contentMachineType: contentMachineType || null,
       carouselData,
       calendarDay: calendarDay || null,
       calendarMonth: calendarMonth || null,
@@ -666,18 +924,17 @@ Responde APENAS com JSON válido:
   }
 });
 
+
 // ── Ficheiros estáticos (SEMPRE depois das rotas /api/*) ─────────────────────
 // Se o static vier antes, o Express serve index.html para rotas /api/* não encontradas
 // causando "Unexpected token '<'" ao tentar fazer JSON.parse do HTML
 app.use(express.static('public'));
 
-// Catch-all: qualquer rota não-API devolve o index.html (SPA)
 // Rotas /api/* não encontradas → 404 JSON (nunca devolver index.html para API)
 app.use('/api', (req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
 });
-
-// Tudo o resto → SPA
+// SPA catch-all
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
