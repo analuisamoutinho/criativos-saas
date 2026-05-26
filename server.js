@@ -241,461 +241,6 @@ ${systemExtra || ''}`;
   }
 });
 
-// ── Content Machine — geração de copy via GPT-4o (BrandsDecoded) ─────────────
-// Tipos: tendencia | case | educativo | comparacao | lista | prova_social | oferta | dump
-app.post('/api/content-machine/generate', async (req, res) => {
-  try {
-    const { tipo, tema, profile } = req.body;
-    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema são obrigatórios.' });
-
-    const manualNote = getManualText(profile);
-    const account = getAccount(profile);
-
-    const tipoLabels = {
-      tendencia:   'Análise de Tendência',
-      case:        'Case de Sucesso',
-      educativo:   'Educativo / Framework',
-      comparacao:  'Comparação / Antes & Depois',
-      lista:       'Lista Valiosa',
-      prova_social:'Prova Social',
-      oferta:      'Oferta',
-      dump:        'Dump / Bastidores',
-    };
-
-    const estruturas = {
-      tendencia: `
-- Slide 1 (CAPA): Hook de 14–18 palavras. Afirmação provocativa ou pergunta que active tensão, curiosidade ou identidade sobre a tendência.
-- Slide 2 (SUB-HOOK): 8–12 palavras. Tensiona ou concretiza o slide 1. Não depende sintaticamente do slide 1.
-- Slides 3–4: Por que esta tendência está a acontecer agora. Evidências e sinais observáveis.
-- Slides 5–7: Implicações do movimento para o mercado/sociedade/negócios.
-- Slides 8–9: O que isto significa para o público de ${account.name}.
-- Slide 10 (CTA): Convite para comentar palavra-chave, seguir ou guardar.`,
-      case: `
-- Slide 1 (CAPA): Hook de 14–18 palavras. Apresenta o case como fenómeno, não como notícia.
-- Slide 2 (SUB-HOOK): 8–12 palavras. Aprofunda a tensão ou o mistério do case.
-- Slides 3–4: Contexto — quem é, o que fez, qual era a situação de partida.
-- Slides 5–6: O PONTO DE VIRADA — a decisão ou mudança que transformou tudo.
-- Slides 7–8: Resultados e números que comprovam a grandeza do case.
-- Slide 9: Lição prática que o leitor pode aplicar no próprio negócio.
-- Slide 10 (CTA): Convite claro para ação.`,
-      educativo: `
-- Slide 1 (CAPA): Hook de 14–18 palavras com promessa clara de aprendizado.
-- Slide 2 (SUB-HOOK): 8–12 palavras que tensionam ou aprofundam a promessa.
-- Slide 3: Introdução ao conceito/framework — por que isto importa.
-- Slides 4–8: Os passos, princípios ou elementos (1 por slide), com exemplos concretos.
-- Slide 9: Como aplicar na prática — exemplo direto.
-- Slide 10 (CTA): Call to action.`,
-      comparacao: `
-- Slide 1 (CAPA): Hook de 14–18 palavras que activa o contraste imediatamente.
-- Slide 2 (SUB-HOOK): 8–12 palavras que definem os dois polos da comparação.
-- Slides 3–5: Lado A — o cenário ruim/antigo/errado, com detalhes e exemplos reais.
-- Slide 6: O ponto de virada — o que separa os dois lados.
-- Slides 7–9: Lado B — o cenário bom/novo/certo, com resultados concretos.
-- Slide 10 (CTA): Convite para reflexão ou ação.`,
-      lista: `
-- Slide 1 (CAPA): Hook de 14–18 palavras com número específico e promessa de valor.
-- Slide 2 (SUB-HOOK): 8–12 palavras que justificam por que esta lista importa agora.
-- Slides 3–9: Um item da lista por slide (mínimo 5, máximo 7 itens). Cada item com 2+ frases de desenvolvimento.
-- Slide 10 (CTA): Convite para guardar, comentar ou seguir.`,
-      prova_social: `
-- Slide 1 (CAPA): Hook de 14–18 palavras focado no resultado conquistado.
-- Slide 2 (SUB-HOOK): 8–12 palavras com o contexto humano da transformação.
-- Slide 3: A situação antes — dor, frustração, ponto de partida.
-- Slides 4–6: O processo — o que foi feito, as decisões, os ajustes.
-- Slides 7–8: Os resultados — números, evidências, mudanças concretas.
-- Slide 9: Lição universal que qualquer pessoa pode extrair.
-- Slide 10 (CTA): Convite para quem quer o mesmo resultado.`,
-      oferta: `
-- Slide 1 (CAPA): Hook de 14–18 palavras que activa desejo sem soar como anúncio.
-- Slide 2 (SUB-HOOK): 8–12 palavras que aprofundam a promessa de transformação.
-- Slides 3–4: O problema que o produto/serviço resolve, com riqueza de detalhes.
-- Slides 5–6: A solução e como funciona — benefícios, não features.
-- Slide 7: Para quem é — qualificação do público ideal.
-- Slide 8: Prova — resultado de quem já usou.
-- Slide 9: O que está incluído / como funciona o processo.
-- Slide 10 (CTA): Convite claro e específico para a ação de compra/contacto.`,
-      dump: `
-- Slide 1 (CAPA): Hook de 14–18 palavras que humaniza e gera curiosidade.
-- Slide 2 (SUB-HOOK): 8–12 palavras que contextualizam o momento ou período.
-- Slides 3–7: Momentos específicos com narrativa (o que estava a acontecer, o que foi aprendido, o que foi sentido).
-- Slide 8: Uma reflexão ou aprendizado gerado por esse período/evento.
-- Slide 9: Como isto se conecta com o trabalho/missão de ${account.name}.
-- Slide 10 (CTA): Convite para comentar, partilhar ou seguir.`,
-    };
-
-    const systemPrompt = `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded, combinando o Content Machine e o Headline Generator.
-
-MISSÃO
-Gerar carrosseis com headlines que capturam atenção no feed, progressão narrativa coesa entre slides e copy que não parece produzida por IA.
-
-REGRAS GLOBAIS
-- Nunca inventar fatos, números, datas, locais ou fontes.
-- Nunca fazer acusações diretas a pessoas ou empresas.
-- Proibido travessão (—) em qualquer saída.
-- Proibido em headline/hook: "quando X vira Y", "a ascensão de", "o impacto de", "por que X está mudando", "não é X, é Y", "virou".
-- Proibido como abertura de qualquer slide: "Descubra", "Saiba", "Conheça", "Aprenda".
-- Proibido AI slop: frases genéricas, jargão corporativo, abstrações vazias, pares simétricos, slogans quebrados, "e isso muda tudo", "no fim das contas", "o ponto é", "colapso silencioso", "a pergunta que fica", "menos X, mais Y", dois-pontos no texto final dos slides de desenvolvimento.
-- Proibido usar o termo "cena".
-- Sem 2ª pessoa nos slides de desenvolvimento. Apenas no CTA é permitido.
-- Sem bullets dentro dos textos dos slides.
-- Sempre em português do Brasil.
-- Apenas fatos verificáveis e observáveis.
-- Sem metalinguagem, sem exposição de raciocínio interno.
-
-═══════════════════════════════════════════
-HEADLINE GENERATOR — CONTRATO DA CAPA
-═══════════════════════════════════════════
-
-TEXTO 1 — hook principal (14 a 18 palavras)
-- Estrutura preferencial: afirmação provocativa + dois-pontos + pergunta
-- Deve abrir tensão, curiosidade, identidade, contraste ou alerta
-- Deve funcionar isoladamente, sem depender do texto 2
-- Não explicar tudo. Abrir tensão, não resolver.
-- Não começar com: Descubra, Saiba, Conheça, Aprenda
-- Contar as palavras antes de fechar. Se não estiver entre 14-18, reescrever.
-
-TEXTO 2 — sub-hook (8 a 12 palavras)
-- Aprofundar, tensionar ou concretizar a leitura aberta pelo texto 1
-- Não entregar a resolução — gerar curiosidade, mistério ou chamada contraintuitiva
-- Funcionar isoladamente, sem depender sintaticamente do texto 1
-- Não começar com conectivo de continuação (E, Mas, Porém, Pois, Então, Assim)
-- Contar as palavras antes de fechar. Se não estiver entre 8-12, reescrever.
-
-PADRÕES DE ALTA PERFORMANCE PARA A HEADLINE
-Priorizar sempre que o tema permitir:
-1. Brasil / Contexto nacional — conectar à identidade brasileira, comportamento local ou fenômeno nacional
-2. Fim / Morte / Crise — mudança estrutural, perda, colapso, substituição ou transformação cultural
-3. Geracional — Gen Z, Millennials, Boomers, comportamento por faixa etária
-4. Novidade — nova tendência, nova fase, nova lógica, novo modelo ou fenômeno emergente
-5. Investigando — tom jornalístico, documental, analítico ou cultural
-6. Contraste / Antítese — tensão entre dois polos (velho vs novo, status vs saúde, algoritmo vs autenticidade)
-7. Pergunta Geracional — grupo adotando comportamento inesperado
-8. Referência Pop / Nome Próprio — nome, marca ou fenômeno pop como âncora de atenção
-
-GATILHOS EMOCIONAIS
-Todo hook deve ativar pelo menos 2 gatilhos simultâneos: nostalgia, medo/alerta, indignação, identidade, curiosidade, aspiração.
-Combinações fortes: nostalgia+identidade, medo+geracional, brasil+identidade, curiosidade+nostalgia, contraste+curiosidade, novidade+alerta.
-
-ANTI-PADRÕES PROIBIDOS NA HEADLINE
-1. Declaração direta sem tensão — ex: "O mercado de wellness está crescendo"
-2. Revelação genérica — abrir com descubra, saiba, conheça, aprenda
-3. Lista saturada — "5 dicas", "3 formas", "7 lições", "10 erros"
-4. Motivacional vazio — frases inspiracionais sem conflito real
-5. Tom genérico de IA — linguagem impessoal que qualquer conta poderia usar
-6. Press release — texto institucional frio ou notícia corporativa
-
-EXEMPLOS ÂNCORA (usar como referência de forma, não copiar literalmente)
-- A Morte do Gosto Pessoal: Como a Dopamina Digital Nos Tornou Indiferentes
-- O Novo Algoritmo do Instagram em 2026 e o Fim do Criador de Conteúdo
-- Por que a Gen Z Parou de Vestir a Camisa e Começou a Tratar Emprego Como Contrato
-- A Geração Z encaretou o Brasil: por que os jovens vivem vidas mais chatas que seus pais?
-- Investigando o Grupo de Pais que Está Criando Seus Filhos com Telefone Fixo
-- Como a Corrida se Tornou a Droga Favorita de Adultos Ansiosos
-- O fim do complexo de vira-lata: por que a estética brasileira virou a nova referência global?
-- Por que Empresários Estão Obcecados com o Ironman e Provas de Resistência?
-- A Morte da Rede Social 3.0: Como as Marcas estão Copiando a Netflix para Viralizar na Nova Internet
-- O Fim do Conteúdo Fast Food: Por que Posts Inteligentes estão Voltando a Dominar o Instagram?
-
-CHECKLIST INTERNO DA HEADLINE (executar antes de serializar)
-[ ] Tem interrupção real — para o scroll de um desconhecido?
-[ ] Tem relevância — faz sentido para quem nunca viu o perfil?
-[ ] Tem clareza — pode ser lida em 2 segundos?
-[ ] Tem tensão — há algo em jogo?
-[ ] Texto 1 está entre 14-18 palavras?
-[ ] Texto 2 está entre 8-12 palavras?
-[ ] Livre dos padrões proibidos?
-[ ] Se morno ou genérico, reescrever internamente antes de continuar.
-
-═══════════════════════════════════════════
-CONTENT MACHINE — ESTRUTURA E PROGRESSÃO
-═══════════════════════════════════════════
-
-ESTRUTURA DE 18 TEXTOS EM ATÉ 15 SLIDES
-Os 18 textos são unidades de copy — não são 18 slides. Múltiplos textos podem e devem ocupar o mesmo slide. O carrossel não pode ultrapassar 15 slides (imagens).
-
-POSIÇÕES FIXAS DOS 18 TEXTOS
-textos 1–2 = capa (sempre slide 1, os dois textos juntos)
-textos 3, 7, 11, 14 = títulos de seção
-textos 4, 5, 8, 9, 12, 13, 15, 16 = parágrafos de desenvolvimento
-textos 6 e 10 = parágrafos curtos de transição
-texto 17 = fechamento real
-texto 18 = assinatura fixa
-
-REGRA DE AGRUPAMENTO EM SLIDES
-- Slide 1: textos 1 + 2 (capa obrigatoriamente com os dois textos)
-- Slides internos: título + parágrafo(s) no mesmo slide quando fizerem sentido juntos. Ex: texto 3 (título) + texto 4 (parágrafo) = 1 slide. Ou texto 7 (título) + textos 8 e 9 (parágrafos) = 1 slide.
-- Parágrafos densos ou de desenvolvimento podem ocupar slide próprio quando o conteúdo exigir espaço.
-- Texto 6 e texto 10 (curtos) geralmente ficam sozinhos ou com o parágrafo anterior.
-- Textos 17 + 18 podem estar no mesmo slide final.
-- Resultado: entre 10 e 15 slides no total. Nunca mais que 15.
-
-FAIXAS DE PALAVRAS POR POSIÇÃO
-- texto 1 (hook): 14 a 18 palavras
-- texto 2 (sub-hook): 8 a 12 palavras
-- títulos (3, 7, 11, 14): 11 a 15 palavras
-- parágrafos (4, 5, 8, 9, 12, 13, 15, 16): 25 a 32 palavras
-- curtos (6, 10): 22 a 26 palavras
-- fechamento (17): 26 a 30 palavras
-- assinatura (18): fixa, exatamente como definida abaixo
-
-ASSINATURA FIXA (texto 18 — sempre exatamente assim)
-Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente "CASE" que nossa equipe te chama.
-
-PROGRESSÃO NARRATIVA
-O carrossel funciona como funil interno. Cada texto avança o raciocínio:
-- Textos 1-2: CAPA — parar o scroll do desconhecido
-- Textos 3-5: TRAÇÃO — abrir o problema, contextualizar a tensão
-- Textos 6-10: AVANÇO — mecanismo, por que acontece, evidências observáveis
-- Textos 11-16: CONSEQUÊNCIA e APLICAÇÃO — implicações, o que muda, lição transferível
-- Texto 17: FECHAMENTO — fechar o argumento com força real, não resumir
-- Texto 18: ASSINATURA — fixa, nunca alterada
-
-REGRAS DE PROGRESSÃO
-- Cada texto deve abrir uma micro-tensão que o próximo resolve parcialmente.
-- Nunca repetir a ideia central do texto anterior com outras palavras.
-- Nunca resumir o que já foi dito.
-- Texto 3 deve conectar com a tensão aberta no texto 2.
-- Texto 17 fecha com força, sem motivacional vazio.
-- Texto 18 é sempre a assinatura fixa.
-
-DISCIPLINA INTERNA ANTES DE SERIALIZAR
-Revisar internamente:
-- Progressão narrativa entre todos os 18 textos
-- Faixas de palavras por posição (reescrever se fora do range)
-- Fatos verificáveis — nenhum inventado
-- Gramática e fluência natural em português do Brasil
-- AI slop removido (frases com cara de tradução, jargão, pares simétricos, abstrações vazias)
-- Independência sintática entre texto 1 e texto 2
-- Total de slides entre 10 e 15
-- Assinatura fixa no texto 18
-- Se qualquer item falhar, reescrever internamente antes de serializar.
-
-Retornar APENAS JSON válido, sem markdown, sem texto antes ou depois.`;
-
-    const userPrompt = `Tipo de carrossel: ${tipoLabels[tipo] || tipo}
-Perfil: ${account.name} (${account.handle})
-${manualNote ? `Diretrizes do cliente: ${manualNote}\n` : ''}
-Tema central: "${tema}"
-
-ESTRUTURA NARRATIVA PARA ESTE TIPO:
-${estruturas[tipo] || estruturas.educativo}
-
-PROCESSO INTERNO OBRIGATÓRIO (executar antes de gerar o JSON):
-
-PASSO 1 — TRIAGEM
-Identificar internamente:
-- Transformação: o que mudou ou está mudando no tema, com costura e consequência
-- Fricção central: a tensão real do fenômeno, não apenas resumo do tema
-- Ângulo narrativo dominante: a leitura mais forte para capturar atenção de quem não conhece o perfil
-- Evidências observáveis: A), B), C) de âncoras verificáveis que sustentam a tese
-
-PASSO 2 — HEADLINE
-Gerar internamente a headline mais forte possível com base na triagem:
-- Texto 1: captura — interrompe o scroll, abre tensão, não resolve. Verificar padrão usado (Brasil, Fim/Crise, Geracional, Novidade, Investigando, Contraste, Nome próprio). 14-18 palavras.
-- Texto 2: ancoragem — aprofunda ou tensiona, não depende do texto 1. 8-12 palavras.
-Passar pelo checklist interno. Se morno, reescrever.
-
-PASSO 3 — ESPINHA DORSAL
-Definir internamente antes de escrever qualquer slide:
-- Hook (textos 3-5): como contextualizar a tensão da headline
-- Mecanismo (textos 6-10): por que o fenômeno acontece, com âncoras observáveis
-- Aplicação (textos 11-16): consequência para quem lê, lição transferível
-- Fechamento (texto 17): encerramento com força real, sem resumir nem motivar vagamente
-
-PASSO 4 — RENDER FINAL
-Gerar os 18 textos usando a espinha dorsal como guia.
-Garantir que cada texto empurra o raciocínio do anterior.
-Verificar faixas de palavras por posição antes de serializar.
-Texto 18 sempre com a assinatura fixa.
-
-Retornar APENAS este JSON.
-REGRA DO JSON: cada objeto em "slides" representa 1 imagem/slide real. Cada slide tem "textos" — um array com 1 ou 2 textos que aparecem nessa imagem. O slide 1 sempre tem os textos 1 e 2. Total de slides: entre 10 e 15. Total de textos: exatamente 18.
-
-{
-  "tipo": "${tipo}",
-  "tipo_label": "${tipoLabels[tipo] || tipo}",
-  "tema": "${tema}",
-  "profile": "${profile}",
-  "slides": [
-    {
-      "slide": 1,
-      "funcao": "CAPA",
-      "textos": [
-        { "posicao": 1, "tipo": "hook",     "texto": "..." },
-        { "posicao": 2, "tipo": "sub-hook", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 2,
-      "funcao": "TRAÇÃO",
-      "textos": [
-        { "posicao": 3, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 4, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 3,
-      "funcao": "TRAÇÃO",
-      "textos": [
-        { "posicao": 5, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 4,
-      "funcao": "TRANSIÇÃO",
-      "textos": [
-        { "posicao": 6, "tipo": "curto", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 5,
-      "funcao": "AVANÇO",
-      "textos": [
-        { "posicao": 7, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 8, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 6,
-      "funcao": "AVANÇO",
-      "textos": [
-        { "posicao": 9, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 7,
-      "funcao": "TRANSIÇÃO",
-      "textos": [
-        { "posicao": 10, "tipo": "curto", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 8,
-      "funcao": "CONSEQUÊNCIA",
-      "textos": [
-        { "posicao": 11, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 12, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 9,
-      "funcao": "CONSEQUÊNCIA",
-      "textos": [
-        { "posicao": 13, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 10,
-      "funcao": "APLICAÇÃO",
-      "textos": [
-        { "posicao": 14, "tipo": "titulo",    "texto": "..." },
-        { "posicao": 15, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 11,
-      "funcao": "APLICAÇÃO",
-      "textos": [
-        { "posicao": 16, "tipo": "paragrafo", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 12,
-      "funcao": "FECHAMENTO",
-      "textos": [
-        { "posicao": 17, "tipo": "fechamento", "texto": "..." }
-      ]
-    },
-    {
-      "slide": 13,
-      "funcao": "ASSINATURA",
-      "textos": [
-        { "posicao": 18, "tipo": "assinatura", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \"CASE\" que nossa equipe te chama." }
-      ]
-    }
-  ]
-}
-
-IMPORTANTE: o template acima é um exemplo de distribuição (13 slides). O modelo pode ajustar o agrupamento para chegar entre 10 e 15 slides, desde que:
-- os 18 textos estejam todos presentes com as posições de 1 a 18
-- as posições e faixas de palavras por tipo sejam respeitadas
-- o slide 1 tenha sempre os textos 1 e 2 juntos
-- o texto 18 seja sempre a assinatura fixa`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        temperature: 1.0,
-        max_tokens: 4500,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    });
-
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-
-    let text = data.choices[0].message.content.trim();
-    // Remover fences markdown se o modelo as incluir mesmo assim
-    text = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-
-    const parsed = JSON.parse(text);
-
-    // Normalizar slides: cada slide tem "textos" (array), não um único "texto"
-    // Garante compatibilidade com o frontend que espera heading/body por slide
-    const slidesNormalizados = (parsed.slides || []).map(s => {
-      const textos = s.textos || [];
-      const primeiro = textos[0] || {};
-      const segundo  = textos[1] || {};
-      return {
-        slideNumber: s.slide,
-        funcao: s.funcao || '',
-        heading: primeiro.texto || '',
-        body:    segundo.texto  || '',
-        tipoTexto1: primeiro.tipo || '',
-        tipoTexto2: segundo.tipo  || '',
-        posicao1: primeiro.posicao || null,
-        posicao2: segundo.posicao  || null,
-        imagePrompt: '',
-        // textos raw para acesso completo no frontend
-        textos,
-      };
-    });
-
-    // Guardar na biblioteca de conteúdos gerados
-    const item = saveGeneratedContent({
-      id: `cnt_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      status: 'pendente',
-      type: 'carrossel',
-      contentMachineType: tipo,
-      contentMachineTypeLabel: tipoLabels[tipo] || tipo,
-      profile,
-      topic: tema,
-      carouselData: {
-        title: tema,
-        slideCount: slidesNormalizados.length,
-        slides: slidesNormalizados,
-        caption: '',
-        hashtags: '',
-      },
-    });
-
-    // Devolver parsed original + slides normalizados para o frontend
-    res.json({ success: true, contentId: item.id, ...parsed, slidesNormalizados });
-  } catch (err) {
-    console.error('Content Machine error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // ── Image generation — GPT Image-1 ───────────────────────────────────────────
 app.post('/api/image', async (req, res) => {
   try {
@@ -913,57 +458,69 @@ app.post('/api/calendar/generate', async (req, res) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const calculatedTotal = totalPosts || Math.min(postsPerDay * daysInMonth, 90); // máx 90/mês
 
-    const prompt = `Gera um calendário editorial para Instagram para ${account.name} (${account.handle}).
+    // Gerar o calendário em blocos de 10 dias para evitar truncamento do JSON
+    const BLOCK_SIZE = 10;
+    const allDays = [];
 
-Mês: ${month}/${year}
-Total de posts: ${calculatedTotal}
+    for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK_SIZE) {
+      const blockEnd = Math.min(blockStart + BLOCK_SIZE - 1, daysInMonth);
+
+      const blockPrompt = `Gera sugestões de calendário editorial para Instagram para ${account.name} (${account.handle}).
+
+Mês: ${month}/${year} — Dias ${blockStart} a ${blockEnd}
 Posts por dia (máx): ${postsPerDay}
-Dias no mês: ${daysInMonth}
-
-Distribui os posts ao longo de todos os dias do mês.
-Pode ter até ${postsPerDay} posts por dia em dias de maior engajamento (terça, quarta, quinta).
-Nos fins de semana podes ter 1 post por dia.
-
 ${manualNote ? `\nDiretrizes do cliente:\n${manualNote}` : ''}
 
-Responde APENAS com JSON válido neste formato exacto:
+REGRAS:
+- Terça, quarta, quinta: até ${postsPerDay} posts por dia
+- Segunda, sexta: 1-2 posts
+- Sábado, domingo: 1 post máximo
+- Varia os tipos: "carrossel" (70%), "feed" (20%), "reels" (10%)
+- Cada topic deve ser específico, concreto e diferente dos outros dias
+
+Responde APENAS com JSON válido — sem texto antes ou depois:
 {
-  "calendar": [
+  "days": [
     {
-      "day": 1,
+      "day": ${blockStart},
       "posts": [
-        {
-          "time": "09:00",
-          "type": "carrossel",
-          "topic": "tema do post",
-          "caption": "legenda completa com emojis",
-          "hashtags": "#hashtag1 #hashtag2",
-          "visualDescription": "descrição visual para geração de imagem",
-          "callToAction": "texto do CTA"
-        }
+        { "time": "09:00", "type": "carrossel", "topic": "tema específico do post" }
       ]
     }
   ]
 }
 
-Tipos possíveis: "carrossel", "feed", "reels"
-Distribui variedade de tipos ao longo do mês.
-Certifica-te que o JSON é válido e completo.`;
+Inclui todos os dias de ${blockStart} a ${blockEnd}.
+O "topic" deve ser uma frase clara sobre o que o post vai abordar.
+JSON deve ser válido e completo.`;
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 8192,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    });
+      const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 3000,
+          messages: [{ role: 'user', content: blockPrompt }],
+        }),
+      });
 
+      const blockData = await blockRes.json();
+      if (blockData.error) throw new Error(blockData.error.message);
+
+      let blockText = blockData.content[0].text.trim();
+      const blockMatch = blockText.match(/\{[\s\S]*\}/);
+      if (blockMatch) blockText = blockMatch[0];
+      const blockParsed = JSON.parse(blockText);
+      allDays.push(...(blockParsed.days || []));
+    }
+
+    // Montar resposta unificada compatível com o resto do código
+    const mockResponse = { ok: true };
+    const data = { content: [{ text: JSON.stringify({ calendar: allDays }) }] };
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
 
@@ -1124,12 +681,13 @@ Responde APENAS com JSON válido:
 // causando "Unexpected token '<'" ao tentar fazer JSON.parse do HTML
 app.use(express.static('public'));
 
-// Catch-all: rotas /api/* inexistentes → 404 JSON; resto → SPA
-// IMPORTANTE: sem isto, Express devolve index.html para /api/* não encontradas,
-// causando "Unexpected token '<'" ao tentar JSON.parse do HTML no frontend
+// Catch-all: qualquer rota não-API devolve o index.html (SPA)
+// Rotas /api/* não encontradas → 404 JSON (nunca devolver index.html para API)
 app.use('/api', (req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
 });
+
+// Tudo o resto → SPA
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
