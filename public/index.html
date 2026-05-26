@@ -1915,54 +1915,150 @@ async function generateCarouselImages() {
   if (engine === 'none') return toast('Selecciona um gerador de imagens', 'info');
 
   const slides = currentCarouselData.slides;
-  const btn = document.getElementById('btnGenImages');
+  const topic  = currentCarouselData.title || '';
+  const btn    = document.getElementById('btnGenImages');
   btn.disabled = true;
 
-  const progressBar = document.getElementById('imageProgress');
+  const progressBar  = document.getElementById('imageProgress');
   const progressFill = document.getElementById('imageProgressFill');
-  const statusEl = document.getElementById('imageGenStatus');
+  const statusEl     = document.getElementById('imageGenStatus');
   progressBar.style.display = 'block';
   currentCarouselImages = [];
 
+  // Mensagens de status variadas para feedback mais rico
+  const statusMsgs = [
+    '🎨 Criando composição visual...',
+    '✨ Integrando texto ao design...',
+    '📐 Ajustando hierarquia tipográfica...',
+    '🎭 Aplicando identidade da marca...',
+    '🖼️ Renderizando slide...',
+  ];
+
   for (let i = 0; i < slides.length; i++) {
-    statusEl.textContent = `A gerar imagem ${i+1} de ${slides.length}...`;
-    progressFill.style.width = `${((i)/slides.length)*100}%`;
+    const s = slides[i];
+    const pct = Math.round((i / slides.length) * 100);
+    progressFill.style.width = `${pct}%`;
+    statusEl.innerHTML = `
+      <span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span>
+      &nbsp;${statusMsgs[i % statusMsgs.length]}`;
+
+    // Marcar o card como "a carregar"
+    const cards = document.querySelectorAll('.slide-card');
+    if (cards[i]) {
+      cards[i].style.opacity = '0.6';
+      cards[i].style.outline = '2px solid var(--magenta)';
+    }
 
     try {
-      const endpoint = engine === 'gpt' ? '/api/image' : '/api/gemini-image';
-      const r = await fetch(`${API}${endpoint}`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ prompt: slides[i].imagePrompt || slides[i].heading }),
-      });
-      const d = await r.json();
-      const b64 = d.b64 || null;
-      const url = d.url || (b64 ? `data:image/png;base64,${b64}` : null);
+      // Determinar função do slide para o endpoint
+      const funcao = s.funcao ||
+        (i === 0 ? 'CAPA' :
+         i === slides.length - 1 ? 'ASSINATURA' :
+         i < 3 ? 'TRAÇÃO' :
+         i < 6 ? 'AVANÇO' : 'CONSEQUÊNCIA');
+
+      // Usar o novo endpoint pro para GPT, fallback para Gemini
+      let url = null;
+
+      if (engine === 'gpt') {
+        const r = await fetch(`${API}/api/image/carousel-slide`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            heading:         s.heading || '',
+            body:            s.body    || s.textos?.[1]?.texto || '',
+            slideNumber:     i + 1,
+            totalSlides:     slides.length,
+            funcao,
+            topic,
+            profile:         currentProfile,
+            imagePromptHint: s.imagePrompt || '',
+          }),
+        });
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        url = d.url || (d.b64 ? `data:image/png;base64,${d.b64}` : null);
+
+      } else {
+        // Gemini: prompt enriquecido com texto e identidade visual
+        const geminiPrompt = buildGeminiSlidePrompt(s, i, slides.length, topic, funcao);
+        const r = await fetch(`${API}/api/gemini-image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: geminiPrompt }),
+        });
+        const d = await r.json();
+        url = d.url || (d.b64 ? `data:image/png;base64,${d.b64}` : null);
+      }
+
       currentCarouselImages.push(url);
 
-      const cards = document.querySelectorAll('.slide-card');
+      // Atualizar o card com a imagem gerada
       if (cards[i] && url) {
+        // Remover imagem anterior se existir
+        const oldImg = cards[i].querySelector('img');
+        if (oldImg) oldImg.remove();
+
         const img = document.createElement('img');
         img.src = url;
+        img.style.transition = 'opacity 0.4s ease';
+        img.style.opacity = '0';
         cards[i].insertBefore(img, cards[i].firstChild);
+        // Fade in suave
+        requestAnimationFrame(() => { img.style.opacity = '1'; });
       }
+
+      if (cards[i]) {
+        cards[i].style.opacity = '1';
+        cards[i].style.outline = '2px solid #10B981'; // verde = concluído
+        setTimeout(() => { if (cards[i]) cards[i].style.outline = 'none'; }, 1500);
+      }
+
     } catch(e) {
+      console.error(`Slide ${i+1} error:`, e);
       currentCarouselImages.push(null);
+      if (cards[i]) {
+        cards[i].style.opacity = '1';
+        cards[i].style.outline = '2px solid #EF4444';
+      }
     }
   }
 
   progressFill.style.width = '100%';
-  statusEl.textContent = `✅ ${slides.length} imagens geradas!`;
+  const successCount = currentCarouselImages.filter(Boolean).length;
+  statusEl.innerHTML = `
+    <span style="color:#10B981;font-weight:600;">✅ ${successCount}/${slides.length} slides gerados!</span>
+    ${successCount < slides.length ? `<span style="color:#EF4444;"> (${slides.length - successCount} falharam)</span>` : ''}`;
   btn.disabled = false;
+  btn.textContent = '🔄 Regenerar imagens';
 
+  // Guardar URLs no criativo
   if (currentCarouselContentId) {
     await fetch(`${API}/api/content/${currentCarouselContentId}`, {
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageUrls: currentCarouselImages.filter(Boolean) }),
     });
   }
-  toast('Imagens geradas! Podes agora publicar.', 'success');
+
+  toast(`${successCount} slides gerados com identidade visual! 🎨`, 'success');
+}
+
+// Prompt rico para Gemini (fallback) — mesmo conceito, adaptado à API
+function buildGeminiSlidePrompt(slide, index, total, topic, funcao) {
+  const heading = slide.heading || '';
+  const body    = slide.body    || slide.textos?.[1]?.texto || '';
+  const isCapa  = funcao === 'CAPA' || index === 0;
+
+  return [
+    `Instagram carousel slide ${index + 1} of ${total}.`,
+    `Topic: "${topic}". Function: ${funcao}.`,
+    `Brand: deep purple #3B0F4C background, magenta #E4007C accents, white text.`,
+    isCapa
+      ? `Full-bleed cinematic hero image. MASSIVE bold white heading text overlaid: "${heading}". Dramatic lighting, dark overlay for contrast.`
+      : `Editorial background scene matching topic. Bold white heading: "${heading}". ${body ? `Subtitle: "${body}".` : ''}`,
+    `Scroll-stopping design. High contrast. Sharp readable typography. Portrait 4:5 format. No lorem ipsum.`,
+  ].join(' ');
 }
 
 async function publishCarouselDirect() {
