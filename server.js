@@ -134,8 +134,6 @@ function getManualText(profile) {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // IDENTIDADES VISUAIS POR PERFIL
-// CASE: baseado no manual — sóbrio, premium, sem hype, arquitetura & decisão
-// Paleta: preto profundo + branco + gold âmbar (sofisticação, maturidade)
 // ═══════════════════════════════════════════════════════════════════════════
 const BRAND_IDENTITIES = {
   marca: {
@@ -320,7 +318,6 @@ ${systemExtra || ''}`;
 // GERAÇÃO DE IMAGENS
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── Salvar b64 em disco e retornar URL pública ────────────────────────────
 app.post('/api/image/save-b64', (req, res) => {
   try {
     const { b64, contentId, slideIndex } = req.body;
@@ -339,7 +336,6 @@ app.get('/api/image/file/:filename', (req, res) => {
   res.sendFile(fp);
 });
 
-// ── GPT Image-1 base (compatibilidade) ───────────────────────────────────
 app.post('/api/image', async (req, res) => {
   try {
     const { prompt, size = '1024x1024' } = req.body;
@@ -354,7 +350,6 @@ app.post('/api/image', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Gemini Imagen ─────────────────────────────────────────────────────────
 app.post('/api/gemini-image', async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -370,7 +365,7 @@ app.post('/api/gemini-image', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Slide de carrossel com identidade visual real ─────────────────────────
+// ── Slide de carrossel com identidade visual — PROMPTS LIMPOS ─────────────
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
     const {
@@ -392,15 +387,14 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     const h = heading.replace(/"/g, "'").replace(/—/g, '-').trim();
     const b = body.replace(/"/g, "'").replace(/—/g, '-').trim().slice(0, 140);
 
-    // Palavras-chave para accent inline (últimas palavras significativas)
-    const hWords      = h.split(/\s+/).filter(w => w.length > 2);
+    const hWords       = h.split(/\s+/).filter(w => w.length > 2);
     const accentPhrase = hWords.length >= 3
       ? hWords.slice(-Math.min(2, Math.ceil(hWords.length / 3))).join(' ')
       : hWords[hWords.length - 1] || '';
 
     // Cena visual via Claude Haiku (só para slides com imagem)
-    let scene       = imagePromptHint || '';
-    const needsScene = ['HERO_DARK', 'EDITORIAL_LIGHT', 'SPLIT_LIGHT'].includes(mood);
+    let scene        = imagePromptHint || '';
+    const needsScene = ['HERO_DARK', 'SPLIT_LIGHT'].includes(mood);
 
     if (needsScene && !scene) {
       try {
@@ -418,235 +412,200 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     }
 
     const slideRef  = `Slide ${slideNumber} of ${totalSlides}`;
-    const brandLine = `Handle top-left: "${brand.handle}" — 11px, ${brand.accent}, opacity 65%.`;
-    const footLine  = `Bottom edge: 3px horizontal line, color ${brand.accent}, full width.`;
-    const labelLine = funcao ? `Category label below handle: "${funcao}" — 9px uppercase letter-spacing 2px, color ${brand.accent}.` : '';
 
     let prompt = '';
 
     if (mood === 'HERO_DARK') {
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Dark cinematic editorial.
 
-BACKGROUND LAYER:
-- Full-bleed cinematic image: ${scene || `dramatic scene related to "${topic}"`}
-- Image occupies TOP 55% of canvas
-- From 55% downward: gradient fade to solid ${brand.bgDark}
-- Dark atmospheric treatment — deep shadows, moody lighting
+BACKGROUND: Full-bleed photograph. Subject: ${scene || `dramatic scene related to "${topic}"`}. Professional photography, moody lighting, deep shadows.
+Gradient overlay: transparent at top, fading to solid ${brand.bgDark} covering bottom 45% of canvas.
 
-TOP ELEMENTS (y=3-5%):
-- ${brandLine}
-- ${labelLine}
+TEXT (bottom 40%, left-aligned, 7% horizontal padding):
+"${h}" — Inter Black ~90px, white, tight line-height 1.0.
+Last 2 words in ${brand.accent} color.
+${b ? `"${b}" — 22px regular, white 60% opacity, margin-top 14px.` : ''}
 
-HEADLINE BLOCK (y=58-88%, left margin 6%):
-- MAIN HEADING: Inter Black / Helvetica Neue 900 weight
-  Font size: ~80-90px, multiple lines OK
-  Color: ${brand.textOnDark}
-  Text: "${h}"
-  EXCEPTION: words "${accentPhrase}" rendered in ${brand.accent}
-  Line height: 1.1, tight tracking
-- SUBTEXT: "${b}" — 22px, weight 400, color ${brand.accent}, margin-top 16px
+TOP-LEFT corner: "${brand.handle}" — ${brand.accent}, 11px, opacity 60%.
+${funcao ? `Below handle: "${funcao}" — ${brand.accent}, 9px uppercase, letter-spacing 2px.` : ''}
+BOTTOM EDGE: solid 3px line ${brand.accent}, full width.
 
-FOOTER: ${footLine}
-
-QUALITY: Magazine cover quality. Every letter perfectly legible. No blur. No distortion. Vertical 4:5.`;
+NOTHING ELSE. No boxes. No icons. No extra shapes. No decorative frames.
+One image. One headline. Absolute clarity.`;
 
     } else if (mood === 'EDITORIAL_LIGHT') {
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Clean white editorial. NO photograph inside the slide.
 
-BACKGROUND: Solid ${brand.bgLight}. Clean editorial white.
+BACKGROUND: Pure ${brand.bgLight}. Flat, clean.
 
-TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+LAYOUT (strict top-to-bottom):
+TOP-LEFT (y=4%): "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `Below: "${funcao}" — ${brand.accent}, 9px uppercase, 2px letter-spacing.` : ''}
 
-IMAGE BLOCK (y=10-45%, centered):
-- Contained image (NOT full-bleed): ${scene || `editorial scene for "${topic}"`}
-- Slight border-radius 8px, fills ~80% canvas width
+HEADING (y=18–58%, left margin 7%):
+"${h}" — Inter Black ~82px, ${brand.textOnLight}, line-height 1.05, tight tracking.
+Words "${accentPhrase}" in ${brand.accent}.
 
-TEXT BLOCK (y=50-88%, left margin 6%):
-- HEADING: Inter Black ~68px weight 900
-  Color: ${brand.textOnLight}
-  Text: "${h}" — words "${accentPhrase}" in ${brand.accent}
-- BODY: "${b}" — 20px weight 400, ${brand.textOnLight} opacity 80%, line-height 1.6
+${b ? `BODY (below heading, margin-top 20px): "${b}" — 21px regular, ${brand.textOnLight} 75% opacity, line-height 1.6.` : ''}
 
-FOOTER: ${footLine}
+BOTTOM EDGE: 3px solid line ${brand.accent}, full width.
 
-QUALITY: Crisp editorial magazine. Perfect text rendering. Vertical 4:5.`;
+ABSOLUTELY NOTHING ELSE. No photographs. No contained image blocks. No decorative shapes. No icons.
+White space is intentional. Typography carries the entire visual weight.`;
 
     } else if (mood === 'TYPE_LIGHT') {
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Pure typography on light background.
 
-BACKGROUND: Pure ${brand.bgLight}. NO image. Typography-only slide.
+BACKGROUND: ${brand.bgLight}. No image. Optional: single very faint vertical line (1px, ${brand.accent}, 5% opacity) as minimal decoration only.
 
-SUBTLE DECORATION: Very faint vertical lines (2px, ${brand.accent}, opacity 8%) as background grid
-OR single decorative data-column motif (tall thin rectangle, ${brand.accent}, opacity 6%).
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
 
-TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+MAIN TEXT (y=20–80%, left margin 7%):
+"${h}" — Inter Black ~88px, ${brand.textOnLight}, line-height 1.0, letter-spacing -1px.
+Words "${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 22px regular, ${brand.textOnLight} 72% opacity, margin-top 26px.` : ''}
 
-MAIN TEXT (y=18-82%, left margin 7%):
-- LARGE HEADING: Inter Black 900, ~85-100px
-  Color: ${brand.textOnLight}
-  Text: "${h}" — words "${accentPhrase}" in ${brand.accent}
-  Line-height: 1.05, tight
-- BODY: "${b}" — 22px weight 400, ${brand.textOnLight} opacity 75%, margin-top 28px
+BOTTOM: 3px ${brand.accent} line.
 
-FOOTER: ${footLine}
-
-QUALITY: Typography IS the design. Perfect kerning. No distortion. Vertical 4:5.`;
+NO image. NO texture. NO decoration beyond what is listed above. Typography only.`;
 
     } else if (mood === 'TYPE_DARK') {
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Dark typography slide.
 
-BACKGROUND: Solid ${brand.bgDark}. Completely flat. Optional: 3% noise texture for depth.
+BACKGROUND: ${brand.bgDark}. Flat. Optional: very subtle 2% noise texture for depth. Nothing else.
 
-TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
 
-MAIN TEXT (y=20-80%, left margin 7%):
-- MASSIVE HEADING: Inter Black 900, ~88-105px
-  Color: ${brand.textOnDark}
-  Text: "${h}" — words "${accentPhrase}" MUST be in ${brand.accent}
-  Line-height: 1.0, ultra-tight, letter-spacing -1px
-- BODY: "${b}" — 22px weight 400, white opacity 70%, margin-top 32px
+MAIN TEXT (y=22–78%, left margin 7%):
+"${h}" — Inter Black ~92px, white, line-height 1.0, letter-spacing -1px.
+Words "${accentPhrase}" MUST be in ${brand.accent}.
+${b ? `"${b}" — 22px regular, white 68% opacity, margin-top 28px.` : ''}
 
-ACCENT ELEMENT:
-- Small decorative bar motif or underline in ${brand.accent} near heading
+ACCENT: single horizontal bar 40px wide × 3px tall in ${brand.accent}, left-aligned, directly below heading.
 
-FOOTER: ${footLine}
+BOTTOM: 3px ${brand.accent} line.
 
-QUALITY: Maximum typographic impact. Perfect rendering. Vertical 4:5.`;
+NO photograph. NO complex background. Dark background + type + one accent bar. That is all.`;
 
     } else if (mood === 'BRAND_PUNCH') {
       const punchBg = profile === 'marca' ? brand.bgDark : brand.bgBrand;
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}. This is the PIVOT / CLIMAX slide.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Bold emotional pivot slide.
 
-BACKGROUND: Solid ${punchBg}. Emotional pivot slide — bold, punchy, memorable.
-Optional: very subtle large geometric pattern in ${brand.accent} at 6% opacity.
+BACKGROUND: ${punchBg}. Optional: one large geometric shape in ${brand.accent} at 5% opacity (circle or rectangle partially cropped at edge). Nothing more.
 
-TOP: Small label "${funcao || 'A VIRADA'}" — 9px uppercase, color ${brand.accent}.
+TOP: "${funcao || 'A VIRADA'}" — ${brand.accent}, 9px uppercase, letter-spacing 3px. y=4%, left 7%.
 
-MAIN TEXT (y=15-75%, left margin 7%):
-- CATEGORY LABEL: "${funcao}" — 14px ${brand.accent} uppercase letter-spacing 3px, margin-bottom 20px
-- MASSIVE HEADING: Inter Black 900, ~95-115px
-  Color: ${brand.textOnDark}
-  Text: "${h}" — words "${accentPhrase}" in ${brand.accent}
-  Line-height: 0.95, ultra-tight
-- BODY: "${b}" — 24px weight 400, ${brand.textOnDark} opacity 80%, margin-top 28px
+MAIN TEXT (y=18–74%, left 7%):
+"${h}" — Inter Black ~96px, white, line-height 0.95, ultra-tight.
+Words "${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 24px regular, white 78% opacity, margin-top 26px.` : ''}
 
-FOOTER: ${footLine}
+BOTTOM: 3px ${brand.accent} line.
 
-QUALITY: STOP-THE-SCROLL slide. Maximum visual weight. Perfect text. Vertical 4:5.`;
+MAXIMUM TYPOGRAPHIC IMPACT. One focal point. No photographs. No complex elements. No decoration.`;
 
     } else if (mood === 'TABLE_LIGHT') {
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Clean comparison table slide.
 
-BACKGROUND: ${brand.bgLight}. Clean editorial.
+BACKGROUND: ${brand.bgLight}. Flat white.
 
-TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
 
-TEXT BLOCK (y=8-30%):
-- HEADING: Inter Black ~62px, ${brand.textOnLight}
-  "${h}" — words "${accentPhrase}" in ${brand.accent}
-- Intro: "${b}" — 20px weight 400, ${brand.textOnLight} opacity 75%
+HEADING (y=8%, left 7%): "${h}" — Inter Black ~60px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
 
-COMPARISON TABLE (y=38-80%, width with 5% margins):
-- Two-column table, 3-4 rows
-- LEFT header: "SEM SISTEMA" — bg #E8E8E8, text #666666, 16px bold
-- RIGHT header: "COM ${brand.name.toUpperCase()}" — bg ${brand.accent}, text ${brand.bgDark}, 16px bold
-- Rows: neutral left, bold ${brand.accent} right
-- Content related to: "${topic}"
-- Row dividers: 1px #E0E0E0
+TABLE (y=28–78%, 6% side margins. TWO columns, THREE rows maximum):
+Left column header: dark background ${brand.bgDark}, white text "SEM SISTEMA", 14px bold.
+Right column header: ${brand.accent} background, dark text "COM ${brand.name.toUpperCase()}", 14px bold.
+Row cells: white background, 1px dividers (${brand.accent} 12% opacity).
+Content: 3 concrete contrasts for the topic "${topic}". Left = problem. Right = solution.
+Cell padding: 12px. Font: 14px regular.
 
-FOOTER: ${footLine}
+BOTTOM: 3px ${brand.accent} line.
 
-QUALITY: Clean, structured, premium data design. Vertical 4:5.`;
+NO illustrations. NO icons. NO extra UI elements. Table + heading only. Clean and clear.`;
 
     } else if (mood === 'CTA_LIGHT') {
       const ctaWord = accentPhrase.toUpperCase() || brand.name.toUpperCase();
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}. FINAL CTA SLIDE.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}. FINAL SLIDE — CTA.
+OUTPUT: 1024×1536px portrait. Clean white conversion slide.
 
-BACKGROUND: ${brand.bgLight}. Clean white.
+BACKGROUND: ${brand.bgLight}. Pure white.
 
-TOP TEXT (y=8%, left 6%):
-- "${b || 'Gostou do conteúdo?'}" — 20px weight 400, ${brand.textOnLight} opacity 80%
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
 
-HEADLINE (y=20-42%, left 6%):
-- LARGE HEADING: Inter Black ~72px
-  Color: ${brand.textOnLight}
-  "${h}" — words "${accentPhrase}" in ${brand.accent}
+HEADLINE (y=22–46%, left 7%):
+"${h}" — Inter Black ~72px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
 
-CTA BOX (y=50-70%, centered, width 88%):
-- Rounded rectangle border-radius 12px, bg: #ECEAE4
-- Border: 1.5px solid ${brand.accent} opacity 30%
-- Inside:
-  "Comenta a palavra abaixo:" — 15px weight 500, ${brand.textOnLight} opacity 60%
-  LARGE: "${ctaWord}" — 52px weight 900, ${brand.accent}
-  "e recebe no DM" — 14px weight 400, ${brand.textOnLight} opacity 50%
+CTA BOX (y=54–70%, centered, 88% width):
+Rounded rectangle, background #EDECE8, border-radius 12px.
+Subtle 1px border ${brand.accent} 20% opacity.
+Inside — three lines centered:
+  "Comenta a palavra:" — 15px gray
+  "${ctaWord}" — 50px ${brand.accent} bold
+  "e recebe no DM" — 14px gray
 
-BOTTOM (y=82-88%):
-- "${brand.handle}" — 13px ${brand.accent} weight 600
+BOTTOM: "${brand.handle}" — 13px ${brand.accent} bold. Then 3px ${brand.accent} line.
 
-FOOTER: ${footLine}
-
-QUALITY: Conversion-optimized. Clear hierarchy. Perfect text. Vertical 4:5.`;
+TWO ELEMENTS ONLY: headline + CTA box. Nothing else. Breathe.`;
 
     } else {
       // SPLIT_LIGHT fallback
-      prompt = `You are a world-class graphic designer creating a premium Instagram carousel slide.
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
 
 ${brand.aestheticDNA}
 ${manualCtx}
 
-CANVAS: 1024×1536px portrait. ${slideRef}.
+OUTPUT: 1024×1536px portrait. Clean editorial.
 
-BACKGROUND: ${brand.bgLight}. Editorial layout.
+BACKGROUND: ${brand.bgLight}.
 
-TOP ELEMENTS (y=3%): ${brandLine} ${labelLine}
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
 
-VISUAL ELEMENT (y=10-42%, centered, max 85% width):
-- ${scene || `data visualization or editorial image for "${topic}"`}
-- Clean crop, slight shadow or border-radius
+TEXT BLOCK (y=15–80%, left 7%):
+"${h}" — Inter Black ~74px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 21px regular, ${brand.textOnLight} 76% opacity, margin-top 22px.` : ''}
 
-TEXT BLOCK (y=48-85%, left 6%):
-- HEADING: Inter Black ~70px, ${brand.textOnLight}
-  "${h}" — words "${accentPhrase}" in ${brand.accent}
-- BODY: "${b}" — 21px weight 400, ${brand.textOnLight} opacity 78%
+BOTTOM: 3px ${brand.accent} line.
 
-FOOTER: ${footLine}
-
-QUALITY: Editorial magazine quality. Perfect rendering. Vertical 4:5.`;
+Clean, deliberate. One typographic statement. Nothing decorative.`;
     }
 
     // Chamar GPT Image-1
@@ -662,7 +621,6 @@ QUALITY: Editorial magazine quality. Perfect rendering. Vertical 4:5.`;
     const b64out = imgData.data[0].b64_json || null;
     let   urlOut = imgData.data[0].url      || null;
 
-    // Auto-salvar b64 em disco se contentId fornecido
     if (b64out && contentId) {
       try {
         const filename = `${contentId}_slide${slideNumber}_${Date.now()}.png`;
@@ -703,7 +661,6 @@ app.patch('/api/content/:id', (req, res) => {
   if (idx === -1) return res.status(404).json({ error: 'Não encontrado' });
   all[idx] = { ...all[idx], ...req.body };
   writeJSON(GENERATED_FILE, all);
-  // Sync Supabase
   if (supabase) {
     const updates = {};
     if (req.body.imageUrls) updates.image_urls = req.body.imageUrls;
@@ -802,7 +759,6 @@ app.delete('/api/instagram/scheduled/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// Processador de agendamentos (a cada minuto)
 setInterval(async () => {
   const posts   = readJSON(SCHEDULED_FILE);
   const now     = new Date();
@@ -1180,7 +1136,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString() });
 });
 
-// ── Ficheiros estáticos (SEMPRE depois das rotas /api/*) ──────────────────
+// ── Ficheiros estáticos ───────────────────────────────────────────────────
 app.use(express.static('public'));
 
 app.use('/api', (req, res) => {
