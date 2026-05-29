@@ -3,7 +3,6 @@ const cors    = require('cors');
 const multer  = require('multer');
 const fs      = require('fs');
 const path    = require('path');
-const os      = require('os');
 const fetch   = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
 
 const app  = express();
@@ -12,20 +11,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// ── Storage ───────────────────────────────────────────────────────────────
 const upload = multer({ dest: 'uploads/' });
 
-const DATA_DIR      = fs.existsSync('/tmp') ? '/tmp' : '.';
+const DATA_DIR       = fs.existsSync('/tmp') ? '/tmp' : '.';
 const SCHEDULED_FILE = path.join(DATA_DIR, 'scheduled_posts.json');
 const GENERATED_FILE = path.join(DATA_DIR, 'generated_content.json');
 const CALENDAR_FILE  = path.join(DATA_DIR, 'calendar_data.json');
 const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
 const IMAGES_DIR     = path.join(DATA_DIR, 'carousel_images');
 
-try { fs.mkdirSync('uploads/',         { recursive: true }); } catch(e) {}
-try { fs.mkdirSync(MANUALS_DIR,        { recursive: true }); } catch(e) {}
-try { fs.mkdirSync(IMAGES_DIR,         { recursive: true }); } catch(e) {}
-try { fs.mkdirSync('uploads/photos/',  { recursive: true }); } catch(e) {}
+try { fs.mkdirSync('uploads/',        { recursive: true }); } catch(e) {}
+try { fs.mkdirSync(MANUALS_DIR,       { recursive: true }); } catch(e) {}
+try { fs.mkdirSync(IMAGES_DIR,        { recursive: true }); } catch(e) {}
+try { fs.mkdirSync('uploads/photos/', { recursive: true }); } catch(e) {}
 
 // ── Supabase ──────────────────────────────────────────────────────────────
 let supabase = null;
@@ -38,7 +36,7 @@ try {
     console.log('⚠️  Supabase não configurado — usando ficheiros locais');
   }
 } catch(e) {
-  console.log('⚠️  @supabase/supabase-js não instalado — usando ficheiros locais');
+  console.log('⚠️  Supabase não instalado — usando ficheiros locais');
 }
 
 // ── Helpers JSON ──────────────────────────────────────────────────────────
@@ -49,7 +47,6 @@ function ensureFile(file, def = '[]') {
     if (!fs.existsSync(file)) fs.writeFileSync(file, def, 'utf-8');
   } catch(e) { console.error('ensureFile:', file, e.message); }
 }
-
 function readJSON(file) {
   try {
     ensureFile(file);
@@ -58,7 +55,6 @@ function readJSON(file) {
     return JSON.parse(raw);
   } catch(e) { console.error('readJSON:', file, e.message); return []; }
 }
-
 function writeJSON(file, data) {
   try {
     ensureFile(file);
@@ -81,6 +77,7 @@ function saveGeneratedContent(item) {
       calendar_day: item.calendarDay || null,
       calendar_month: item.calendarMonth || null,
       calendar_year: item.calendarYear || null,
+      image_urls: item.imageUrls || [],
       created_at: item.createdAt,
     }, { onConflict: 'id' }).then(({ error }) => {
       if (error) console.error('Supabase save:', error.message);
@@ -94,7 +91,12 @@ function updateContentStatus(id, status, extra = {}) {
   const idx = all.findIndex(i => i.id === id);
   if (idx !== -1) { all[idx] = { ...all[idx], status, ...extra }; writeJSON(GENERATED_FILE, all); }
   if (supabase) {
-    supabase.from('generated_content').update({ status, ...extra }).eq('id', id)
+    const updates = { status };
+    if (extra.imageUrls)    updates.image_urls   = extra.imageUrls;
+    if (extra.publishedAt)  updates.published_at = extra.publishedAt;
+    if (extra.scheduledAt)  updates.scheduled_at = extra.scheduledAt;
+    if (extra.instagramId)  updates.instagram_id = extra.instagramId;
+    supabase.from('generated_content').update(updates).eq('id', id)
       .then(({ error }) => { if (error) console.error('Supabase update:', error.message); });
   }
 }
@@ -133,9 +135,11 @@ function getManualText(profile) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// IDENTIDADES VISUAIS POR PERFIL
+// IDENTIDADES VISUAIS
 // ═══════════════════════════════════════════════════════════════════════════
 const BRAND_IDENTITIES = {
+
+  // ── CASE ACELERADORA ────────────────────────────────────────────────────
   marca: {
     accent:      '#C8A020',
     accentAlt:   '#FFFFFF',
@@ -146,36 +150,85 @@ const BRAND_IDENTITIES = {
     textOnLight: '#0A0A0A',
     handle:      '@caseaceleradora',
     name:        'CASE',
-    moods: [
-      'HERO_DARK', 'EDITORIAL_LIGHT', 'TYPE_LIGHT', 'SPLIT_LIGHT',
-      'TABLE_LIGHT', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'BRAND_PUNCH', 'CTA_LIGHT',
-    ],
-    aestheticDNA: `Premium B2B editorial design. Think The Economist cover meets McKinsey Digital report.
-TYPOGRAPHY: Geometric sans-serif (Inter or Neue Haas Grotesk equivalent), weight 700-900 for headings. Clean, structured, authoritative.
-NEVER: hype graphics, rockets, explosions, cartoonish elements, neon colors, aggressive design, excessive decoration.
-ALWAYS convey: structure, clarity, strategic intelligence, premium quality, data-driven thinking, architectural precision.
-PHOTOGRAPHY when used: executive boardroom, data screens, architectural details, precise editorial composition. Desaturated or cool tones.
-GRAPHIC ELEMENTS: clean grid lines, data column motifs (tall thin rectangles suggesting bar charts), subtle ascending line patterns.`,
+    moods: ['HERO_DARK','EDITORIAL_LIGHT','TYPE_LIGHT','SPLIT_LIGHT','TABLE_LIGHT','TYPE_DARK','EDITORIAL_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
+    aestheticDNA: `Premium B2B editorial design. Think The Economist meets McKinsey Digital.
+TYPOGRAPHY: Geometric sans-serif, weight 700-900, clean and authoritative.
+NEVER: hype graphics, rockets, cartoonish elements, neon colors.
+ALWAYS: structure, clarity, strategic intelligence, data-driven precision.
+PHOTOGRAPHY: executive boardroom, architectural details, desaturated editorial tones.`,
   },
+
+  // ── ANA MOUTINHO — IDENTIDADE COMPLETA DO MANUAL ───────────────────────
   pessoal: {
-    accent:      '#E4007C',
-    accentAlt:   '#FF6B35',
-    bgDark:      '#0D0D0D',
-    bgLight:     '#FFFFFF',
-    bgBrand:     '#3B0F4C',
-    textOnDark:  '#FFFFFF',
-    textOnLight: '#111111',
+    accent:      '#8B7355',   // marrom café — calor, intimidade, maturidade
+    accentAlt:   '#C4A882',   // caramelo claro — destaque suave
+    accentFem:   '#C17B6F',   // rosa queimado — feminino sem infantil
+    bgDark:      '#1A1612',   // quase preto com tom quente
+    bgLight:     '#FAF8F5',   // off-white / creme
+    bgMid:       '#EDEAE4',   // cinza quente
+    bgBrand:     '#2C2420',   // grafite escuro e quente
+    textOnDark:  '#F5F2EE',   // creme sobre escuro
+    textOnLight: '#1A1612',   // grafite sobre claro
     handle:      '@analuisa.moutinho',
     name:        'Ana Moutinho',
-    moods: [
-      'HERO_DARK', 'EDITORIAL_LIGHT', 'TYPE_LIGHT', 'HERO_DARK',
-      'TABLE_LIGHT', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'BRAND_PUNCH', 'CTA_LIGHT',
-    ],
-    aestheticDNA: `Personal brand editorial design. Warm, human, authentic energy.
-TYPOGRAPHY: Modern humanist sans-serif, bold weight 700-900, approachable and dynamic.
-PHOTOGRAPHY: Real authentic moments, warm tones, human connection, lifestyle editorial feel.
-GRAPHIC ELEMENTS: clean bold layouts, magenta accent lines, strong contrast between type and image.`,
+
+    // Moods baseados no manual: lo-fi, editorial, diário visual
+    moods: ['HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','TYPE_DARK_WARM','DIARIO_EDITORIAL','VIRADA','CTA_INTIMO'],
+
+    aestheticDNA: `IDENTIDADE: "Ana mais real" — diário visual inteligente de uma mulher construindo a própria vida com intenção.
+
+SENSAÇÃO DESEJADA:
+— "ela observa o mundo de um jeito diferente"
+— "ela não está tentando parecer perfeita"
+— "ela traduz coisas que eu sinto, mas não sabia nomear"
+— "ela é estratégica, mas humana"
+
+PERSONALIDADE: realista, observadora, estratégica, feminina sem ser frágil, ambiciosa sem ser performática, vulnerável com filtro.
+
+ESTÉTICA VISUAL (CRÍTICO):
+— real, crua, íntima, sofisticada, levemente granulada
+— luz natural, fotos espontâneas, imperfeições bonitas
+— aparência de diário visual, não de agência de marketing
+— tipografia forte sobre fotos reais
+— paleta: off-white/creme (#FAF8F5), preto suave, marrom café (#8B7355), verde oliva, cinza quente, rosa queimado (#C17B6F)
+
+TOM DE VOZ:
+— reflexivo, direto, levemente provocativo, íntimo, inteligente, feminino
+— frases curtas e marcantes, como pensamentos reais
+— NUNCA: "seja sua melhor versão", "mulher de alta performance", "desbloqueie seu potencial"
+— NUNCA: motivacional raso, tom de guru, coach, LinkedIn
+
+EXEMPLO DE FRASES NO TOM CERTO:
+"Às vezes a vida não muda porque você ainda está tentando caber numa versão sua que já venceu o prazo."
+"Rotina não é sobre fazer mais. É sobre parar de negociar todos os dias com a pessoa que você disse que queria ser."
+"Tem gente tentando parecer autoridade antes de ter construído uma visão de mundo."
+
+PILARES: construção pessoal, leitura de comportamento, estratégia de vida, estética de vida real, marca pessoal.
+
+NÃO PARECE: portfólio de marketing, perfil motivacional, vitrine artificial, design Canva, feed perfeito demais.`,
+
+    copyDNA: `COPY PARA ANA MOUTINHO — REGRAS OBRIGATÓRIAS:
+
+1. HOOK (slide 1): afirmação provocativa que nomeia algo que a pessoa sente mas não sabe nomear. 12-16 palavras. Nunca começa com "Descubra", "Saiba", "5 dicas".
+
+2. TOM: íntimo e observador, como se fosse uma anotação de diário que também é estratégica. Reflexivo, não instrucional.
+
+3. PROIBIDO: "mulher de alta performance", "desbloqueie", "seja sua melhor versão", "sucesso", linguagem de coach, tom corporativo, superlativos vazios.
+
+4. ESTRUTURA dos carrosseis (6-8 slides):
+   Slide 1: gancho — nomeia o padrão ou comportamento
+   Slide 2: tensão — aprofunda o desconforto
+   Slide 3: explicação com observação real
+   Slide 4: exemplo concreto ou dado
+   Slide 5: virada de chave
+   Slide 6: frase memorável
+   Slide 7: fechamento com reflexão
+   Slide 8: CTA leve ("salva pra reler", "me diz se fez sentido", "envia pra alguém")
+
+5. VOZ: primeira pessoa ocasional, mas sem excessos. Usa "a gente" às vezes. Não usa segunda pessoa no tom imperativo.`,
   },
+
+  // ── VIRTTUS ─────────────────────────────────────────────────────────────
   virttus: {
     accent:      '#00D4AA',
     accentAlt:   '#7B2FFF',
@@ -186,13 +239,10 @@ GRAPHIC ELEMENTS: clean bold layouts, magenta accent lines, strong contrast betw
     textOnLight: '#050B18',
     handle:      '@virttus',
     name:        'Virttus',
-    moods: [
-      'HERO_DARK', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'HERO_DARK',
-      'TABLE_LIGHT', 'TYPE_DARK', 'EDITORIAL_LIGHT', 'BRAND_PUNCH', 'CTA_LIGHT',
-    ],
+    moods: ['HERO_DARK','TYPE_DARK','EDITORIAL_LIGHT','HERO_DARK','TABLE_LIGHT','TYPE_DARK','EDITORIAL_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
     aestheticDNA: `Tech B2B precision design. Sharp, forward-looking, data-driven.
 TYPOGRAPHY: Geometric tech sans-serif, precise and clean, weight 700-900.
-VISUALS: Abstract data visualizations, digital interfaces, circuit-inspired patterns, tech product renders.
+VISUALS: Abstract data visualizations, digital interfaces, circuit patterns.
 NEVER: clipart, generic stock, cartoonish elements.`,
   },
 };
@@ -214,10 +264,7 @@ if (!fs.existsSync(PHOTOS_FILE)) fs.writeFileSync(PHOTOS_FILE, '[]');
 
 const photoUpload = multer({
   dest: 'uploads/photos/',
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Apenas imagens'));
-  },
+  fileFilter: (req, file, cb) => { if (file.mimetype.startsWith('image/')) cb(null, true); else cb(new Error('Apenas imagens')); },
   limits: { fileSize: 20 * 1024 * 1024 },
 });
 
@@ -231,18 +278,8 @@ app.post('/api/photos/upload', photoUpload.single('photo'), async (req, res) => 
     fs.renameSync(req.file.path, dest);
     const b64     = fs.readFileSync(dest).toString('base64');
     const dataUrl = `data:${req.file.mimetype || 'image/jpeg'};base64,${b64}`;
-    const meta = {
-      id, profile,
-      filename: `${id}${ext}`,
-      originalName: req.file.originalname,
-      tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
-      description,
-      uploadedAt: new Date().toISOString(),
-      dataUrl,
-    };
-    const all = readJSON(PHOTOS_FILE);
-    all.unshift(meta);
-    writeJSON(PHOTOS_FILE, all);
+    const meta = { id, profile, filename: `${id}${ext}`, originalName: req.file.originalname, tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [], description, uploadedAt: new Date().toISOString(), dataUrl };
+    const all = readJSON(PHOTOS_FILE); all.unshift(meta); writeJSON(PHOTOS_FILE, all);
     res.json({ success: true, photo: meta });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
@@ -264,14 +301,10 @@ app.post('/api/photos/suggest', async (req, res) => {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', max_tokens: 512,
-        messages: [{ role: 'user', content: `Tema: "${topic}"\nFotos:\n${photoList}\nSeleciona até ${limit} IDs. JSON: {"suggestions":["id1"]}` }],
-      }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 512, messages: [{ role: 'user', content: `Tema: "${topic}"\nFotos:\n${photoList}\nSeleciona até ${limit} IDs. JSON: {"suggestions":["id1"]}` }] }),
     });
-    const d    = await r.json();
-    const text = d.content[0].text;
-    const match  = text.match(/\{[\s\S]*\}/);
+    const d = await r.json();
+    const match  = d.content[0].text.match(/\{[\s\S]*\}/);
     const parsed = match ? JSON.parse(match[0]) : { suggestions: [] };
     const allFull = readJSON(PHOTOS_FILE);
     res.json({ suggestions: parsed.suggestions.map(id => allFull.find(p => p.id === id)).filter(Boolean) });
@@ -285,7 +318,7 @@ app.get('/api/photos/:id', (req, res) => {
 });
 
 app.delete('/api/photos/:id', (req, res) => {
-  let all   = readJSON(PHOTOS_FILE);
+  const all   = readJSON(PHOTOS_FILE);
   const photo = all.find(p => p.id === req.params.id);
   if (!photo) return res.status(404).json({ error: 'Não encontrada' });
   const fp = path.join(PHOTOS_DIR, photo.filename);
@@ -298,9 +331,12 @@ app.delete('/api/photos/:id', (req, res) => {
 app.post('/api/claude', async (req, res) => {
   try {
     const { prompt, profile, systemExtra } = req.body;
+    const brand      = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const manualNote = getManualText(profile);
     const systemMsg  = `Você é especialista em marketing digital e criação de conteúdo para Instagram.
-Responda sempre em português de Portugal.
+Responda sempre em português do Brasil.
+${brand.aestheticDNA ? `\n## Identidade da marca\n${brand.aestheticDNA}` : ''}
+${brand.copyDNA ? `\n## Diretrizes de copy\n${brand.copyDNA}` : ''}
 ${manualNote ? `\n## Manual do cliente\n${manualNote}` : ''}
 ${systemExtra || ''}`;
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -365,256 +401,347 @@ app.post('/api/gemini-image', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Slide de carrossel com identidade visual — PROMPTS LIMPOS ─────────────
+// ── Slide de carrossel — PROMPTS LIMPOS com identidade ANA MOUTINHO ──────
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
-    const {
-      heading         = '',
-      body            = '',
-      slideNumber     = 1,
-      totalSlides     = 9,
-      funcao          = '',
-      topic           = '',
-      profile         = 'marca',
-      imagePromptHint = '',
-      contentId       = null,
-    } = req.body;
+    const { heading = '', body = '', slideNumber = 1, totalSlides = 9, funcao = '', topic = '', profile = 'marca', imagePromptHint = '', contentId = null } = req.body;
 
-    const brand      = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
-    const mood       = brand.moods[Math.min(slideNumber - 1, brand.moods.length - 1)];
-    const manualCtx  = getManualText(profile);
+    const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
+    const isAna = profile === 'pessoal';
+
+    // Para Ana: moods lo-fi; para outros: moods editorial
+    const mood = brand.moods[Math.min(slideNumber - 1, brand.moods.length - 1)];
+    const manualCtx = getManualText(profile);
 
     const h = heading.replace(/"/g, "'").replace(/—/g, '-').trim();
     const b = body.replace(/"/g, "'").replace(/—/g, '-').trim().slice(0, 140);
 
     const hWords       = h.split(/\s+/).filter(w => w.length > 2);
-    const accentPhrase = hWords.length >= 3
-      ? hWords.slice(-Math.min(2, Math.ceil(hWords.length / 3))).join(' ')
-      : hWords[hWords.length - 1] || '';
+    const accentPhrase = hWords.slice(-Math.min(2, Math.ceil(hWords.length / 3))).join(' ') || hWords[hWords.length - 1] || '';
 
-    // Cena visual via Claude Haiku (só para slides com imagem)
-    let scene        = imagePromptHint || '';
-    const needsScene = ['HERO_DARK', 'SPLIT_LIGHT'].includes(mood);
+    // Cena visual
+    let scene = imagePromptHint || '';
+    const needsScene = ['HERO_DARK', 'HERO_LOFI', 'COLAGEM_REAL', 'SPLIT_LIGHT'].includes(mood);
 
     if (needsScene && !scene) {
       try {
+        const scenePrompt = isAna
+          ? `Art director for Ana Moutinho personal brand. Lo-fi, real, intimate aesthetic like a personal diary.
+Topic: "${topic}" | Slide ${slideNumber}: "${h}"
+Describe in max 12 words the PERFECT real-life background: selfie, mirror photo, desk with coffee, open book, notebook, city walk, gym, window light, everyday objects. Ultra-specific. No text. English only.`
+          : `Art director for ${brand.name}. ${brand.aestheticDNA.split('\n')[0]}
+Topic: "${topic}" | Slide ${slideNumber}: "${h}"
+Describe in max 12 words the PERFECT background visual. No text. English only.`;
+
         const sr = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: 'claude-haiku-4-5-20251001', max_tokens: 90,
-            messages: [{ role: 'user', content: `Art director for ${brand.name}. ${brand.aestheticDNA.split('\n')[0]}\nTopic: "${topic}" | Slide ${slideNumber}: "${h}"\nDescribe in max 12 words the PERFECT background visual. Ultra-specific. No text. English only.` }],
-          }),
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 80, messages: [{ role: 'user', content: scenePrompt }] }),
         });
         const sd = await sr.json();
         if (sd.content?.[0]?.text) scene = sd.content[0].text.trim().replace(/^["']|["']$/g, '');
-      } catch(e) { scene = `${topic}, editorial photography, professional lighting`; }
+      } catch(e) { scene = isAna ? `woman at desk with coffee, natural light, cozy home office` : `${topic}, editorial photography`; }
     }
 
-    const slideRef  = `Slide ${slideNumber} of ${totalSlides}`;
-
+    const slideRef = `Slide ${slideNumber} of ${totalSlides}`;
     let prompt = '';
 
-    if (mood === 'HERO_DARK') {
-      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
+    // ── MOODS PARA ANA MOUTINHO (lo-fi, real, diário visual) ─────────────
+    if (mood === 'HERO_LOFI') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}.
 
-${brand.aestheticDNA}
+AESTHETIC: Lo-fi, real, raw personal diary. Think: spontaneous photo with strong typography overlay. Human, imperfect, intentional.
 ${manualCtx}
 
+OUTPUT: 1024×1536px portrait.
+
+BACKGROUND: Real-life photograph. Subject: ${scene || `woman in everyday life moment, natural light, candid`}.
+Slightly grainy, warm tone. Natural imperfections are GOOD. NOT a studio shot.
+Dark gradient overlay on bottom 40% only.
+
+TEXT (bottom 38%, left-aligned, 7% padding):
+"${h}" — bold condensed sans-serif ~82px, color ${brand.textOnDark}.
+Last 2-3 words in ${brand.accent} OR in italic serif for contrast.
+${b ? `"${b}" — 20px regular, ${brand.textOnDark} 65% opacity, margin-top 12px.` : ''}
+
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 10px, 55% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 8px uppercase.` : ''}
+BOTTOM: thin 2px line ${brand.accent}, full width.
+
+NOTHING ELSE. One real photo. One strong headline. Grain and warmth are welcome.`;
+
+    } else if (mood === 'DIARIO_EDITORIAL') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}.
+
+AESTHETIC: Editorial diary — clean off-white with strong typography. Like a printed magazine page but personal.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait. Light background, typography-forward.
+
+BACKGROUND: ${brand.bgLight} (off-white / warm cream). Flat. Optional: very subtle paper texture at 4% opacity.
+
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 10px, 55% opacity.
+${funcao ? `"${funcao}" — ${brand.accentFem || brand.accent}, 8px uppercase, letter-spacing 2px.` : ''}
+
+MAIN TEXT (y=16–70%, left 7%):
+"${h}" — bold condensed sans ~80px, ${brand.textOnLight}, line-height 1.05.
+Key phrase "${accentPhrase}" in italic serif style OR ${brand.accent} color for contrast.
+${b ? `"${b}" — 20px regular, ${brand.textOnLight} 72% opacity, margin-top 18px, line-height 1.6.` : ''}
+
+ACCENT: single thin horizontal rule (1px, ${brand.accent}, 40% opacity) between handle and heading.
+BOTTOM: 2px line ${brand.accent}.
+
+NOTHING ELSE. Warm, editorial, personal. No photographs. Typography is the design.`;
+
+    } else if (mood === 'TYPE_CREME') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}.
+
+AESTHETIC: Pure typography on warm cream. Like a handwritten note, but with design intention.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait. Cream background only.
+
+BACKGROUND: ${brand.bgLight}. Optional: extremely subtle grain texture 3% opacity.
+
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 10px, 50% opacity.
+
+MAIN TEXT (y=18–78%, left 7%):
+"${h}" — bold condensed sans ~90px, ${brand.textOnLight}, line-height 1.0, tight.
+Words "${accentPhrase}" in italic serif — creates elegant contrast.
+${b ? `"${b}" — 21px regular, ${brand.textOnLight} 70% opacity, margin-top 24px.` : ''}
+
+DECORATIVE: optional small asterisk or dash in ${brand.accent} between headline and body.
+BOTTOM: 2px ${brand.accent} line.
+
+NO image. NO decoration beyond listed. Cream + type + one accent mark.`;
+
+    } else if (mood === 'COLAGEM_REAL') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}.
+
+AESTHETIC: Real life collage — two or four photos of everyday life moments stitched together, with a phrase overlay.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait.
+
+LAYOUT: Grid of 2 or 4 real-life photos:
+${scene || `desk with coffee cup, open notebook, woman's hands typing, natural window light`}.
+Photos slightly different tones, grainy, candid. NOT posed.
+White or cream thin border between photos.
+Semi-transparent overlay band in center with text.
+
+TEXT OVERLAY (center band):
+"${h}" — bold sans ~60px, white or ${brand.bgLight}.
+${b ? `"${b}" — 18px, white 80% opacity.` : ''}
+
+BOTTOM: "${brand.handle}" — small, ${brand.accent}.
+BOTTOM EDGE: 2px ${brand.accent} line.
+
+REAL. CANDID. HUMAN. No studio quality. Grain is good.`;
+
+    } else if (mood === 'FRASE_IMPACTO') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}.
+
+AESTHETIC: Single powerful phrase. Dark warm background. Maximum emotional impact.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait.
+
+BACKGROUND: ${brand.bgDark}. Warm almost-black. Optional: very faint film grain 3%.
+
+TOP: "${funcao || 'nota'}" — ${brand.accent}, 8px uppercase, letter-spacing 3px. y=4%, left 7%.
+
+MAIN TEXT (y=20–72%, left 7%):
+"${h}" — bold condensed sans ~94px, ${brand.textOnDark}, line-height 0.95, ultra-tight.
+Words "${accentPhrase}" in ${brand.accentFem || brand.accent}.
+${b ? `"${b}" — 22px regular, ${brand.textOnDark} 72% opacity, margin-top 24px.` : ''}
+
+BOTTOM: 2px ${brand.accent} line.
+
+ONE STATEMENT. Emotional weight. No photograph. Darkness + type only.`;
+
+    } else if (mood === 'TYPE_DARK_WARM') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}.
+
+AESTHETIC: Dark warm typography slide.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait.
+
+BACKGROUND: ${brand.bgDark}. Warm dark tone. Optional: 2% grain texture.
+
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 10px, 55% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 8px uppercase.` : ''}
+
+MAIN TEXT (y=20–76%, left 7%):
+"${h}" — bold condensed sans ~88px, ${brand.textOnDark}, line-height 1.0.
+"${accentPhrase}" in ${brand.accentFem || brand.accent}.
+${b ? `"${b}" — 22px regular, ${brand.textOnDark} 68% opacity, margin-top 26px.` : ''}
+
+ACCENT: single 36px wide × 2px tall bar in ${brand.accent}, left-aligned, below heading.
+BOTTOM: 2px ${brand.accent} line.
+
+WARM DARKNESS. Type only. No photo.`;
+
+    } else if (mood === 'VIRADA') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}. PIVOT / CLIMAX SLIDE.
+
+AESTHETIC: Emotional turning point. Dark warm with bold statement.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait.
+
+BACKGROUND: ${brand.bgBrand}. Optional: one soft circle shape in ${brand.accent} at 5% opacity, partially cropped.
+
+TOP: "${funcao || 'a virada'}" — ${brand.accent}, 8px uppercase, letter-spacing 3px. y=4%, left 7%.
+
+MAIN TEXT (y=16–72%, left 7%):
+"${h}" — bold condensed sans ~96px, ${brand.textOnDark}, line-height 0.95, ultra-tight.
+"${accentPhrase}" in ${brand.accentFem || brand.accent}.
+${b ? `"${b}" — 23px regular, ${brand.textOnDark} 76% opacity, margin-top 24px.` : ''}
+
+BOTTOM: 2px ${brand.accent} line.
+
+MAXIMUM EMOTIONAL IMPACT. No photograph. One statement.`;
+
+    } else if (mood === 'CTA_INTIMO') {
+      prompt = `You are creating ONE intimate Instagram carousel slide for Ana Moutinho personal brand. ${slideRef}. FINAL SLIDE — intimate CTA.
+
+AESTHETIC: Warm, close, personal. Like a note left for a friend.
+${manualCtx}
+
+OUTPUT: 1024×1536px portrait.
+
+BACKGROUND: ${brand.bgLight} (warm cream).
+
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 10px, 55% opacity.
+
+HEADLINE (y=20–44%, left 7%):
+"${h}" — bold condensed sans ~72px, ${brand.textOnLight}.
+"${accentPhrase}" in italic serif or ${brand.accent}.
+
+CTA BOX (y=52–68%, centered, 88% width):
+Rounded rectangle, background ${brand.bgMid || '#EDEAE4'}, border-radius 12px.
+Subtle 1px border ${brand.accent} 20% opacity.
+Inside — centered text:
+  "${b || 'salva pra reler quando esquecer disso.'}" — 18px, ${brand.textOnLight} 75% opacity, italic.
+
+BOTTOM: "${brand.handle}" — 12px ${brand.accent} bold. Then 2px ${brand.accent} line.
+
+WARM. INTIMATE. Two elements only. Breathe.`;
+
+    // ── MOODS PADRÃO (Case/Virttus) ──────────────────────────────────────
+    } else if (mood === 'HERO_DARK') {
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
+${brand.aestheticDNA}
+${manualCtx}
 OUTPUT: 1024×1536px portrait. Dark cinematic editorial.
-
-BACKGROUND: Full-bleed photograph. Subject: ${scene || `dramatic scene related to "${topic}"`}. Professional photography, moody lighting, deep shadows.
-Gradient overlay: transparent at top, fading to solid ${brand.bgDark} covering bottom 45% of canvas.
-
-TEXT (bottom 40%, left-aligned, 7% horizontal padding):
-"${h}" — Inter Black ~90px, white, tight line-height 1.0.
-Last 2 words in ${brand.accent} color.
+BACKGROUND: Full-bleed photograph. Subject: ${scene || `scene related to "${topic}"`}. Moody lighting.
+Gradient overlay: transparent at top → solid ${brand.bgDark} covering bottom 45%.
+TEXT (bottom 40%, left 7%): "${h}" — Inter Black ~90px, white, line-height 1.0. Last 2 words in ${brand.accent}.
 ${b ? `"${b}" — 22px regular, white 60% opacity, margin-top 14px.` : ''}
-
-TOP-LEFT corner: "${brand.handle}" — ${brand.accent}, 11px, opacity 60%.
-${funcao ? `Below handle: "${funcao}" — ${brand.accent}, 9px uppercase, letter-spacing 2px.` : ''}
-BOTTOM EDGE: solid 3px line ${brand.accent}, full width.
-
-NOTHING ELSE. No boxes. No icons. No extra shapes. No decorative frames.
-One image. One headline. Absolute clarity.`;
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
+BOTTOM: 3px ${brand.accent} line.
+NOTHING ELSE. One image. One headline.`;
 
     } else if (mood === 'EDITORIAL_LIGHT') {
       prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
-
 ${brand.aestheticDNA}
 ${manualCtx}
-
-OUTPUT: 1024×1536px portrait. Clean white editorial. NO photograph inside the slide.
-
-BACKGROUND: Pure ${brand.bgLight}. Flat, clean.
-
-LAYOUT (strict top-to-bottom):
-TOP-LEFT (y=4%): "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
-${funcao ? `Below: "${funcao}" — ${brand.accent}, 9px uppercase, 2px letter-spacing.` : ''}
-
-HEADING (y=18–58%, left margin 7%):
-"${h}" — Inter Black ~82px, ${brand.textOnLight}, line-height 1.05, tight tracking.
+OUTPUT: 1024×1536px portrait. Clean white editorial. NO photograph.
+BACKGROUND: ${brand.bgLight}. Flat.
+TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
+${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
+HEADING (y=18–58%, left 7%): "${h}" — Inter Black ~82px, ${brand.textOnLight}, line-height 1.05.
 Words "${accentPhrase}" in ${brand.accent}.
-
-${b ? `BODY (below heading, margin-top 20px): "${b}" — 21px regular, ${brand.textOnLight} 75% opacity, line-height 1.6.` : ''}
-
-BOTTOM EDGE: 3px solid line ${brand.accent}, full width.
-
-ABSOLUTELY NOTHING ELSE. No photographs. No contained image blocks. No decorative shapes. No icons.
-White space is intentional. Typography carries the entire visual weight.`;
+${b ? `BODY: "${b}" — 21px regular, ${brand.textOnLight} 75%, margin-top 20px.` : ''}
+BOTTOM: 3px ${brand.accent} line.
+NOTHING ELSE. Typography only.`;
 
     } else if (mood === 'TYPE_LIGHT') {
       prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
-
 ${brand.aestheticDNA}
 ${manualCtx}
-
-OUTPUT: 1024×1536px portrait. Pure typography on light background.
-
-BACKGROUND: ${brand.bgLight}. No image. Optional: single very faint vertical line (1px, ${brand.accent}, 5% opacity) as minimal decoration only.
-
+OUTPUT: 1024×1536px portrait. Pure typography on light.
+BACKGROUND: ${brand.bgLight}. No image.
 TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
-${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
-
-MAIN TEXT (y=20–80%, left margin 7%):
-"${h}" — Inter Black ~88px, ${brand.textOnLight}, line-height 1.0, letter-spacing -1px.
-Words "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 22px regular, ${brand.textOnLight} 72% opacity, margin-top 26px.` : ''}
-
-BOTTOM: 3px ${brand.accent} line.
-
-NO image. NO texture. NO decoration beyond what is listed above. Typography only.`;
+MAIN TEXT (y=20–80%, left 7%): "${h}" — Inter Black ~88px, ${brand.textOnLight}, line-height 1.0.
+"${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 22px regular, ${brand.textOnLight} 72%, margin-top 26px.` : ''}
+BOTTOM: 3px ${brand.accent} line. NO image.`;
 
     } else if (mood === 'TYPE_DARK') {
       prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
-
 ${brand.aestheticDNA}
 ${manualCtx}
-
-OUTPUT: 1024×1536px portrait. Dark typography slide.
-
-BACKGROUND: ${brand.bgDark}. Flat. Optional: very subtle 2% noise texture for depth. Nothing else.
-
+OUTPUT: 1024×1536px portrait. Dark typography.
+BACKGROUND: ${brand.bgDark}. Flat.
 TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
-${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
-
-MAIN TEXT (y=22–78%, left margin 7%):
-"${h}" — Inter Black ~92px, white, line-height 1.0, letter-spacing -1px.
-Words "${accentPhrase}" MUST be in ${brand.accent}.
-${b ? `"${b}" — 22px regular, white 68% opacity, margin-top 28px.` : ''}
-
-ACCENT: single horizontal bar 40px wide × 3px tall in ${brand.accent}, left-aligned, directly below heading.
-
-BOTTOM: 3px ${brand.accent} line.
-
-NO photograph. NO complex background. Dark background + type + one accent bar. That is all.`;
+MAIN TEXT (y=22–78%, left 7%): "${h}" — Inter Black ~92px, white, line-height 1.0.
+"${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 22px regular, white 68%, margin-top 28px.` : ''}
+ACCENT: single 40px × 3px bar ${brand.accent}, left-aligned, below heading.
+BOTTOM: 3px ${brand.accent} line. NO photo.`;
 
     } else if (mood === 'BRAND_PUNCH') {
       const punchBg = profile === 'marca' ? brand.bgDark : brand.bgBrand;
-      prompt = `You are creating ONE premium Instagram slide. ${slideRef}. This is the PIVOT / CLIMAX slide.
-
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}. PIVOT SLIDE.
 ${brand.aestheticDNA}
 ${manualCtx}
-
-OUTPUT: 1024×1536px portrait. Bold emotional pivot slide.
-
-BACKGROUND: ${punchBg}. Optional: one large geometric shape in ${brand.accent} at 5% opacity (circle or rectangle partially cropped at edge). Nothing more.
-
-TOP: "${funcao || 'A VIRADA'}" — ${brand.accent}, 9px uppercase, letter-spacing 3px. y=4%, left 7%.
-
-MAIN TEXT (y=18–74%, left 7%):
-"${h}" — Inter Black ~96px, white, line-height 0.95, ultra-tight.
-Words "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 24px regular, white 78% opacity, margin-top 26px.` : ''}
-
-BOTTOM: 3px ${brand.accent} line.
-
-MAXIMUM TYPOGRAPHIC IMPACT. One focal point. No photographs. No complex elements. No decoration.`;
+OUTPUT: 1024×1536px portrait.
+BACKGROUND: ${punchBg}. Optional: one geometric shape ${brand.accent} 5% opacity.
+TOP: "${funcao || 'A VIRADA'}" — ${brand.accent}, 9px uppercase. y=4%, left 7%.
+MAIN TEXT (y=18–74%, left 7%): "${h}" — Inter Black ~96px, white, line-height 0.95.
+"${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 24px regular, white 78%, margin-top 26px.` : ''}
+BOTTOM: 3px ${brand.accent} line. No photos.`;
 
     } else if (mood === 'TABLE_LIGHT') {
       prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
-
 ${brand.aestheticDNA}
 ${manualCtx}
-
-OUTPUT: 1024×1536px portrait. Clean comparison table slide.
-
-BACKGROUND: ${brand.bgLight}. Flat white.
-
+OUTPUT: 1024×1536px portrait. Clean comparison table.
+BACKGROUND: ${brand.bgLight}.
 TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
-${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
-
-HEADING (y=8%, left 7%): "${h}" — Inter Black ~60px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
-
-TABLE (y=28–78%, 6% side margins. TWO columns, THREE rows maximum):
-Left column header: dark background ${brand.bgDark}, white text "SEM SISTEMA", 14px bold.
-Right column header: ${brand.accent} background, dark text "COM ${brand.name.toUpperCase()}", 14px bold.
-Row cells: white background, 1px dividers (${brand.accent} 12% opacity).
-Content: 3 concrete contrasts for the topic "${topic}". Left = problem. Right = solution.
-Cell padding: 12px. Font: 14px regular.
-
-BOTTOM: 3px ${brand.accent} line.
-
-NO illustrations. NO icons. NO extra UI elements. Table + heading only. Clean and clear.`;
+HEADING (y=8%, left 7%): "${h}" — Inter Black ~60px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
+TABLE (y=28–78%, 6% margins. TWO columns, THREE rows max):
+Left header: ${brand.bgDark} bg, white text "SEM SISTEMA", 14px bold.
+Right header: ${brand.accent} bg, dark text "COM ${brand.name.toUpperCase()}", 14px bold.
+Rows: white bg, 1px dividers ${brand.accent} 12% opacity. Content: contrasts for "${topic}".
+BOTTOM: 3px ${brand.accent} line. No illustrations.`;
 
     } else if (mood === 'CTA_LIGHT') {
       const ctaWord = accentPhrase.toUpperCase() || brand.name.toUpperCase();
-      prompt = `You are creating ONE premium Instagram slide. ${slideRef}. FINAL CTA SLIDE.
-
+      prompt = `You are creating ONE premium Instagram slide. ${slideRef}. FINAL CTA.
 ${brand.aestheticDNA}
 ${manualCtx}
-
-OUTPUT: 1024×1536px portrait. Clean white conversion slide.
-
-BACKGROUND: ${brand.bgLight}. Pure white.
-
+OUTPUT: 1024×1536px portrait. Clean white CTA.
+BACKGROUND: ${brand.bgLight}.
 TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
-
-HEADLINE (y=22–46%, left 7%):
-"${h}" — Inter Black ~72px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
-
-CTA BOX (y=54–70%, centered, 88% width):
-Rounded rectangle, background #EDECE8, border-radius 12px.
-Subtle 1px border ${brand.accent} 20% opacity.
-Inside — three lines centered:
-  "Comenta a palavra:" — 15px gray
-  "${ctaWord}" — 50px ${brand.accent} bold
-  "e recebe no DM" — 14px gray
-
-BOTTOM: "${brand.handle}" — 13px ${brand.accent} bold. Then 3px ${brand.accent} line.
-
-TWO ELEMENTS ONLY: headline + CTA box. Nothing else. Breathe.`;
+HEADLINE (y=22–46%, left 7%): "${h}" — Inter Black ~72px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
+CTA BOX (y=54–70%, centered, 88% width): rounded rect, bg #EDECE8, border-radius 12px, border 1px ${brand.accent} 20%.
+Inside centered: "Comenta a palavra:" 15px gray | "${ctaWord}" 50px ${brand.accent} bold | "e recebe no DM" 14px gray.
+BOTTOM: "${brand.handle}" 13px ${brand.accent}. Then 3px ${brand.accent} line. Two elements only.`;
 
     } else {
       // SPLIT_LIGHT fallback
       prompt = `You are creating ONE premium Instagram slide. ${slideRef}.
-
 ${brand.aestheticDNA}
 ${manualCtx}
-
 OUTPUT: 1024×1536px portrait. Clean editorial.
-
 BACKGROUND: ${brand.bgLight}.
-
 TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px, 60% opacity.
-${funcao ? `"${funcao}" — ${brand.accent}, 9px uppercase.` : ''}
-
-TEXT BLOCK (y=15–80%, left 7%):
-"${h}" — Inter Black ~74px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 21px regular, ${brand.textOnLight} 76% opacity, margin-top 22px.` : ''}
-
-BOTTOM: 3px ${brand.accent} line.
-
-Clean, deliberate. One typographic statement. Nothing decorative.`;
+TEXT (y=15–80%, left 7%): "${h}" — Inter Black ~74px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
+${b ? `"${b}" — 21px regular, ${brand.textOnLight} 76%, margin-top 22px.` : ''}
+BOTTOM: 3px ${brand.accent} line. Clean, deliberate.`;
     }
 
-    // Chamar GPT Image-1
+    // ── Chamar GPT Image-1 ─────────────────────────────────────────────
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1536', quality: 'high' }),
     });
-
     const imgData = await imgRes.json();
     if (imgData.error) return res.status(500).json({ error: imgData.error.message });
 
@@ -638,7 +765,7 @@ Clean, deliberate. One typographic statement. Nothing decorative.`;
   }
 });
 
-// ── Base de conteúdos gerados ─────────────────────────────────────────────
+// ── Base de conteúdos ─────────────────────────────────────────────────────
 app.get('/api/content', async (req, res) => {
   const { profile, type, status } = req.query;
   try {
@@ -673,47 +800,32 @@ app.patch('/api/content/:id', (req, res) => {
   res.json({ success: true, item: all[idx] });
 });
 
-// ── Instagram — publicação ────────────────────────────────────────────────
+// ── Instagram ─────────────────────────────────────────────────────────────
 async function publishSingle(account, imageUrl, caption) {
   const { id: accountId, token } = account;
-  const containerRes = await fetch(
-    `https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(caption)}&access_token=${token}`,
-    { method: 'POST' }
-  );
-  const { id: containerId, error } = await containerRes.json();
+  const cr = await fetch(`https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(imageUrl)}&caption=${encodeURIComponent(caption)}&access_token=${token}`, { method: 'POST' });
+  const { id: containerId, error } = await cr.json();
   if (error) throw new Error(error.message);
   await new Promise(r => setTimeout(r, 5000));
-  const pubRes = await fetch(
-    `https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${containerId}&access_token=${token}`,
-    { method: 'POST' }
-  );
-  return pubRes.json();
+  const pr = await fetch(`https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${containerId}&access_token=${token}`, { method: 'POST' });
+  return pr.json();
 }
 
 async function publishCarousel(account, imageUrls, caption) {
   const { id: accountId, token } = account;
   const childIds = [];
   for (const url of imageUrls) {
-    const r = await fetch(
-      `https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(url)}&is_carousel_item=true&access_token=${token}`,
-      { method: 'POST' }
-    );
+    const r = await fetch(`https://graph.facebook.com/v19.0/${accountId}/media?image_url=${encodeURIComponent(url)}&is_carousel_item=true&access_token=${token}`, { method: 'POST' });
     const { id, error } = await r.json();
     if (error) throw new Error(error.message);
     childIds.push(id);
   }
-  const carouselRes = await fetch(
-    `https://graph.facebook.com/v19.0/${accountId}/media?media_type=CAROUSEL&children=${childIds.join(',')}&caption=${encodeURIComponent(caption)}&access_token=${token}`,
-    { method: 'POST' }
-  );
-  const { id: carouselId, error: cerr } = await carouselRes.json();
+  const cr = await fetch(`https://graph.facebook.com/v19.0/${accountId}/media?media_type=CAROUSEL&children=${childIds.join(',')}&caption=${encodeURIComponent(caption)}&access_token=${token}`, { method: 'POST' });
+  const { id: carouselId, error: cerr } = await cr.json();
   if (cerr) throw new Error(cerr.message);
   await new Promise(r => setTimeout(r, 8000));
-  const pubRes = await fetch(
-    `https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${carouselId}&access_token=${token}`,
-    { method: 'POST' }
-  );
-  return pubRes.json();
+  const pr = await fetch(`https://graph.facebook.com/v19.0/${accountId}/media_publish?creation_id=${carouselId}&access_token=${token}`, { method: 'POST' });
+  return pr.json();
 }
 
 app.post('/api/instagram/post', async (req, res) => {
@@ -736,12 +848,11 @@ app.post('/api/instagram/carousel', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Agendamento ───────────────────────────────────────────────────────────
 app.post('/api/instagram/schedule', (req, res) => {
   try {
     const { scheduledAt, contentId, ...rest } = req.body;
-    const posts    = readJSON(SCHEDULED_FILE);
-    const newPost  = { id: `sch_${Date.now()}`, contentId, scheduledAt, status: 'pending', ...rest };
+    const posts   = readJSON(SCHEDULED_FILE);
+    const newPost = { id: `sch_${Date.now()}`, contentId, scheduledAt, status: 'pending', ...rest };
     posts.push(newPost);
     writeJSON(SCHEDULED_FILE, posts);
     if (contentId) updateContentStatus(contentId, 'agendado', { scheduledAt, scheduleId: newPost.id });
@@ -749,27 +860,23 @@ app.post('/api/instagram/schedule', (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/instagram/scheduled', (req, res) => {
-  res.json(readJSON(SCHEDULED_FILE));
-});
-
+app.get('/api/instagram/scheduled', (req, res) => { res.json(readJSON(SCHEDULED_FILE)); });
 app.delete('/api/instagram/scheduled/:id', (req, res) => {
-  const posts = readJSON(SCHEDULED_FILE).filter(p => p.id !== req.params.id);
-  writeJSON(SCHEDULED_FILE, posts);
+  writeJSON(SCHEDULED_FILE, readJSON(SCHEDULED_FILE).filter(p => p.id !== req.params.id));
   res.json({ success: true });
 });
 
 setInterval(async () => {
-  const posts   = readJSON(SCHEDULED_FILE);
-  const now     = new Date();
-  let changed   = false;
+  const posts = readJSON(SCHEDULED_FILE);
+  const now   = new Date();
+  let changed = false;
   for (const post of posts) {
     if (post.status !== 'pending') continue;
     if (new Date(post.scheduledAt) > now) continue;
     try {
       const account = getAccount(post.profile);
       let result;
-      if (post.type === 'carousel' && post.imageUrls?.length > 1) {
+      if (post.type === 'carousel' || post.type === 'carrossel') {
         result = await publishCarousel(account, post.imageUrls, post.caption);
       } else {
         result = await publishSingle(account, post.imageUrl || post.imageUrls?.[0], post.caption);
@@ -779,20 +886,17 @@ setInterval(async () => {
       post.instagramId = result.id;
       if (post.contentId) updateContentStatus(post.contentId, 'publicado', { publishedAt: post.publishedAt, instagramId: result.id });
       changed = true;
-    } catch(err) {
-      post.status = 'error';
-      post.error  = err.message;
-      changed     = true;
-    }
+    } catch(err) { post.status = 'error'; post.error = err.message; changed = true; }
   }
   if (changed) writeJSON(SCHEDULED_FILE, posts);
 }, 60_000);
 
-// ── Calendário editorial ──────────────────────────────────────────────────
+// ── Calendário — FIX: persistência correta no Supabase ───────────────────
 app.post('/api/calendar/generate', async (req, res) => {
   try {
     const { month, year, profile, postsPerDay = 2 } = req.body;
     const manualNote  = getManualText(profile);
+    const brand       = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account     = getAccount(profile);
     const daysInMonth = new Date(year, month, 0).getDate();
     const BLOCK       = 10;
@@ -800,36 +904,42 @@ app.post('/api/calendar/generate', async (req, res) => {
 
     for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
       const blockEnd = Math.min(blockStart + BLOCK - 1, daysInMonth);
-      const blockPrompt = `Você é o estrategista de conteúdo criando o calendário editorial de ${account.name} (${account.handle}) para ${month}/${year}.
 
-METODOLOGIA BRANDSDECODED — SEGUIR OBRIGATORIAMENTE:
-O Instagram em 2026 é plataforma de DESCOBERTA. Todo post deve funcionar para quem NUNCA viu o perfil.
-Métricas que importam: retenção, compartilhamentos, saves.
+      // Prompt adaptado por perfil
+      const brandContext = profile === 'pessoal'
+        ? `PERFIL: Ana Moutinho (@analuisa.moutinho) — marca pessoal "Ana mais real".
+IDENTIDADE: diário visual inteligente. Mulher construindo a vida com intenção. Real, estratégica, humana.
+PILARES: construção pessoal, leitura de comportamento, estratégia de vida, estética de vida real, marca pessoal.
+TOM: reflexivo, direto, íntimo, levemente provocativo. NUNCA motivacional genérico, coach, LinkedIn.
+${brand.copyDNA || ''}`
+        : `PERFIL: ${account.name} (${account.handle})
+${brand.aestheticDNA?.split('\n')[0] || ''}`;
 
-TIPOS DE POST (usar APENAS estes):
-- "tendencia": Análise de Tendência — movimento cultural/mercado em alta
-- "case": Case de Sucesso — história de marca/pessoa explicando o ponto de virada
-- "educativo": Framework com método específico e nome
+      const blockPrompt = `Você é o estrategista de conteúdo criando o calendário editorial para ${account.name} — ${month}/${year}.
+
+${brandContext}
+${manualNote ? `DIRETRIZES ADICIONAIS:\n${manualNote}` : ''}
+
+TIPOS DE POST:
+- "tendencia": Análise de tendência/fenômeno cultural/comportamento
+- "case": Case de sucesso ou fracasso — com ângulo específico
+- "educativo": Framework, método, conceito com nome
 - "comparacao": Antes/depois, certo/errado — alto alcance
 - "lista": Lista de insights — fácil de consumir
-- "prova_social": Resultado real de cliente — bom para conversão
+- "prova_social": Resultado real — bom para conversão
 - "oferta": Produto/serviço envolto em valor — máximo 1x/semana
 
-PERFIL: ${account.name} (${account.handle})
-${manualNote ? 'DIRETRIZES DO CLIENTE:\n' + manualNote : ''}
+REGRA DO TOPIC — deve ser:
+✅ ESPECÍFICO — nomear fenômeno, padrão de comportamento ou dado concreto
+✅ COM ÂNGULO — não o tema, mas a observação sobre ele
+❌ PROIBIDO: "dicas de marketing", "como crescer", frases genéricas sem tensão
 
-DISTRIBUIÇÃO: 40% tendencia, 30% case, 15% educativo+comparacao+lista, 15% prova_social+oferta
 HORÁRIOS: 09:00, 12:00, 18:00
-
-REGRA CRÍTICA DO TOPIC — deve ser:
-✅ ESPECÍFICO — nomear empresa, pessoa, fenômeno ou dado concreto
-✅ COM ÂNGULO — não só o tema, mas o ponto de vista
-✅ PROIBIDO: "Dicas de marketing", "Como crescer no Instagram", frases genéricas
 
 Responde APENAS com JSON válido:
 {
   "days": [
-    { "day": ${blockStart}, "posts": [{ "time": "09:00", "type": "tendencia", "topic": "tema específico" }] }
+    { "day": ${blockStart}, "posts": [{ "time": "09:00", "type": "tendencia", "topic": "tema específico com ângulo" }] }
   ]
 }
 Inclui TODOS os dias de ${blockStart} a ${blockEnd}.`;
@@ -847,14 +957,11 @@ Inclui TODOS os dias de ${blockStart} a ${blockEnd}.`;
       allDays.push(...(JSON.parse(blockText).days || []));
     }
 
-    const calendar  = { calendar: allDays };
     const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
-    calendar.calendar = calendar.calendar.map(dayEntry => ({
+    const calendarDays = allDays.map(dayEntry => ({
       ...dayEntry,
       posts: (dayEntry.posts || []).map(post => {
-        const match = generated.find(g =>
-          g.calendarDay === dayEntry.day && g.calendarMonth === month && g.calendarYear === year
-        );
+        const match = generated.find(g => g.calendarDay === dayEntry.day && g.calendarMonth === month && g.calendarYear === year);
         return {
           ...post,
           date:        `${year}-${String(month).padStart(2,'0')}-${String(dayEntry.day).padStart(2,'0')}`,
@@ -865,35 +972,63 @@ Inclui TODOS os dias de ${blockStart} a ${blockEnd}.`;
       }),
     }));
 
-    writeJSON(CALENDAR_FILE, { profile, month, year, ...calendar });
+    // Salvar localmente
+    writeJSON(CALENDAR_FILE, { profile, month, year, calendar: calendarDays, savedAt: new Date().toISOString() });
+
+    // Salvar no Supabase (coluna correta: 'data' como JSONB ou text)
     if (supabase) {
-      supabase.from('calendars').upsert({
-        id: `${profile}_${year}_${month}`, profile, month, year,
-        data: JSON.stringify(calendar.calendar), updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' }).then(({ error }) => { if (error) console.error('Supabase calendar:', error.message); });
+      await supabase.from('calendars').upsert({
+        id:         `${profile}_${year}_${month}`,
+        profile,
+        month:      parseInt(month),
+        year:       parseInt(year),
+        data:       JSON.stringify(calendarDays),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
     }
 
-    res.json(calendar);
+    res.json({ calendar: calendarDays });
   } catch(err) {
     console.error('Calendar error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
+// FIX: rota saved com query correta e fallback robusto
 app.get('/api/calendar/saved', async (req, res) => {
   try {
     const { profile, month, year } = req.query;
+
+    // 1. Tentar Supabase
     if (supabase) {
-      const { data, error } = await supabase.from('calendars')
-        .select('data').eq('id', `${profile}_${year}_${month}`).single();
-      if (!error && data?.data) return res.json({ found: true, calendar: JSON.parse(data.data) });
+      const { data, error } = await supabase
+        .from('calendars')
+        .select('data, updated_at')
+        .eq('id', `${profile}_${year}_${month}`)
+        .single();
+
+      if (!error && data?.data) {
+        const calendar = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+        return res.json({ found: true, calendar, savedAt: data.updated_at });
+      }
     }
+
+    // 2. Fallback: arquivo local
     const saved = readJSON(CALENDAR_FILE);
-    if (saved?.profile === profile && String(saved.month) === String(month) && String(saved.year) === String(year)) {
-      return res.json({ found: true, calendar: saved.calendar });
+    if (
+      saved?.profile === profile &&
+      String(saved.month) === String(month) &&
+      String(saved.year)  === String(year) &&
+      saved.calendar?.length
+    ) {
+      return res.json({ found: true, calendar: saved.calendar, savedAt: saved.savedAt });
     }
+
     res.json({ found: false });
-  } catch(e) { res.json({ found: false }); }
+  } catch(e) {
+    console.error('calendar/saved error:', e);
+    res.json({ found: false });
+  }
 });
 
 // ── Gerar + Salvar carrossel ──────────────────────────────────────────────
@@ -901,35 +1036,43 @@ app.post('/api/carousel/generate-and-save', async (req, res) => {
   try {
     const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags, contentMachineType } = req.body;
     const manualNote = getManualText(profile);
+    const brand      = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account    = getAccount(profile);
     const mode       = blocks ? 'blocks' : 'topic';
 
-    const systemPrompt = `Você é o gerador de carrosseis da BrandsDecoded — o padrão mais alto de copy para Instagram no Brasil.
+    const isAna = profile === 'pessoal';
 
-PRINCÍPIOS FUNDAMENTAIS:
+    const systemPrompt = isAna
+      ? `Você é o gerador de carrosseis da Ana Moutinho — marca pessoal "Ana mais real".
+
+${brand.copyDNA || ''}
+${brand.aestheticDNA || ''}
+
+REGRAS ABSOLUTAS:
+- Retornar APENAS JSON válido, sem markdown.
+- Nunca inventar fatos ou dados.
+- Nunca travessão (—).
+- Proibido: "Descubra", "Saiba", "Aprenda", "seja sua melhor versão", "mulher de alta performance".`
+      : `Você é o gerador de carrosseis da BrandsDecoded — padrão mais alto de copy para Instagram.
+
+PRINCÍPIOS:
 1. O Instagram é plataforma de DESCOBERTA. Cada carrossel funciona para quem NUNCA viu o perfil.
-2. Carrossel não é design. É copy. O que move o dedo é a tensão narrativa.
-3. Funil interno: capa para o desconhecido → tração → avanço → CTA.
+2. Funil interno: capa → tração → avanço → CTA.
 
-CONTRATO DA CAPA (slides 1 e 2):
-Slide 1 (hook): 14-18 palavras. Afirmação provocativa + dois-pontos + pergunta. NUNCA começar com Descubra/Saiba/Aprenda.
-Slide 2 (sub-hook): 8-12 palavras. Aprofunda o slide 1. Não começa com conectivo.
+CONTRATO DA CAPA:
+Slide 1 (hook): 14-18 palavras. Afirmação provocativa + dois-pontos + pergunta. NUNCA começar com Descubra/Saiba.
+Slide 2 (sub-hook): 8-12 palavras. Aprofunda o slide 1.
 
-PROIBIDO em qualquer slide:
-- Travessão (—), "virou" em headline, "a ascensão de", "colapso silencioso"
-- Frases genéricas com cara de IA
-- Inventar fatos, números, datas ou fontes
-
+PROIBIDO: Travessão (—), frases genéricas com cara de IA, inventar fatos.
 Retornar APENAS JSON válido, sem markdown.`;
 
     let prompt;
 
     if (mode === 'blocks') {
-      prompt = `Modo: BLOCOS DE TEXTO
-Perfil: ${account.name} (${account.handle})
+      prompt = `Perfil: ${account.name} (${account.handle})
 ${manualNote ? 'Diretrizes: ' + manualNote : ''}
 
-Blocos a converter (1 slide cada, preservar texto original):
+Converte estes blocos em slides (1 bloco = 1 slide, preservar texto original):
 ${blocks}
 
 JSON:
@@ -942,13 +1085,15 @@ JSON:
 }`;
     } else {
       const tipoInstrucoes = {
-        tendencia:    `TIPO: ANÁLISE DE TENDÊNCIA. Capa como fenômeno. Slides 3-4: por que acontece agora. Slides 5-7: implicações. Slides 8-9: o que muda.`,
-        case:         `TIPO: CASE DE SUCESSO. Capa como fenômeno cultural. Slides 3-4: contexto. Slides 5-6: ponto de virada. Slides 7-8: resultados verificáveis. Slide 9: lição.`,
-        educativo:    `TIPO: EDUCATIVO/FRAMEWORK. Capa promete método específico com nome. Slides 3-9: um passo por slide com exemplo concreto.`,
-        comparacao:   `TIPO: COMPARAÇÃO. Capa activa contraste. Slides 3-5: Lado A. Slide 6: ponto de virada. Slides 7-9: Lado B.`,
-        lista:        `TIPO: LISTA. Capa com número específico e promessa real. Slides 3-9: um item por slide.`,
-        prova_social: `TIPO: PROVA SOCIAL. Capa foca no resultado. Slide 3: antes. Slides 4-6: processo. Slides 7-8: números. Slide 9: lição.`,
-        oferta:       `TIPO: OFERTA. Capa activa desejo sem soar como anúncio. Slides 3-4: problema. Slides 5-6: solução. Slide 7: para quem. Slide 8: prova. Slide 9: o que inclui.`,
+        tendencia:    isAna ? `TIPO: Análise de comportamento/tendência. Capa nomeia um padrão que a pessoa reconhece. Slides 2-3: tensão e observação. Slides 4-6: aprofundamento com exemplos reais. Slide 7: virada. Slide 8: CTA leve.`
+                            : `TIPO: ANÁLISE DE TENDÊNCIA. Capa como fenômeno. Slides 3-7: implicações. Slides 8-9: o que muda.`,
+        case:         `TIPO: CASE. Capa como fenômeno cultural. Contexto → ponto de virada → resultados → lição.`,
+        educativo:    isAna ? `TIPO: Estratégia de vida / framework pessoal. Capa promete método com nome próprio. Slides: um passo por slide com exemplo concreto e íntimo.`
+                            : `TIPO: EDUCATIVO. Capa promete método com nome. Slides: um passo por slide.`,
+        comparacao:   `TIPO: COMPARAÇÃO. Capa ativa contraste. Lado A → virada → Lado B.`,
+        lista:        `TIPO: LISTA. Capa com número e promessa real. Um item por slide.`,
+        prova_social: `TIPO: PROVA SOCIAL. Capa foca no resultado. Antes → processo → números → lição.`,
+        oferta:       `TIPO: OFERTA. Capa ativa desejo. Problema → solução → para quem → prova → o que inclui.`,
       };
 
       prompt = `Perfil: ${account.name} (${account.handle})
@@ -957,20 +1102,17 @@ Tema central: "${topic}"
 
 ${contentMachineType && tipoInstrucoes[contentMachineType] ? tipoInstrucoes[contentMachineType] : tipoInstrucoes.tendencia}
 
-PROCESSO INTERNO: 1) Identificar fricção central 2) Gerar headline mais forte (14-18 palavras) 3) Definir espinha dorsal 4) Render com progressão narrativa.
-
-Total: 10 slides.
+Total: ${isAna ? '7-8' : '10'} slides.
 
 JSON:
 {
   "title": "título interno",
-  "slideCount": 10,
+  "slideCount": ${isAna ? 8 : 10},
   "slides": [
-    { "slideNumber": 1, "heading": "hook 14-18 palavras", "body": "", "imagePrompt": "cena em inglês" },
-    { "slideNumber": 2, "heading": "sub-hook 8-12 palavras", "body": "", "imagePrompt": "..." }
+    { "slideNumber": 1, "heading": "hook", "body": "", "imagePrompt": "cena em inglês, sem texto" }
   ],
-  "caption": "legenda completa com emojis, contexto e CTA",
-  "hashtags": "#hashtag1 #hashtag2 #hashtag3"
+  "caption": "legenda completa com emojis e CTA",
+  "hashtags": "#hashtag1 #hashtag2"
 }`;
     }
 
@@ -979,7 +1121,6 @@ JSON:
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8192, system: systemPrompt, messages: [{ role: 'user', content: prompt }] }),
     });
-
     const d = await r.json();
     if (d.error) return res.status(500).json({ error: d.error.message });
 
@@ -1016,34 +1157,37 @@ app.post('/api/content-machine/generate', async (req, res) => {
     if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema.' });
 
     const manualNote = getManualText(profile);
+    const brand      = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account    = getAccount(profile);
+    const isAna      = profile === 'pessoal';
 
-    const tipoLabels = {
-      tendencia:'Análise de Tendência', case:'Case de Sucesso',
-      educativo:'Educativo / Framework', comparacao:'Comparação / Antes & Depois',
-      lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta', dump:'Dump / Bastidores',
-    };
+    const tipoLabels = { tendencia:'Análise de Tendência', case:'Case de Sucesso', educativo:'Educativo / Framework', comparacao:'Comparação / Antes & Depois', lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta', dump:'Dump / Bastidores' };
 
-    const systemPrompt = `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded.
+    const systemPrompt = isAna
+      ? `Você é o gerador de carrosseis da Ana Moutinho — marca pessoal "Ana mais real".
 
-REGRAS GLOBAIS:
-- Nunca inventar fatos, números, datas ou fontes.
-- Proibido travessão (—) em qualquer saída.
-- Proibido em headline: "quando X vira Y", "a ascensão de", "virou".
-- Proibido como abertura: "Descubra", "Saiba", "Conheça".
-- Sem 2ª pessoa nos slides de desenvolvimento. Apenas no CTA.
-- Sempre em português do Brasil.
+${brand.copyDNA || ''}
+${brand.aestheticDNA || ''}
+
+ESTRUTURA DE SLIDES:
+textos 1-2 = gancho e tensão (capa)
+textos 3,7,11,14 = observações/viradas (11-15 palavras)
+textos 4,5,8,9,12,13,15,16 = desenvolvimento íntimo (25-32 palavras)
+textos 6,10 = transições reflexivas (22-26 palavras)
+texto 17 = fechamento memorável (26-30 palavras)
+texto 18 = CTA leve fixo
+
+CTA FIXO (texto 18):
+"salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você."
+
+Retornar APENAS JSON válido, sem markdown.`
+      : `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded.
+
+REGRAS: Nunca inventar fatos. Proibido travessão (—). Sem "Descubra/Saiba/Conheça". Sem 2ª pessoa nos slides de desenvolvimento.
 
 CONTRATO DA CAPA:
 Slide 1 (hook): 14-18 palavras. Afirmação provocativa + dois-pontos + pergunta.
-Slide 2 (sub-hook): 8-12 palavras. Tensionar o slide 1. Não começa com conectivo.
-
-ESTRUTURA DE 18 TEXTOS EM 10-13 SLIDES:
-textos 1-2 = capa | textos 3,7,11,14 = títulos de secção (11-15 palavras)
-textos 4,5,8,9,12,13,15,16 = parágrafos (25-32 palavras)
-textos 6,10 = parágrafos curtos de transição (22-26 palavras)
-texto 17 = fechamento (26-30 palavras)
-texto 18 = assinatura fixa
+Slide 2 (sub-hook): 8-12 palavras.
 
 ASSINATURA FIXA (texto 18):
 Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente "CASE" que nossa equipe te chama.
@@ -1051,14 +1195,14 @@ Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber 
 Retornar APENAS JSON válido, sem markdown.`;
 
     const tipoInstrucoes = {
-      tendencia:`TIPO: ANÁLISE DE TENDÊNCIA. Capa trata como fenômeno. Slides 3-4: por que acontece. Slides 5-7: implicações. Slides 8-9: o que muda.`,
-      case:`TIPO: CASE DE SUCESSO. Capa como fenômeno cultural. Slides 3-4: contexto. Slides 5-6: ponto de virada. Slides 7-8: resultados. Slide 9: lição.`,
-      educativo:`TIPO: EDUCATIVO/FRAMEWORK. Capa promete método com nome. Slides 3-9: um passo por slide com exemplo.`,
-      comparacao:`TIPO: COMPARAÇÃO. Capa activa contraste. Slides 3-5: Lado A. Slide 6: virada. Slides 7-9: Lado B.`,
-      lista:`TIPO: LISTA. Capa com número e promessa. Slides 3-9: um item por slide.`,
-      prova_social:`TIPO: PROVA SOCIAL. Capa foca resultado. Slide 3: antes. Slides 4-6: processo. Slides 7-8: números. Slide 9: lição.`,
-      oferta:`TIPO: OFERTA. Capa activa desejo. Slides 3-4: problema. Slides 5-6: solução. Slide 7: para quem. Slide 8: prova. Slide 9: o que inclui.`,
-      dump:`TIPO: DUMP/BASTIDORES. Capa humaniza. Slides 3-7: momentos com narrativa. Slide 8: reflexão. Slide 9: conexão com missão.`,
+      tendencia:    isAna ? 'Capa nomeia um padrão de comportamento. Desenvolvimento: observação → tensão → aprofundamento → virada pessoal.' : 'Capa como fenômeno. Por que acontece. Implicações. O que muda.',
+      case:         'Capa como fenômeno cultural. Contexto. Ponto de virada. Resultados verificáveis. Lição.',
+      educativo:    isAna ? 'Capa promete estratégia de vida com nome próprio. Slides: um passo por slide, íntimo e concreto.' : 'Capa promete método com nome. Slides: um passo por slide com exemplo.',
+      comparacao:   'Capa ativa contraste. Lado A. Virada. Lado B.',
+      lista:        'Capa com número e promessa. Um item por slide.',
+      prova_social: 'Capa foca resultado. Antes. Processo. Números. Lição.',
+      oferta:       'Capa ativa desejo. Problema. Solução. Para quem. Prova. O que inclui.',
+      dump:         isAna ? 'Capa humaniza e cria identificação. Momentos reais com narrativa. Reflexão. Conexão com processo pessoal.' : 'Capa humaniza. Momentos com narrativa. Reflexão. Conexão com missão.',
     };
 
     const userPrompt = `Tipo: ${tipoLabels[tipo] || tipo}
@@ -1079,12 +1223,12 @@ JSON:
         { "posicao": 1, "tipo": "hook",     "texto": "..." },
         { "posicao": 2, "tipo": "sub-hook", "texto": "..." }
     ]},
-    { "slide": 2, "funcao": "TRAÇÃO", "textos": [
+    { "slide": 2, "funcao": "TENSÃO", "textos": [
         { "posicao": 3, "tipo": "titulo",    "texto": "..." },
         { "posicao": 4, "tipo": "paragrafo", "texto": "..." }
     ]},
-    { "slide": 13, "funcao": "ASSINATURA", "textos": [
-        { "posicao": 18, "tipo": "assinatura", "texto": "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \\"CASE\\" que nossa equipe te chama." }
+    { "slide": 13, "funcao": "CTA", "textos": [
+        { "posicao": 18, "tipo": "cta", "texto": "${isAna ? 'salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você.' : 'Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente \\"CASE\\" que nossa equipe te chama.'}" }
     ]}
   ]
 }`;
@@ -1092,26 +1236,17 @@ JSON:
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'gpt-4o', temperature: 1.0, max_tokens: 4500,
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-      }),
+      body: JSON.stringify({ model: 'gpt-4o', temperature: 1.0, max_tokens: 4500, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }),
     });
-
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
 
-    let text = data.choices[0].message.content.trim();
-    text = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    let text = data.choices[0].message.content.trim().replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
     const parsed = JSON.parse(text);
 
     const slidesNorm = (parsed.slides || []).map(s => {
       const txs = s.textos || [];
-      return {
-        slideNumber: s.slide, funcao: s.funcao || '',
-        heading: txs[0]?.texto || '', body: txs[1]?.texto || '',
-        textos: txs,
-      };
+      return { slideNumber: s.slide, funcao: s.funcao || '', heading: txs[0]?.texto || '', body: txs[1]?.texto || '', textos: txs };
     });
 
     const item = saveGeneratedContent({
@@ -1131,20 +1266,10 @@ JSON:
   }
 });
 
-// ── Health check ──────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', ts: new Date().toISOString() });
-});
+// ── Health ────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => { res.json({ status: 'ok', ts: new Date().toISOString() }); });
 
-// ── Ficheiros estáticos ───────────────────────────────────────────────────
 app.use(express.static('public'));
-
-app.use('/api', (req, res) => {
-  res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` });
-});
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
+app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
+app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo na porta ${PORT}`));
