@@ -113,14 +113,10 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .content-topic{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .content-meta{font-size:.75rem;color:var(--mid);margin-top:2px;display:flex;gap:10px;align-items:center;}
 .content-actions{display:flex;gap:6px;flex-shrink:0;}
-/* ── SLIDES PREVIEW — FIX scroll ── */
 .slides-preview{display:flex;gap:12px;overflow-x:auto;padding:12px 0 16px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
-/* FIX: slide-card usa position:relative, NÃO absolute para filhos */
 .slide-card{flex-shrink:0;width:180px;height:220px;border-radius:var(--radius);background:var(--gradient);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;color:var(--white);scroll-snap-align:start;position:relative;overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;}
 .slide-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 28px rgba(0,0,0,.22);}
-/* FIX: overlay como pseudo-elemento, não modifica o fluxo */
 .slide-card::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3);z-index:1;}
-/* FIX: img com object-fit cover mas SEM position absolute que quebra scroll */
 .slide-card .slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--radius);z-index:0;}
 .slide-card-content{position:relative;z-index:2;}
 .slide-number{font-size:.65rem;font-weight:700;opacity:.7;margin-bottom:4px;}
@@ -130,7 +126,6 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .slide-status-badge.aprovado{background:rgba(16,185,129,.9);color:#fff;}
 .slide-status-badge.alteracao{background:rgba(239,68,68,.9);color:#fff;}
 .slide-comment-dot{position:absolute;bottom:6px;right:6px;z-index:10;width:18px;height:18px;background:var(--magenta);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:white;box-shadow:0 2px 6px rgba(228,0,124,.5);pointer-events:none;}
-/* ── LIGHTBOX ── */
 .lightbox-overlay{position:fixed;inset:0;background:rgba(8,8,8,.92);backdrop-filter:blur(8px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
 .lightbox-overlay.visible{display:flex;}
 .lightbox-inner{display:flex;width:100%;max-width:1060px;max-height:95vh;border-radius:20px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:lbIn .22s ease;}
@@ -482,6 +477,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     </div>
   </section>
 </main>
+
 <!-- MODAL CALENDÁRIO -->
 <div class="modal-overlay" id="calPostModal"><div class="modal" style="max-width:600px;"><div class="modal-header"><h3 id="calPostModalTitle">Post do Calendário</h3><button class="modal-close" onclick="closeModal('calPostModal')">×</button></div><div id="calPostModalBody"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('calPostModal')">Fechar</button><button class="btn btn-outline" id="modalBtnGenerate" onclick="generateFromCalendarPost()">✨ Gerar criativo</button><button class="btn btn-primary" id="modalBtnPublish" onclick="publishFromCalendarPost()">🚀 Agendar / Publicar</button></div></div></div>
 <!-- MODAL CONTEÚDO -->
@@ -503,13 +499,14 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     </div>
   </div>
 </div>
+
 <script>
 /* ── STATE ── */
 let currentProfile = 'marca';
 let currentCalendarData = null;
 let currentCalendarPost = null;
-let currentCarouselData = null;      // inclui imageUrls persistidas
-let currentCarouselImages = [];       // array em memória, sincronizado com currentCarouselData.imageUrls
+let currentCarouselData = null;
+let currentCarouselImages = [];
 let currentCarouselContentId = null;
 let currentFeedImageUrl = null;
 let currentFeedContentId = null;
@@ -523,7 +520,6 @@ let lbCommentStore = {};
 let lbStatusStore  = {};
 
 const API = '';
-const LS_KEY = () => `calendar_${currentProfile}`;
 
 /* ── UTILS ── */
 function toast(msg,type='info'){const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span> ${msg}`;document.body.appendChild(el);setTimeout(()=>el.remove(),4000);}
@@ -673,7 +669,6 @@ async function generateCarousel(){
   try{
     const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();if(d.error)throw new Error(d.error);
-    // FIX: guardar imageUrls no objeto principal
     currentCarouselData={...d,imageUrls:[]};
     currentCarouselContentId=d.contentId;
     currentCarouselImages=[];
@@ -702,7 +697,7 @@ async function loadPhotoSuggestions(topic){
   }catch(e){area.style.display='none';}
 }
 
-/* ── RENDER SLIDES PREVIEW — FIX scroll ── */
+/* ── RENDER SLIDES PREVIEW ── */
 function renderSlidesPreview(slides){
   lbSlides=slides;
   const imgs=currentCarouselImages||[];
@@ -780,7 +775,7 @@ function lbUpdateStrip(){
 document.addEventListener('keydown',e=>{const lb=document.getElementById('slideLightbox');if(!lb?.classList.contains('visible'))return;if(e.key==='ArrowLeft')lbNavigate(-1);if(e.key==='ArrowRight')lbNavigate(1);if(e.key==='Escape')closeLightbox();});
 document.addEventListener('click',e=>{const lb=document.getElementById('slideLightbox');if(e.target===lb)closeLightbox();});
 
-/* ── GERAR IMAGENS — FIX: persiste URLs no currentCarouselData ── */
+/* ── GERAR IMAGENS ── */
 const BRAND_ACCENT={marca:{accent:'#C8A020',bg:'#0A0A0A',handle:'@caseaceleradora'},pessoal:{accent:'#8B7355',bg:'#1A1612',handle:'@analuisa.moutinho'},virttus:{accent:'#00D4AA',bg:'#050B18',handle:'@virttus'}};
 
 async function generateCarouselImages(autoPublishConfig=null){
@@ -816,8 +811,6 @@ async function generateCarouselImages(autoPublishConfig=null){
         if(b64&&contentId){try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,contentId,slideIndex:i})});const svd=await sv.json();if(svd.url)url=svd.url;}catch(e){}}
       }
       currentCarouselImages.push(url);
-
-      // FIX: atualizar imagem no slide card SEM position absolute quebrar scroll
       if(card&&url){
         let img=card.querySelector('.slide-img');
         if(!img){img=document.createElement('img');img.className='slide-img';card.insertBefore(img,card.firstChild);}
@@ -836,7 +829,6 @@ async function generateCarouselImages(autoPublishConfig=null){
   statusEl.innerHTML=`<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides gerados!</span>${ok<slides.length?` <span style="color:#EF4444;">(${slides.length-ok} falharam)</span>`:''}`;
   btn.disabled=false;btn.textContent='🔄 Regenerar imagens';
 
-  // FIX: salvar imageUrls no currentCarouselData para persistência em sessão
   if(currentCarouselData)currentCarouselData.imageUrls=currentCarouselImages.filter(Boolean);
 
   const validUrls=currentCarouselImages.filter(Boolean);
@@ -946,66 +938,115 @@ async function suggestPhotos(){
   catch(e){resultEl.innerHTML=`<div style="color:#EF4444;">Erro: ${e.message}</div>`;}
 }
 
-/* ── CALENDÁRIO — FIX: localStorage + Supabase dupla persistência ── */
+/* ══════════════════════════════════════════════════════════
+   CALENDÁRIO — VERSÃO CORRIGIDA
+   Fixes: 
+   1. Number(entry.day) — normaliza chave string→número
+   2. topic fallback robusto (topic || tema || '')
+   3. saveCalendarToLocal persiste imediatamente
+   4. loadSavedCalendar tenta localStorage antes do servidor
+══════════════════════════════════════════════════════════ */
+
 function initCalendarMonths(){
   const sel=document.getElementById('calMonth');
-  ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);});
+  ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{
+    const opt=document.createElement('option');
+    opt.value=i+1;opt.textContent=m;
+    if(i+1===new Date().getMonth()+1)opt.selected=true;
+    sel.appendChild(opt);
+  });
 }
 
-// Salvar calendário no localStorage como backup imediato
 function saveCalendarToLocal(calendarData,profile,month,year){
-  try{localStorage.setItem(`calendar_${profile}_${year}_${month}`,JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()}));}
-  catch(e){console.warn('localStorage save failed:',e);}
+  try{
+    localStorage.setItem(
+      `calendar_${profile}_${year}_${month}`,
+      JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()})
+    );
+  }catch(e){console.warn('localStorage save failed:',e);}
 }
+
 function loadCalendarFromLocal(profile,month,year){
-  try{const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}return null;}
-  catch(e){return null;}
+  try{
+    const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);
+    if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}
+    return null;
+  }catch(e){return null;}
 }
 
 async function generateCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value),postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);
-  document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='none';calendarApproved=false;
-  const btn=document.getElementById('btnGenCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';
+  const month=parseInt(document.getElementById('calMonth').value),
+        year=parseInt(document.getElementById('calYear').value),
+        postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);
+
+  document.getElementById('calendarLoading').style.display='flex';
+  document.getElementById('calendarContainer').style.display='none';
+  document.getElementById('calendarPreviewBar').style.display='none';
+  document.getElementById('calApprovedBadge').style.display='none';
+  calendarApproved=false;
+
+  const btn=document.getElementById('btnGenCalendar');
+  btn.disabled=true;btn.textContent='⏳ A gerar...';
+
   try{
-    const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});
-    const d=await r.json();if(d.error)throw new Error(d.error);
+    const r=await fetch('/api/calendar/generate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})
+    });
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+
+    // FIX: log para diagnóstico
+    console.log('[Calendar] Amostra recebida:', JSON.stringify((d.calendar||[]).slice(0,2)));
+
     currentCalendarData=d;
-    // Salvar imediatamente no localStorage
     saveCalendarToLocal(d.calendar,currentProfile,month,year);
-    renderCalendar(d,month,year);document.getElementById('calendarPreviewBar').style.display='block';
+    renderCalendar(d,month,year);
+    document.getElementById('calendarPreviewBar').style.display='block';
     toast('Sugestão gerada! Revê e aprova.','info');
-  }catch(e){toast('Erro: '+e.message,'error');}
-  finally{document.getElementById('calendarLoading').style.display='none';btn.disabled=false;btn.textContent='✨ Gerar calendário';}
+  }catch(e){
+    toast('Erro: '+e.message,'error');
+  }finally{
+    document.getElementById('calendarLoading').style.display='none';
+    btn.disabled=false;btn.textContent='✨ Gerar calendário';
+  }
 }
 
 function approveCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
+  const month=parseInt(document.getElementById('calMonth').value),
+        year=parseInt(document.getElementById('calYear').value);
   calendarApproved=true;
-  document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='inline-block';
-  // Salvar aprovação no localStorage
+  document.getElementById('calendarPreviewBar').style.display='none';
+  document.getElementById('calApprovedBadge').style.display='inline-block';
   if(currentCalendarData)saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);
   toast('Calendário aprovado e salvo!','success');
 }
-function rejectCalendar(){document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calendarContainer').style.display='none';currentCalendarData=null;calendarApproved=false;toast('Calendário rejeitado.','info');}
 
-// FIX: loadSavedCalendar agora verifica localStorage primeiro (instantâneo), depois servidor
+function rejectCalendar(){
+  document.getElementById('calendarPreviewBar').style.display='none';
+  document.getElementById('calendarContainer').style.display='none';
+  currentCalendarData=null;calendarApproved=false;
+  toast('Calendário rejeitado.','info');
+}
+
 async function loadSavedCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
+  const month=parseInt(document.getElementById('calMonth').value),
+        year=parseInt(document.getElementById('calYear').value);
 
-  // 1. Tentar localStorage (imediato, sem rede)
+  // 1. localStorage primeiro (instantâneo)
   const local=loadCalendarFromLocal(currentProfile,month,year);
   if(local?.calendar?.length){
     currentCalendarData={calendar:local.calendar};
     renderCalendar(currentCalendarData,month,year);
-    calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';
+    calendarApproved=true;
+    document.getElementById('calApprovedBadge').style.display='inline-block';
     document.getElementById('calendarPreviewBar').style.display='none';
-    // Não mostrar toast para não ser intrusivo — o calendário simplesmente aparece
-    // Tentar atualizar do servidor em background
     _refreshCalendarFromServer(month,year);
     return;
   }
 
-  // 2. Tentar servidor
+  // 2. servidor como fallback
   await _refreshCalendarFromServer(month,year);
 }
 
@@ -1015,11 +1056,11 @@ async function _refreshCalendarFromServer(month,year){
     const d=await r.json();
     if(d.found&&d.calendar?.length){
       currentCalendarData={calendar:d.calendar};
-      // Atualizar localStorage com dados do servidor
       saveCalendarToLocal(d.calendar,currentProfile,month,year);
       if(!calendarApproved){
         renderCalendar(currentCalendarData,month,year);
-        calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';
+        calendarApproved=true;
+        document.getElementById('calApprovedBadge').style.display='inline-block';
         document.getElementById('calendarPreviewBar').style.display='none';
         toast('Calendário anterior carregado.','info');
       }
@@ -1027,68 +1068,185 @@ async function _refreshCalendarFromServer(month,year){
   }catch(e){console.warn('server calendar load:',e);}
 }
 
-function saveCalendarPostEdit(day,postIndex){
-  if(!currentCalendarData)return;
-  const dayEntry=currentCalendarData.calendar.find(e=>e.day===day);if(!dayEntry||!dayEntry.posts[postIndex])return;
-  const newTopic=document.getElementById('calEditTopic')?.value?.trim(),newType=document.getElementById('calEditType')?.value,newTime=document.getElementById('calEditTime')?.value;
-  if(newTopic)dayEntry.posts[postIndex].topic=newTopic;if(newType)dayEntry.posts[postIndex].type=newType;if(newTime)dayEntry.posts[postIndex].time=newTime;
-  if(currentCalendarPost&&currentCalendarPost.day===day){currentCalendarPost.topic=dayEntry.posts[postIndex].topic;currentCalendarPost.type=dayEntry.posts[postIndex].type;currentCalendarPost.time=dayEntry.posts[postIndex].time;}
-  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
-  saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);
-  renderCalendar(currentCalendarData,month,year);closeModal('calPostModal');toast('Post actualizado!','success');
-}
-
+/* ── renderCalendar — VERSÃO CORRIGIDA ── */
 function renderCalendar(data,month,year){
   const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   document.getElementById('calendarTitle').textContent=`${months[month-1]} ${year}`;
-  const grid=document.getElementById('calendarGrid');grid.innerHTML='';
-  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>grid.insertAdjacentHTML('beforeend',`<div class="cal-header">${d}</div>`));
-  const firstDay=new Date(year,month-1,1).getDay(),offset=firstDay===0?6:firstDay-1;
+
+  const grid=document.getElementById('calendarGrid');
+  grid.innerHTML='';
+
+  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>
+    grid.insertAdjacentHTML('beforeend',`<div class="cal-header">${d}</div>`)
+  );
+
+  const firstDay=new Date(year,month-1,1).getDay();
+  const offset=firstDay===0?6:firstDay-1;
   for(let i=0;i<offset;i++)grid.insertAdjacentHTML('beforeend','<div class="cal-day empty"></div>');
-  const today=new Date(),daysInMonth=new Date(year,month,0).getDate(),postsByDay={};
-  (data.calendar||[]).forEach(entry=>{postsByDay[entry.day]=entry.posts||[];});
+
+  const today=new Date();
+  const daysInMonth=new Date(year,month,0).getDate();
+
+  // FIX 1: normalizar chave para número (entry.day pode chegar como string "1" ou número 1)
+  const postsByDay={};
+  (data.calendar||[]).forEach(entry=>{
+    const dayKey=Number(entry.day);
+    if(!isNaN(dayKey))postsByDay[dayKey]=entry.posts||[];
+  });
+
+  console.log('[Calendar] postsByDay keys:', Object.keys(postsByDay));
+
   for(let d=1;d<=daysInMonth;d++){
-    const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d,posts=postsByDay[d]||[];
-    const postsHtml=posts.map((p,pi)=>`<div class="cal-post ${p.status}" onclick="openCalendarPost(${d},${pi})" title="${p.type} — ${p.topic}"><span class="cal-post-icon">${typeIcon(p.type)}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.time||''} ${p.topic?.slice(0,18)||p.type}</span></div>`).join('');
-    grid.insertAdjacentHTML('beforeend',`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div><div class="cal-posts">${postsHtml}</div></div>`);
+    const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d;
+    const posts=postsByDay[d]||[];
+
+    const postsHtml=posts.map((p,pi)=>{
+      // FIX 2: topic pode estar em p.topic ou p.tema; fallback para tipo
+      const rawTopic=(p.topic||p.tema||'').trim();
+      const label=rawTopic?rawTopic.slice(0,22):(p.type||'post');
+      const status=p.status||'pendente';
+
+      return `<div class="cal-post ${status}" onclick="openCalendarPost(${d},${pi})" title="${p.type||''} — ${rawTopic}">
+        <span class="cal-post-icon">${typeIcon(p.type)}</span>
+        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.time?p.time+' ':''}<strong>${label}</strong></span>
+      </div>`;
+    }).join('');
+
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="cal-day${isToday?' today':''}">
+        <div class="cal-day-num">${d}</div>
+        <div class="cal-posts">${postsHtml}</div>
+      </div>`
+    );
   }
+
   document.getElementById('calendarContainer').style.display='block';
+}
+
+function saveCalendarPostEdit(day,postIndex){
+  if(!currentCalendarData)return;
+  const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);
+  if(!dayEntry||!dayEntry.posts[postIndex])return;
+  const newTopic=document.getElementById('calEditTopic')?.value?.trim(),
+        newType=document.getElementById('calEditType')?.value,
+        newTime=document.getElementById('calEditTime')?.value;
+  if(newTopic)dayEntry.posts[postIndex].topic=newTopic;
+  if(newType)dayEntry.posts[postIndex].type=newType;
+  if(newTime)dayEntry.posts[postIndex].time=newTime;
+  if(currentCalendarPost&&currentCalendarPost.day===day){
+    currentCalendarPost.topic=dayEntry.posts[postIndex].topic;
+    currentCalendarPost.type=dayEntry.posts[postIndex].type;
+    currentCalendarPost.time=dayEntry.posts[postIndex].time;
+  }
+  const month=parseInt(document.getElementById('calMonth').value),
+        year=parseInt(document.getElementById('calYear').value);
+  saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);
+  renderCalendar(currentCalendarData,month,year);
+  closeModal('calPostModal');
+  toast('Post actualizado!','success');
 }
 
 function openCalendarPost(day,postIndex){
   if(!currentCalendarData)return;
-  const dayEntry=currentCalendarData.calendar.find(e=>e.day===day);if(!dayEntry)return;
+  // FIX 3: comparar com Number() para garantir match
+  const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);
+  if(!dayEntry)return;
   const post=dayEntry.posts[postIndex];
-  currentCalendarPost={...post,day,month:parseInt(document.getElementById('calMonth').value),year:parseInt(document.getElementById('calYear').value)};
+  if(!post)return;
+
+  currentCalendarPost={
+    ...post,day,
+    month:parseInt(document.getElementById('calMonth').value),
+    year:parseInt(document.getElementById('calYear').value)
+  };
+
+  // FIX 4: topic pode estar em post.topic ou post.tema
+  const topicVal=(post.topic||post.tema||'').replace(/"/g,'&quot;');
+
   document.getElementById('calPostModalTitle').textContent=`${typeIcon(post.type)} Dia ${day}`;
   document.getElementById('calPostModalBody').innerHTML=`
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;"><span class="badge badge-${post.status}">${statusLabel(post.status)}</span><span class="badge" style="background:#F3E8FF;color:var(--purple);">${post.type}</span><span style="font-size:.78rem;color:var(--mid);">📅 Dia ${day}</span></div>
-    <div class="form-group"><label class="form-label">Tema do post</label><input class="input" id="calEditTopic" value="${(post.topic||'').replace(/"/g,'&quot;')}" placeholder="Tema específico com ângulo"/></div>
-    <div style="display:flex;gap:12px;"><div class="form-group" style="flex:1;margin-bottom:0;"><label class="form-label">Tipo</label><select class="select" id="calEditType"><option value="tendencia" ${post.type==='tendencia'?'selected':''}>📡 Análise de Tendência</option><option value="case" ${post.type==='case'?'selected':''}>🏆 Case de Sucesso</option><option value="educativo" ${post.type==='educativo'?'selected':''}>📚 Educativo</option><option value="comparacao" ${post.type==='comparacao'?'selected':''}>⚖️ Comparação</option><option value="lista" ${post.type==='lista'?'selected':''}>📋 Lista</option><option value="prova_social" ${post.type==='prova_social'?'selected':''}>🌟 Prova Social</option><option value="oferta" ${post.type==='oferta'?'selected':''}>🎯 Oferta</option></select></div><div class="form-group" style="width:120px;margin-bottom:0;"><label class="form-label">Horário</label><input class="input" type="time" id="calEditTime" value="${post.time||'09:00'}"/></div></div>
-    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day},${postIndex})">💾 Guardar alterações</button></div>
-    ${post.status==='pendente'?`<hr style="border:none;border-top:1px solid var(--light);margin:16px 0;"/><div style="background:var(--pale);border-radius:var(--radius);padding:12px;"><div class="form-row"><div class="form-group" style="margin:0;"><label class="form-label">Agendar para</label><input type="datetime-local" class="input" id="calPostScheduleTime" value="${currentCalendarPost.year}-${String(currentCalendarPost.month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${post.time||'09:00'}"/></div><div class="form-group" style="margin:0;"><label class="form-label">Ação</label><select class="select" id="calPostAction"><option value="generate">Só gerar criativo</option><option value="schedule">Gerar e agendar</option><option value="now">Gerar e publicar agora</option></select></div></div></div>`:`<div style="font-size:.82rem;margin-top:12px;color:${post.status==='publicado'?'#065F46':'#1E40AF'};">${post.status==='agendado'?`📆 Agendado para ${formatDate(post.scheduledAt)}`:`✅ Publicado em ${formatDate(post.publishedAt)}`}</div>`}`;
-  document.getElementById('modalBtnGenerate').style.display=post.status==='pendente'?'inline-flex':'none';
-  document.getElementById('modalBtnPublish').style.display=post.status==='pendente'?'inline-flex':'none';
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      <span class="badge badge-${post.status||'pendente'}">${statusLabel(post.status||'pendente')}</span>
+      <span class="badge" style="background:#F3E8FF;color:var(--purple);">${post.type}</span>
+      <span style="font-size:.78rem;color:var(--mid);">📅 Dia ${day}</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tema do post</label>
+      <input class="input" id="calEditTopic" value="${topicVal}" placeholder="Tema específico com ângulo"/>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <div class="form-group" style="flex:1;margin-bottom:0;">
+        <label class="form-label">Tipo</label>
+        <select class="select" id="calEditType">
+          <option value="tendencia" ${post.type==='tendencia'?'selected':''}>📡 Análise de Tendência</option>
+          <option value="case" ${post.type==='case'?'selected':''}>🏆 Case de Sucesso</option>
+          <option value="educativo" ${post.type==='educativo'?'selected':''}>📚 Educativo</option>
+          <option value="comparacao" ${post.type==='comparacao'?'selected':''}>⚖️ Comparação</option>
+          <option value="lista" ${post.type==='lista'?'selected':''}>📋 Lista</option>
+          <option value="prova_social" ${post.type==='prova_social'?'selected':''}>🌟 Prova Social</option>
+          <option value="oferta" ${post.type==='oferta'?'selected':''}>🎯 Oferta</option>
+        </select>
+      </div>
+      <div class="form-group" style="width:120px;margin-bottom:0;">
+        <label class="form-label">Horário</label>
+        <input class="input" type="time" id="calEditTime" value="${post.time||'09:00'}"/>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day},${postIndex})">💾 Guardar alterações</button>
+    </div>
+    ${post.status==='pendente'||!post.status?`
+    <hr style="border:none;border-top:1px solid var(--light);margin:16px 0;"/>
+    <div style="background:var(--pale);border-radius:var(--radius);padding:12px;">
+      <div class="form-row">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Agendar para</label>
+          <input type="datetime-local" class="input" id="calPostScheduleTime" value="${currentCalendarPost.year}-${String(currentCalendarPost.month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${post.time||'09:00'}"/>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">Ação</label>
+          <select class="select" id="calPostAction">
+            <option value="generate">Só gerar criativo</option>
+            <option value="schedule">Gerar e agendar</option>
+            <option value="now">Gerar e publicar agora</option>
+          </select>
+        </div>
+      </div>
+    </div>`:`
+    <div style="font-size:.82rem;margin-top:12px;color:${post.status==='publicado'?'#065F46':'#1E40AF'};">
+      ${post.status==='agendado'?`📆 Agendado para ${formatDate(post.scheduledAt)}`:`✅ Publicado em ${formatDate(post.publishedAt)}`}
+    </div>`}`;
+
+  document.getElementById('modalBtnGenerate').style.display=(!post.status||post.status==='pendente')?'inline-flex':'none';
+  document.getElementById('modalBtnPublish').style.display=(!post.status||post.status==='pendente')?'inline-flex':'none';
   showModal('calPostModal');
 }
 
 async function generateFromCalendarPost(){
   if(!currentCalendarPost)return;
-  const p=currentCalendarPost,genBtn=document.getElementById('modalBtnGenerate');
+  const p=currentCalendarPost;
+  const genBtn=document.getElementById('modalBtnGenerate');
   genBtn.disabled=true;genBtn.textContent='⏳ A gerar copy...';
   try{
-    const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:p.topic,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})});
+    const r=await fetch('/api/carousel/generate-and-save',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})
+    });
     const d=await r.json();if(d.error)throw new Error(d.error);
-    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
+    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;
+    currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
     toast('Copy gerada!','success');closeModal('calPostModal');showSection('carousel',null);
     setTimeout(()=>{
       renderSlidesPreview(d.slides||[]);
-      document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides — ${p.topic}`;
+      document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides — ${p.topic||p.tema}`;
       document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;
-      document.getElementById('carouselPreviewTitle').textContent=d.title||p.topic;
+      document.getElementById('carouselPreviewTitle').textContent=d.title||p.topic||p.tema;
       document.getElementById('carouselPreviewCard').style.display='block';
       const scheduledDT=`${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}T${p.time||'09:00'}`;
-      document.getElementById('publishAction').value='schedule';document.getElementById('scheduleDateTime').value=scheduledDT;document.getElementById('scheduleTimeGroup').style.display='block';document.getElementById('publishPanel').classList.add('visible');
+      document.getElementById('publishAction').value='schedule';
+      document.getElementById('scheduleDateTime').value=scheduledDT;
+      document.getElementById('scheduleTimeGroup').style.display='block';
+      document.getElementById('publishPanel').classList.add('visible');
     },300);
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{genBtn.disabled=false;genBtn.textContent='✨ Gerar criativo';}
@@ -1096,22 +1254,39 @@ async function generateFromCalendarPost(){
 
 async function publishFromCalendarPost(){
   if(!currentCalendarPost)return;
-  const p=currentCalendarPost,action=document.getElementById('calPostAction')?.value||'generate',dt=document.getElementById('calPostScheduleTime')?.value,pubBtn=document.getElementById('modalBtnPublish');
+  const p=currentCalendarPost,
+        action=document.getElementById('calPostAction')?.value||'generate',
+        dt=document.getElementById('calPostScheduleTime')?.value,
+        pubBtn=document.getElementById('modalBtnPublish');
   pubBtn.disabled=true;pubBtn.textContent='⏳ A processar...';
   try{
-    const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:p.topic,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})});
+    const r=await fetch('/api/carousel/generate-and-save',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})
+    });
     const d=await r.json();if(d.error)throw new Error(d.error);
-    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
+    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;
+    currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
     closeModal('calPostModal');
     if(action==='generate'){
       showSection('carousel',null);
-      setTimeout(()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewCard').style.display='block';document.getElementById('publishPanel').classList.add('visible');},300);
+      setTimeout(()=>{
+        renderSlidesPreview(d.slides||[]);
+        document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;
+        document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;
+        document.getElementById('carouselPreviewCard').style.display='block';
+        document.getElementById('publishPanel').classList.add('visible');
+      },300);
       toast('Copy gerada! Clica em "Gerar imagens" para continuar.','success');
     }else{
       showSection('carousel',null);
       setTimeout(async()=>{
-        renderSlidesPreview(d.slides||[]);document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewCard').style.display='block';
-        const scheduledAt=dt?new Date(dt).toISOString():null;toast(`A gerar ${(d.slides||[]).length} slides...`,'info');
+        renderSlidesPreview(d.slides||[]);
+        document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;
+        document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;
+        document.getElementById('carouselPreviewCard').style.display='block';
+        const scheduledAt=dt?new Date(dt).toISOString():null;
+        toast(`A gerar ${(d.slides||[]).length} slides...`,'info');
         await generateCarouselImages({action:action==='now'?'now':'schedule',scheduledAt,caption:d.caption||'',contentId:d.contentId,calendarPost:p});
       },400);
     }
