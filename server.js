@@ -280,7 +280,7 @@ ${systemExtra || ''}`;
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// GERAÇÃO DE IMAGENS
+// GERAÇÃO DE IMAGENS — VERSÃO COM DIRETOR DE ARTE IA
 // ═══════════════════════════════════════════════════════════════════════════
 
 app.post('/api/image/save-b64', (req, res) => {
@@ -330,124 +330,160 @@ app.post('/api/gemini-image', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ── Slide de carrossel ────────────────────────────────────────────────────
+// ── Slide de carrossel — VERSÃO COM DIRETOR DE ARTE IA ────────────────────
+// Fluxo: Claude Haiku (direção de arte ~150 palavras) → GPT Image (só foto) → retorna foto + designMeta
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
-    const { heading = '', body = '', slideNumber = 1, totalSlides = 9, funcao = '', topic = '', profile = 'marca', imagePromptHint = '', contentId = null } = req.body;
+    const {
+      heading = '', body = '',
+      slideNumber = 1, totalSlides = 9,
+      funcao = '', topic = '',
+      profile = 'marca',
+      imagePromptHint = '',
+      contentId = null
+    } = req.body;
+
     const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const isAna = profile === 'pessoal';
-    const mood = brand.moods[Math.min(slideNumber - 1, brand.moods.length - 1)];
-    const manualCtx = getManualText(profile);
+    const mood  = brand.moods[Math.min(slideNumber - 1, brand.moods.length - 1)];
+
     const h = heading.replace(/"/g, "'").replace(/—/g, '-').trim();
-    const b = body.replace(/"/g, "'").replace(/—/g, '-').trim().slice(0, 140);
-    const hWords       = h.split(/\s+/).filter(w => w.length > 2);
-    const accentPhrase = hWords.slice(-Math.min(2, Math.ceil(hWords.length / 3))).join(' ') || hWords[hWords.length - 1] || '';
-    let scene = imagePromptHint || '';
-    const needsScene = ['HERO_DARK', 'HERO_LOFI', 'COLAGEM_REAL', 'SPLIT_LIGHT'].includes(mood);
-    if (needsScene && !scene) {
+    const b = body.replace(/"/g, "'").replace(/—/g, '-').trim().slice(0, 180);
+
+    // ── Etapa 1: Diretor de Arte IA (Claude Haiku ~150 palavras) ─────────
+    const needsPhoto = ['HERO_DARK','HERO_LOFI','COLAGEM_REAL','SPLIT_LIGHT','EDITORIAL_LIGHT','DIARIO_EDITORIAL'].includes(mood);
+
+    let artDirection = imagePromptHint || '';
+
+    if (needsPhoto) {
+      const visualDNA = isAna
+        ? `VISUAL DNA — Ana Moutinho "Ana mais real":
+Aesthetic: lo-fi diary, intimate, real. Not polished, not corporate.
+Feel: like a photo from her iPhone, warm grain, honest moment.
+References: Sofia Coppola films, Lana Del Rey visuals, candid editorial.
+Avoid: studio lighting, stock photo feel, fake smiles, perfect setup.`
+        : profile === 'virttus'
+        ? `VISUAL DNA — Virttus tech B2B precision, forward-looking, sharp.
+References: Bloomberg Businessweek, Wired magazine. Clean architecture, digital abstraction.
+Avoid: generic tech stock, blue gradients, cliché office scenes.`
+        : `VISUAL DNA — Case Aceleradora premium B2B editorial.
+References: Monocle, FT Weekend, Harvard Business Review covers.
+Aesthetic: quiet luxury, strategic intelligence, executive authority.
+Avoid: startup hustle, motivational clichés, busy distracting backgrounds.`;
+
+      const slideCtx = funcao === 'CAPA' || slideNumber === 1
+        ? 'COVER SLIDE — maximum cinematic impact, strong single focal point, hero image quality.'
+        : funcao === 'CTA' || slideNumber === totalSlides
+        ? 'CLOSING SLIDE — warmer, intimate feel, invites connection.'
+        : `Slide ${slideNumber}/${totalSlides} — clean, uncluttered supporting visual.`;
+
+      const artPrompt = `You are a world-class art director for premium Instagram editorial content.
+
+${visualDNA}
+
+TOPIC: "${topic}"
+SLIDE HEADING: "${h}"
+${slideCtx}
+
+Direct the BACKGROUND PHOTOGRAPH ONLY. This image will have typography overlaid by our design system.
+CRITICAL: No text, no typography, no logos, no graphic elements in the image.
+
+Describe precisely (max 150 words):
+- SUBJECT: who/what, their action or emotional state
+- ENVIRONMENT: specific location, architecture or nature
+- LIGHTING: quality, direction, color temperature, time of day
+- LENS & FRAMING: focal length feel, crop, angle, depth of field
+- COLOR PALETTE: dominant tones, accent colors, warmth/coolness
+- EMOTIONAL TONE: mood and psychological impact
+- PHOTOGRAPHIC STYLE: specific magazine or photographer reference
+
+Output ONLY the photographic direction. No preamble, no labels.`;
+
       try {
-        const scenePrompt = isAna
-          ? `Art director for Ana Moutinho personal brand. Lo-fi, real, intimate aesthetic.
-Topic: "${topic}" | Slide ${slideNumber}: "${h}"
-Describe in max 12 words the PERFECT real-life background. No text. English only.`
-          : `Art director for ${brand.name}. ${brand.aestheticDNA.split('\n')[0]}
-Topic: "${topic}" | Slide ${slideNumber}: "${h}"
-Describe in max 12 words the PERFECT background visual. No text. English only.`;
         const sr = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
-          headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 80, messages: [{ role: 'user', content: scenePrompt }] }),
+          headers: {
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 280,
+            messages: [{ role: 'user', content: artPrompt }]
+          }),
         });
         const sd = await sr.json();
-        if (sd.content?.[0]?.text) scene = sd.content[0].text.trim().replace(/^["']|["']$/g, '');
-      } catch(e) { scene = isAna ? `woman at desk with coffee, natural light` : `${topic}, editorial photography`; }
-    }
-    const slideRef = `Slide ${slideNumber} of ${totalSlides}`;
-    let prompt = '';
-    if (mood === 'HERO_DARK') {
-      prompt = `Premium Instagram carousel slide. ${slideRef}. ${brand.aestheticDNA} ${manualCtx}
-OUTPUT: 1024×1536px portrait. Dark cinematic editorial.
-BACKGROUND: Full-bleed photograph. Subject: ${scene || topic}. Moody lighting.
-Gradient overlay: transparent top → solid ${brand.bgDark} bottom 45%.
-TEXT (bottom 40%, left 7%): "${h}" — Inter Black ~90px, white. Last 2 words in ${brand.accent}.
-${b ? `"${b}" — 22px regular, white 60%, margin-top 14px.` : ''}
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px. BOTTOM: 3px ${brand.accent} line.`;
-    } else if (mood === 'HERO_LOFI') {
-      prompt = `Intimate Instagram carousel slide for Ana Moutinho. ${slideRef}. Lo-fi diary aesthetic.
-OUTPUT: 1024×1536px portrait. Real-life photograph background.
-BACKGROUND: ${scene || 'woman at desk, natural light, candid'}. Slightly grainy, warm.
-Dark gradient overlay bottom 40%.
-TEXT (bottom 38%, left 7%): "${h}" — bold condensed ~82px, white. Last words in ${brand.accent}.
-${b ? `"${b}" — 20px, white 65%, margin-top 12px.` : ''}
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 10px. BOTTOM: 2px ${brand.accent} line.`;
-    } else if (mood === 'EDITORIAL_LIGHT' || mood === 'DIARIO_EDITORIAL') {
-      prompt = `Clean editorial Instagram slide. ${slideRef}.
-OUTPUT: 1024×1536px portrait. Light background, typography only.
-BACKGROUND: ${brand.bgLight}. Flat.
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px.
-HEADING (y=18–58%, left 7%): "${h}" — Inter Black ~82px, ${brand.textOnLight}. Words "${accentPhrase}" in ${brand.accent}.
-${b ? `BODY: "${b}" — 21px, ${brand.textOnLight} 75%, margin-top 20px.` : ''}
-BOTTOM: 3px ${brand.accent} line. Typography only.`;
-    } else if (mood === 'TYPE_LIGHT' || mood === 'TYPE_CREME') {
-      prompt = `Pure typography Instagram slide. ${slideRef}.
-OUTPUT: 1024×1536px portrait. Cream/light background only.
-BACKGROUND: ${brand.bgLight}. No image.
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px.
-MAIN TEXT (y=20–80%, left 7%): "${h}" — Inter Black ~88px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 22px, ${brand.textOnLight} 72%, margin-top 26px.` : ''}
-BOTTOM: 3px ${brand.accent} line.`;
-    } else if (mood === 'TYPE_DARK' || mood === 'TYPE_DARK_WARM' || mood === 'FRASE_IMPACTO') {
-      prompt = `Dark typography Instagram slide. ${slideRef}.
-OUTPUT: 1024×1536px portrait. Dark background.
-BACKGROUND: ${brand.bgDark}. Flat.
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px.
-MAIN TEXT (y=22–78%, left 7%): "${h}" — Inter Black ~92px, white. "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 22px, white 68%, margin-top 28px.` : ''}
-BOTTOM: 3px ${brand.accent} line.`;
-    } else if (mood === 'BRAND_PUNCH' || mood === 'VIRADA') {
-      prompt = `Premium pivot Instagram slide. ${slideRef}. Maximum impact.
-OUTPUT: 1024×1536px portrait. Dark brand background.
-BACKGROUND: ${brand.bgBrand}.
-TOP: "${funcao}" — ${brand.accent}, 9px uppercase. y=4%, left 7%.
-MAIN TEXT (y=18–74%, left 7%): "${h}" — Inter Black ~96px, white. "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 24px, white 78%, margin-top 26px.` : ''}
-BOTTOM: 3px ${brand.accent} line.`;
-    } else if (mood === 'TABLE_LIGHT') {
-      prompt = `Clean comparison table Instagram slide. ${slideRef}.
-OUTPUT: 1024×1536px portrait. Light background.
-BACKGROUND: ${brand.bgLight}.
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px.
-HEADING (y=8%, left 7%): "${h}" — Inter Black ~60px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
-TABLE (y=28–78%): two columns, three rows max. Left header dark, right header ${brand.accent}.
-BOTTOM: 3px ${brand.accent} line.`;
-    } else if (mood === 'CTA_LIGHT' || mood === 'CTA_INTIMO') {
-      prompt = `Final CTA Instagram slide. ${slideRef}. Warm and inviting.
-OUTPUT: 1024×1536px portrait. Light background.
-BACKGROUND: ${brand.bgLight}.
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px.
-HEADLINE (y=22–46%, left 7%): "${h}" — Inter Black ~72px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
-CTA BOX (y=54–70%, centered, 88% width): rounded rect, subtle border ${brand.accent}.
-Inside: "${b || 'salva e compartilha'}" — 18px, italic.
-BOTTOM: "${brand.handle}" 13px ${brand.accent}. Then 3px ${brand.accent} line.`;
-    } else {
-      prompt = `Clean editorial Instagram slide. ${slideRef}.
-OUTPUT: 1024×1536px portrait.
-BACKGROUND: ${brand.bgLight}.
-TOP-LEFT: "${brand.handle}" — ${brand.accent}, 11px.
-TEXT (y=15–80%, left 7%): "${h}" — Inter Black ~74px, ${brand.textOnLight}. "${accentPhrase}" in ${brand.accent}.
-${b ? `"${b}" — 21px, ${brand.textOnLight} 76%, margin-top 22px.` : ''}
-BOTTOM: 3px ${brand.accent} line.`;
+        if (sd.content?.[0]?.text) {
+          artDirection = sd.content[0].text.trim();
+          console.log(`[ArtDir] Slide ${slideNumber}: ${artDirection.slice(0, 80)}...`);
+        }
+      } catch(e) {
+        console.warn('Art direction fallback:', e.message);
+        artDirection = isAna
+          ? 'Young woman at her desk by a large window, early morning soft diffused light, coffee cup nearby, candid moment of quiet reflection, warm golden hour tones, shallow depth of field, 35mm film aesthetic, slightly grainy texture, intimate and real, lo-fi diary feel'
+          : 'Executive standing by floor-to-ceiling glass window overlooking city skyline at dusk, dramatic raking side light, desaturated editorial tones, architectural precision and clean lines, Monocle magazine aesthetic, sharp focus on subject';
+      }
     }
 
+    // ── Etapa 2: GPT Image gera APENAS a fotografia limpa ────────────────
+    let photoPrompt = '';
+
+    if (needsPhoto && artDirection) {
+      photoPrompt = `${artDirection}
+
+CRITICAL REQUIREMENTS:
+- Absolutely NO text, words, letters, numbers, or typography anywhere in the image
+- NO logos, watermarks, or graphic overlays of any kind
+- NO UI elements, frames, borders, or design elements
+- This is pure photography intended as a background layer — clean and uncluttered
+- Ultra high quality, ${mood.includes('LOFI') ? 'authentic film grain, lo-fi aesthetic' : 'luxury magazine editorial quality'}
+- Portrait orientation composition, 2:3 aspect ratio`;
+    } else {
+      // Slides tipográficos puros — gera fundo textural limpo
+      const bgMap = {
+        TYPE_LIGHT:     `Minimalist flat surface. Warm off-white tone like ${brand.bgLight}. Very subtle paper or linen texture, barely perceptible. Completely clean, no objects, no shadows, no text.`,
+        TYPE_CREME:     `Warm cream minimalist background. Soft beige tone. Very subtle organic texture. Pure clean surface, no elements whatsoever.`,
+        TYPE_DARK:      `Deep dark background. Rich near-black tone like ${brand.bgDark}. Very subtle film grain texture. Pure surface, completely clean.`,
+        TYPE_DARK_WARM: `Dark warm background. Deep espresso tone. Subtle film grain. Pure photographic dark surface, no objects.`,
+        BRAND_PUNCH:    `Abstract dark background. Deep near-black tone. Very subtle diagonal light reflection or bokeh. No text, no logos, purely atmospheric.`,
+        VIRADA:         `Dark dramatic abstract background. Deep shadow photography. Moody atmospheric light leak at edge. Completely clean, no text, no elements.`,
+        TABLE_LIGHT:    `Clean light background. Flat warm white surface. Subtle paper texture. No elements, pure minimal surface.`,
+        CTA_LIGHT:      `Warm light background. Soft cream tones. Gentle organic texture. Pure clean inviting surface.`,
+        CTA_INTIMO:     `Warm intimate light background. Soft beige and cream. Gentle grain. Cozy and quiet surface.`,
+        FRASE_IMPACTO:  `Dramatic dark background. Deep shadows. Cinematic darkness with one subtle edge of light. No text, no elements.`,
+        SPLIT_LIGHT:    `Clean minimal light background. Soft warm white. Barely visible texture. Pure surface.`,
+        COLAGEM_REAL:   `Warm cream background. Soft natural light. Subtle organic texture. Clean and quiet.`,
+      };
+      photoPrompt = (bgMap[mood] || `Clean ${brand.bgLight} minimal background surface. Subtle texture. No text, no elements.`);
+      photoPrompt += '\n\nCRITICAL: Absolutely NO text, typography, letters, numbers, or graphic elements anywhere in the image.';
+    }
+
+    console.log(`[Slide ${slideNumber}] mood=${mood} needsPhoto=${needsPhoto} promptLen=${photoPrompt.length}`);
+
+    // ── Etapa 3: Chamar GPT Image ─────────────────────────────────────────
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size: '1024x1536', quality: 'high' }),
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: photoPrompt,
+        n: 1,
+        size: '1024x1536',
+        quality: 'high',
+      }),
     });
+
     const imgData = await imgRes.json();
     if (imgData.error) return res.status(500).json({ error: imgData.error.message });
+
     const b64out = imgData.data[0].b64_json || null;
     let   urlOut = imgData.data[0].url      || null;
+
+    // Salvar imagem localmente e retornar URL persistente
     if (b64out && contentId) {
       try {
         const filename = `${contentId}_slide${slideNumber}_${Date.now()}.png`;
@@ -456,7 +492,29 @@ BOTTOM: 3px ${brand.accent} line.`;
         urlOut = `${process.env.PUBLIC_URL || ''}/api/image/file/${filename}`;
       } catch(e) { console.warn('Auto-save failed:', e.message); }
     }
-    res.json({ url: urlOut, b64: b64out, mood, scene });
+
+    // Retorna foto limpa + designMeta para o frontend montar o overlay HTML/CSS
+    res.json({
+      url: urlOut,
+      b64: b64out,
+      mood,
+      artDirection,
+      designMeta: {
+        heading: h,
+        body: b,
+        accent: brand.accent,
+        accentAlt: brand.accentAlt || '#FFFFFF',
+        bgDark: brand.bgDark,
+        bgLight: brand.bgLight,
+        handle: brand.handle,
+        isDark: ['HERO_DARK','HERO_LOFI','TYPE_DARK','TYPE_DARK_WARM','BRAND_PUNCH','VIRADA','FRASE_IMPACTO','CTA_INTIMO'].includes(mood),
+        mood,
+        slideNumber,
+        totalSlides,
+        funcao,
+      }
+    });
+
   } catch(err) {
     console.error('carousel-slide error:', err);
     res.status(500).json({ error: err.message });
@@ -589,37 +647,24 @@ setInterval(async () => {
   if (changed) writeJSON(SCHEDULED_FILE, posts);
 }, 60_000);
 
-// ══════════════════════════════════════════════════════════════════════════
-// CALENDÁRIO — VERSÃO CORRIGIDA
-// Fixes:
-// 1. Prompt explícito com exemplo concreto do JSON esperado
-// 2. Parser robusto que tenta múltiplas estruturas de resposta
-// 3. Validação e fallback para cada entrada
-// 4. Log detalhado para diagnóstico
-// ══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// CALENDÁRIO
+// ═══════════════════════════════════════════════════════════════════════════
 
-// Helper: extrai JSON de forma robusta de texto que pode ter markdown
 function extractJSON(text) {
-  // Remove blocos de código markdown
   let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-  // Tenta encontrar o primeiro objeto JSON válido
   const match = cleaned.match(/\{[\s\S]*\}/);
   if (match) return JSON.parse(match[0]);
-  // Tenta o texto diretamente
   return JSON.parse(cleaned);
 }
 
-// Helper: normaliza a estrutura de dias que a IA pode retornar
 function normalizeDays(parsed) {
-  // Aceita: { days: [...] } ou { calendar: [...] } ou [ ... ] direto
   let days = parsed.days || parsed.calendar || parsed.data || (Array.isArray(parsed) ? parsed : null);
   if (!days) {
-    // Tenta encontrar qualquer array dentro do objeto
     const keys = Object.keys(parsed);
     for (const k of keys) {
       if (Array.isArray(parsed[k]) && parsed[k].length > 0 && parsed[k][0].day !== undefined) {
-        days = parsed[k];
-        break;
+        days = parsed[k]; break;
       }
     }
   }
@@ -634,12 +679,11 @@ app.post('/api/calendar/generate', async (req, res) => {
     const account     = getAccount(profile);
     const daysInMonth = new Date(year, month, 0).getDate();
 
-    // Gerar em blocos de 10 dias para evitar timeout
     const BLOCK = 10;
     const allDays = [];
 
     for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
-      const blockEnd = Math.min(blockStart + BLOCK - 1, daysInMonth);
+      const blockEnd    = Math.min(blockStart + BLOCK - 1, daysInMonth);
       const daysInBlock = blockEnd - blockStart + 1;
 
       const brandContext = profile === 'pessoal'
@@ -649,8 +693,7 @@ TOM: reflexivo, direto, íntimo. NUNCA motivacional genérico.`
         : `PERFIL: ${account.name} (${account.handle})
 NICHO: ${brand.aestheticDNA?.split('\n')[0] || 'marketing e negócios'}`;
 
-      // Exemplo concreto do formato esperado — crucial para a IA seguir
-      const exampleDay = blockStart;
+      const exampleDay   = blockStart;
       const examplePosts = postsPerDay === 1
         ? `[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding de clientes"}]`
         : `[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding"},{"time":"18:00","type":"tendencia","topic":"O novo comportamento do consumidor pós-IA em 2026"}]`;
@@ -686,16 +729,8 @@ Cada dia DEVE ter exactamente ${postsPerDay} post(s) com topic específico e com
 
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: blockPrompt }]
-        }),
+        headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: blockPrompt }] }),
       });
 
       const blockData = await blockRes.json();
@@ -707,135 +742,70 @@ Cada dia DEVE ter exactamente ${postsPerDay} post(s) com topic específico e com
       let blockDays = [];
       try {
         const parsed = extractJSON(rawText);
-        blockDays = normalizeDays(parsed);
+        blockDays    = normalizeDays(parsed);
         console.log(`[Calendar] Bloco ${blockStart}–${blockEnd} parseado: ${blockDays.length} dias`);
-
-        // Validar que cada dia tem posts
-        const invalidDays = blockDays.filter(d => !d.posts || d.posts.length === 0);
-        if (invalidDays.length > 0) {
-          console.warn(`[Calendar] ${invalidDays.length} dias sem posts:`, invalidDays.map(d => d.day));
-        }
-
-        // Log de amostra para diagnóstico
-        if (blockDays.length > 0) {
-          console.log(`[Calendar] Amostra dia ${blockDays[0].day}:`, JSON.stringify(blockDays[0]));
-        }
-
+        if (blockDays.length > 0) console.log(`[Calendar] Amostra dia ${blockDays[0].day}:`, JSON.stringify(blockDays[0]));
       } catch (parseErr) {
         console.error(`[Calendar] Erro ao parsear bloco ${blockStart}–${blockEnd}:`, parseErr.message);
-        console.error(`[Calendar] Texto raw completo:`, rawText);
-
-        // Fallback: gerar dias vazios para não quebrar o calendário
-        for (let d = blockStart; d <= blockEnd; d++) {
-          blockDays.push({ day: d, posts: [] });
-        }
+        for (let d = blockStart; d <= blockEnd; d++) blockDays.push({ day: d, posts: [] });
       }
 
       allDays.push(...blockDays);
     }
 
-    // Pegar conteúdos já gerados para marcar status
     const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
 
-    // Montar calendário final com validação robusta
     const calendarDays = allDays.map(dayEntry => {
       const dayNum = Number(dayEntry.day);
       const posts  = Array.isArray(dayEntry.posts) ? dayEntry.posts : [];
-
       return {
         day:   dayNum,
         posts: posts.map(post => {
-          // Garante que topic existe (aceita topic ou tema)
           const topic = (post.topic || post.tema || '').trim();
           const type  = post.type || post.tipo || 'educativo';
           const time  = post.time || post.horario || '09:00';
-
-          const match = generated.find(g =>
-            g.calendarDay === dayNum &&
-            g.calendarMonth === month &&
-            g.calendarYear === year
-          );
-
-          return {
-            time,
-            type,
-            topic,
-            date:        `${year}-${String(month).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`,
-            contentId:   match?.id     || null,
-            status:      match?.status || 'pendente',
-            scheduledAt: match?.scheduledAt || null,
-          };
+          const match = generated.find(g => g.calendarDay === dayNum && g.calendarMonth === month && g.calendarYear === year);
+          return { time, type, topic, date: `${year}-${String(month).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`, contentId: match?.id || null, status: match?.status || 'pendente', scheduledAt: match?.scheduledAt || null };
         }),
       };
     });
 
-    // Validação final
     const totalPosts = calendarDays.reduce((acc, d) => acc + d.posts.length, 0);
     console.log(`[Calendar] Total: ${calendarDays.length} dias, ${totalPosts} posts gerados`);
+    if (totalPosts === 0) throw new Error('A IA retornou calendário sem posts. Tenta novamente.');
 
-    if (totalPosts === 0) {
-      throw new Error('A IA retornou calendário sem posts. Tenta novamente.');
-    }
+    writeJSON(CALENDAR_FILE, { profile, month, year, calendar: calendarDays, savedAt: new Date().toISOString() });
 
-    // Salvar localmente
-    writeJSON(CALENDAR_FILE, {
-      profile, month, year,
-      calendar: calendarDays,
-      savedAt: new Date().toISOString()
-    });
-
-    // Salvar no Supabase
     if (supabase) {
       await supabase.from('calendars').upsert({
-        id:         `${profile}_${year}_${month}`,
-        profile,
-        month:      parseInt(month),
-        year:       parseInt(year),
-        data:       JSON.stringify(calendarDays),
-        updated_at: new Date().toISOString(),
+        id: `${profile}_${year}_${month}`, profile, month: parseInt(month), year: parseInt(year),
+        data: JSON.stringify(calendarDays), updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
     }
 
     res.json({ calendar: calendarDays });
-
   } catch(err) {
     console.error('[Calendar] Erro geral:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ── Calendário saved ──────────────────────────────────────────────────────
 app.get('/api/calendar/saved', async (req, res) => {
   try {
     const { profile, month, year } = req.query;
-
     if (supabase) {
-      const { data, error } = await supabase
-        .from('calendars')
-        .select('data, updated_at')
-        .eq('id', `${profile}_${year}_${month}`)
-        .single();
+      const { data, error } = await supabase.from('calendars').select('data, updated_at').eq('id', `${profile}_${year}_${month}`).single();
       if (!error && data?.data) {
         const calendar = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
         return res.json({ found: true, calendar, savedAt: data.updated_at });
       }
     }
-
     const saved = readJSON(CALENDAR_FILE);
-    if (
-      saved?.profile === profile &&
-      String(saved.month) === String(month) &&
-      String(saved.year)  === String(year) &&
-      saved.calendar?.length
-    ) {
+    if (saved?.profile === profile && String(saved.month) === String(month) && String(saved.year) === String(year) && saved.calendar?.length) {
       return res.json({ found: true, calendar: saved.calendar, savedAt: saved.savedAt });
     }
-
     res.json({ found: false });
-  } catch(e) {
-    console.error('calendar/saved error:', e);
-    res.json({ found: false });
-  }
+  } catch(e) { console.error('calendar/saved error:', e); res.json({ found: false }); }
 });
 
 // ── Gerar + Salvar carrossel ──────────────────────────────────────────────
@@ -882,19 +852,12 @@ JSON: {"title":"...","slideCount":${isAna ? 8 : 10},"slides":[{"slideNumber":1,"
     const carouselData = extractJSON(d.content[0].text.trim());
 
     const item = saveGeneratedContent({
-      id: `cnt_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      status: 'pendente',
-      type: 'carrossel',
-      mode, profile,
+      id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente',
+      type: 'carrossel', mode, profile,
       topic: topic || `Carrossel ${carouselData.slideCount} slides`,
-      caption: caption || carouselData.caption,
-      hashtags: hashtags || carouselData.hashtags,
-      contentMachineType: contentMachineType || null,
-      carouselData,
-      calendarDay:   calendarDay   || null,
-      calendarMonth: calendarMonth || null,
-      calendarYear:  calendarYear  || null,
+      caption: caption || carouselData.caption, hashtags: hashtags || carouselData.hashtags,
+      contentMachineType: contentMachineType || null, carouselData,
+      calendarDay: calendarDay || null, calendarMonth: calendarMonth || null, calendarYear: calendarYear || null,
       imageUrls: [],
     });
 
@@ -971,11 +934,8 @@ JSON:
     });
 
     const item = saveGeneratedContent({
-      id: `cnt_${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      status: 'pendente', type: 'carrossel',
-      contentMachineType: tipo,
-      contentMachineTypeLabel: tipoLabels[tipo] || tipo,
+      id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel',
+      contentMachineType: tipo, contentMachineTypeLabel: tipoLabels[tipo] || tipo,
       profile, topic: tema, imageUrls: [],
       carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption: '', hashtags: '' },
     });
