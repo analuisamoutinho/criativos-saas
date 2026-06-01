@@ -113,7 +113,11 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .content-topic{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .content-meta{font-size:.75rem;color:var(--mid);margin-top:2px;display:flex;gap:10px;align-items:center;}
 .content-actions{display:flex;gap:6px;flex-shrink:0;}
-.slides-preview{display:flex;gap:12px;overflow-x:auto;padding:12px 0 16px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+.slides-preview{display:flex;gap:12px;overflow-x:scroll;padding:12px 0 20px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;cursor:grab;user-select:none;scrollbar-width:thin;scrollbar-color:var(--light) transparent;}
+.slides-preview:active{cursor:grabbing;}
+.slides-preview::-webkit-scrollbar{height:5px;}
+.slides-preview::-webkit-scrollbar-track{background:transparent;}
+.slides-preview::-webkit-scrollbar-thumb{background:var(--light);border-radius:99px;}
 .slide-card{flex-shrink:0;width:180px;height:220px;border-radius:var(--radius);background:var(--gradient);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;color:var(--white);scroll-snap-align:start;position:relative;overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;}
 .slide-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 28px rgba(0,0,0,.22);}
 .slide-card::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3);z-index:1;}
@@ -250,7 +254,12 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .photo-suggestions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .photo-suggestion-item{width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid transparent;cursor:pointer;transition:border-color .2s;}
 .photo-suggestion-item:hover,.photo-suggestion-item.selected{border-color:var(--magenta);}
-/* ── Slide Renderer ─────────────────────────────────────────────────────── */
+/* ── Design Style Selector ── */
+.ds-btn{background:var(--white);border:1.5px solid var(--light);border-radius:10px;padding:10px 12px;text-align:left;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
+.ds-btn:hover{border-color:var(--magenta);box-shadow:0 2px 10px rgba(228,0,124,.1);}
+.ds-btn.active{border-color:var(--magenta);background:rgba(228,0,124,.05);box-shadow:0 0 0 2px rgba(228,0,124,.15);}
+.ds-btn-name{font-size:.8rem;font-weight:700;color:var(--dark);display:flex;align-items:center;gap:6px;}
+.ds-btn-sub{font-size:.67rem;color:var(--mid);margin-top:2px;line-height:1.3;}
 .sr-slide-wrapper{position:relative;width:1024px;height:1536px;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;}
 .sr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
 .sr-overlay{position:absolute;inset:0;z-index:1;}
@@ -349,6 +358,11 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
             <div class="form-group"><label class="form-label">Tema / Tópico</label><textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="4"></textarea></div>
           </div>
           <div class="form-group"><label class="form-label">Gerador de imagens</label><select class="select" id="imageEngine"><option value="gpt">GPT Image-1</option><option value="gemini">Gemini Imagen</option><option value="none">Só texto (sem imagens)</option></select></div>
+          <div class="form-group" id="designStyleGroup">
+            <label class="form-label">Estilo visual</label>
+            <div id="designStyleOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
+            <div id="designStyleDesc" style="font-size:.73rem;color:var(--mid);margin-top:7px;padding:8px 12px;background:var(--pale);border-radius:8px;border-left:2px solid var(--magenta);display:none;"></div>
+          </div>
           <div class="form-group"><label class="form-label">Legenda personalizada (opcional)</label><textarea class="textarea" id="carouselCaption" placeholder="Deixar em branco para gerar automaticamente..." rows="2"></textarea></div>
           <button class="btn btn-primary" onclick="generateCarousel()" id="btnGenCarousel" style="width:100%">✨ Gerar carrossel</button>
         </div>
@@ -529,6 +543,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 <script>
 /* ── STATE ── */
 let currentProfile = 'marca';
+let currentDesignStyle = null; // estilo visual selecionado
 let currentCalendarData = null;
 let currentCalendarPost = null;
 let currentCarouselData = null;
@@ -538,6 +553,125 @@ let currentFeedImageUrl = null;
 let currentFeedContentId = null;
 let currentModalContent = null;
 let calendarApproved = false;
+
+/* ── DESIGN STYLES ── */
+const DESIGN_STYLES = {
+  marca: [
+    {
+      id: 'premium_editorial',
+      name: '📰 Premium Editorial',
+      sub: 'Monocle · FT Weekend · McKinsey',
+      desc: 'Fotos executivas com enquadramento arquitetônico. Tipografia geométrica bold, hierarquia clara, palette desaturada. Autoridade máxima.',
+      promptStyle: 'Premium B2B editorial. Think Monocle magazine meets McKinsey Digital. Executive photography, architectural precision, desaturated tones, quiet luxury.',
+      overlayStyle: 'HERO_DARK',
+    },
+    {
+      id: 'data_visual',
+      name: '📊 Data Visual',
+      sub: 'Bloomberg · Economist · Wired',
+      desc: 'Fundos tipográficos limpos com dados em destaque. Gráficos e números como elemento visual principal.',
+      promptStyle: 'Data-driven visual design. Bloomberg/Economist aesthetic. Clean backgrounds, bold numbers as hero element, information hierarchy, structured grid.',
+      overlayStyle: 'TYPE_LIGHT',
+    },
+  ],
+  pessoal: [
+    {
+      id: 'lofi_diary',
+      name: '📷 Lo-fi Diary',
+      sub: 'iPhone grain · Sofia Coppola · real',
+      desc: 'Fotos íntimas com grão de filme. Luz natural, momentos espontâneos, sem estúdio. A "Ana mais real".',
+      promptStyle: 'Lo-fi diary aesthetic. Like a candid iPhone photo from a thoughtful woman. Warm grain, natural light, honest imperfect moment. Sofia Coppola visual universe.',
+      overlayStyle: 'HERO_LOFI',
+    },
+    {
+      id: 'editorial_minimal',
+      name: '✦ Editorial Minimal',
+      sub: 'Clean · reflexivo · feminino',
+      desc: 'Fundos creme limpos com tipografia como elemento central. Sofisticado e intimista.',
+      promptStyle: 'Soft editorial minimal. Warm cream backgrounds, clean surfaces, subtle organic textures. Intimate and sophisticated without being corporate.',
+      overlayStyle: 'TYPE_CREME',
+    },
+    {
+      id: 'colagem_real',
+      name: '🌿 Colagem Real',
+      sub: 'Textura · objetos · próximo',
+      desc: 'Mix de texturas reais, objetos cotidianos como café, caderno, janela. Muito próximo e humano.',
+      promptStyle: 'Real life collage. Everyday objects shot close-up: coffee cup, open journal, morning window light, hands. Warm tactile textures, very human and relatable.',
+      overlayStyle: 'COLAGEM_REAL',
+    },
+  ],
+  virttus: [
+    {
+      id: 'tech_precision',
+      name: '⚡ Tech Precision',
+      sub: 'Sharp · forward · digital',
+      desc: 'Abstração digital, luzes azuis e verdes sobre escuro. B2B tech premium.',
+      promptStyle: 'Tech B2B precision. Abstract digital visuals, sharp geometry, teal and electric green accents on deep dark backgrounds. Forward-looking, data-driven.',
+      overlayStyle: 'HERO_DARK',
+    },
+    {
+      id: 'corporate_clean',
+      name: '🏢 Corporate Clean',
+      sub: 'Profissional · estruturado · confiança',
+      desc: 'Backgrounds limpos com tipografia estruturada. Seriedade corporativa sem ser genérico.',
+      promptStyle: 'Clean corporate precision. Light backgrounds, structured typography focus, professional imagery without clichés. Trust and authority.',
+      overlayStyle: 'TYPE_LIGHT',
+    },
+  ],
+};
+
+function initDesignStyles() {
+  const styles = DESIGN_STYLES[currentProfile] || DESIGN_STYLES.marca;
+  const container = document.getElementById('designStyleOptions');
+  if (!container) return;
+  container.innerHTML = styles.map((s, i) => `
+    <button class="ds-btn${i === 0 ? ' active' : ''}" data-style-id="${s.id}" onclick="selectDesignStyle('${s.id}')">
+      <div class="ds-btn-name">${s.name}</div>
+      <div class="ds-btn-sub">${s.sub}</div>
+    </button>`).join('');
+  currentDesignStyle = styles[0].id;
+  updateDesignStyleDesc();
+}
+
+function selectDesignStyle(id) {
+  document.querySelectorAll('.ds-btn').forEach(b => b.classList.toggle('active', b.dataset.styleId === id));
+  currentDesignStyle = id;
+  updateDesignStyleDesc();
+}
+
+function updateDesignStyleDesc() {
+  const styles = DESIGN_STYLES[currentProfile] || [];
+  const s = styles.find(x => x.id === currentDesignStyle);
+  const el = document.getElementById('designStyleDesc');
+  if (!el || !s) return;
+  el.textContent = s.desc;
+  el.style.display = 'block';
+}
+
+function getActiveDesignStyle() {
+  const styles = DESIGN_STYLES[currentProfile] || DESIGN_STYLES.marca;
+  return styles.find(s => s.id === currentDesignStyle) || styles[0];
+}
+
+/* ── DRAG SCROLL no slides-preview ── */
+function initSlidesDragScroll() {
+  const el = document.getElementById('slidesPreview');
+  if (!el) return;
+  let isDown = false, startX = 0, scrollLeft = 0;
+  el.addEventListener('mousedown', e => {
+    if (e.target.closest('.slide-card')) return; // clique normal no card
+    isDown = true; el.classList.add('active');
+    startX = e.pageX - el.offsetLeft; scrollLeft = el.scrollLeft;
+  });
+  el.addEventListener('mouseleave', () => { isDown = false; el.classList.remove('active'); });
+  el.addEventListener('mouseup', () => { isDown = false; el.classList.remove('active'); });
+  el.addEventListener('mousemove', e => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    el.scrollLeft = scrollLeft - (x - startX) * 1.4;
+  });
+}
 
 /* ── LIGHTBOX STATE ── */
 let lbCurrentIndex = 0;
@@ -566,6 +700,7 @@ function showSection(id,navBtn){
   if(id==='dashboard')loadDashboard();
   if(id==='library')loadLibrary();
   if(id==='photos')loadPhotos();
+  if(id==='carousel')setTimeout(initSlidesDragScroll, 250);
 }
 function setNavActive(id,btn){
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
@@ -579,6 +714,7 @@ function setProfile(profile,btn){
   const names={marca:'Case Aceleradora',pessoal:'Ana Moutinho',virttus:'Virttus'};
   document.getElementById('activeProfileBadge').textContent=names[profile];
   toast(`Perfil: ${names[profile]}`,'info');
+  initDesignStyles();
   loadDashboard();
 }
 
@@ -743,6 +879,7 @@ function renderSlidesPreview(slides){
       </div>
     </div>`;
   }).join('');
+  setTimeout(initSlidesDragScroll, 80);
 }
 
 /* ── LIGHTBOX ── */
@@ -819,7 +956,7 @@ const SlideRenderer = {
   },
 
   _buildSlideHTML(photoUrl, designMeta) {
-    const { heading, body, accent, bgDark, bgLight, handle, isDark, mood, slideNumber, totalSlides, funcao } = designMeta;
+    const { heading, body, accent, bgDark, bgLight, handle, isDark, mood, slideNumber, totalSlides, funcao, designStyleHint } = designMeta;
     const textColor    = isDark ? 'light' : 'dark';
     const overlayClass = isDark
       ? (mood.includes('HERO') ? 'sr-overlay-dark-bottom' : 'sr-overlay-dark-full')
@@ -828,14 +965,27 @@ const SlideRenderer = {
     const headingLen  = heading.length;
     const headingSize = headingLen > 80 ? '68px' : headingLen > 55 ? '78px' : headingLen > 35 ? '88px' : '96px';
     const headingHTML = this._applyAccentWords(heading, accent);
+
+    // Contraste garantido: handle e funcao sempre com sombra forte em fundos mistos
+    // Em fundos claros: cor escura. Em fundos escuros: accent ou branco
+    const handleColor  = isDark ? accent : accent; // accent tem contraste em ambos
+    const handleShadow = isDark
+      ? '0 1px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4)'  // sombra escura
+      : '0 1px 3px rgba(255,255,255,0.8)'; // halo branco em fundos claros
+    const funcaoColor  = isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.55)';
+    const funcaoShadow = isDark
+      ? '0 1px 4px rgba(0,0,0,0.8)'
+      : '0 1px 2px rgba(255,255,255,0.9)';
+    const numColor     = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.28)';
+
     return `
       <div class="sr-slide-wrapper" style="background:${isDark ? bgDark : bgLight};">
         <img class="sr-bg" src="${photoUrl}" crossorigin="anonymous" />
         <div class="sr-overlay ${overlayClass}"></div>
-        <div class="sr-slide-num" style="color:${isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'};">${slideNumber}/${totalSlides}</div>
+        <div class="sr-slide-num" style="color:${numColor};text-shadow:0 1px 4px rgba(0,0,0,0.3);">${slideNumber}/${totalSlides}</div>
         <div class="sr-content ${isCenter ? 'sr-content-center' : ''}">
-          <div class="sr-handle" style="color:${accent};">${handle}</div>
-          ${funcao && funcao !== 'CAPA' ? `<div class="sr-funcao-label" style="color:${accent};">${funcao}</div>` : ''}
+          <div class="sr-handle" style="color:${handleColor};text-shadow:${handleShadow};letter-spacing:.05em;font-size:22px;font-weight:800;">${handle}</div>
+          ${funcao && funcao !== 'CAPA' ? `<div class="sr-funcao-label" style="color:${funcaoColor};text-shadow:${funcaoShadow};font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px;">${funcao}</div>` : ''}
           <div class="sr-heading sr-heading-${textColor}" style="font-size:${headingSize};">${headingHTML}</div>
           ${body ? `<div class="sr-body sr-body-${textColor}">${body}</div>` : ''}
         </div>
@@ -922,7 +1072,7 @@ async function generateCarouselImages(autoPublishConfig = null) {
         const slideRes = await fetch('/api/image/carousel-slide', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ heading, body, slideNumber: i+1, totalSlides: slides.length, funcao, topic, profile: currentProfile, contentId, imagePromptHint: s.imagePrompt || '' }),
+          body: JSON.stringify({ heading, body, slideNumber: i+1, totalSlides: slides.length, funcao, topic, profile: currentProfile, contentId, imagePromptHint: s.imagePrompt || '', designStyleHint: getActiveDesignStyle()?.promptStyle || '' }),
         });
         const slideData = await slideRes.json();
         if (slideData.error) throw new Error(slideData.error);
@@ -936,13 +1086,12 @@ async function generateCarouselImages(autoPublishConfig = null) {
         finalPngB64 = await SlideRenderer.renderSlide(photoUrl, designMeta);
 
         if (finalPngB64) {
-          if (contentId) {
-            try {
-              const saveRes  = await fetch('/api/image/save-b64', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ b64: finalPngB64, contentId, slideIndex: i }) });
-              const saveData = await saveRes.json();
-              if (saveData.url) finalUrl = saveData.url;
-            } catch(e) { console.warn('Save b64 failed:', e.message); }
-          }
+          // Sempre salvar no servidor para ter URL pública persistente
+          try {
+            const saveRes  = await fetch('/api/image/save-b64', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ b64: finalPngB64, contentId: contentId || `tmp_${Date.now()}`, slideIndex: i }) });
+            const saveData = await saveRes.json();
+            if (saveData.url) finalUrl = saveData.url;
+          } catch(e) { console.warn('Save b64 failed:', e.message); }
           finalUrl = finalUrl || `data:image/png;base64,${finalPngB64}`;
         } else {
           finalUrl = photoUrl; // fallback: foto sem overlay
@@ -985,9 +1134,14 @@ async function generateCarouselImages(autoPublishConfig = null) {
   btn.disabled = false; btn.textContent = '🔄 Regenerar imagens';
 
   if (currentCarouselData) currentCarouselData.imageUrls = currentCarouselImages.filter(Boolean);
-  const validUrls = currentCarouselImages.filter(Boolean);
+  // Salvar na biblioteca apenas URLs absolutas (não data:URLs que não persistem)
+  const validUrls = currentCarouselImages.filter(u => u && !u.startsWith('data:'));
+  const allUrls   = currentCarouselImages.filter(Boolean);
   if (contentId && validUrls.length) {
-    await fetch(`/api/content/${contentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrls: validUrls, status: 'pendente' }) }).catch(e => console.warn('PATCH:', e));
+    try {
+      await fetch(`/api/content/${contentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrls: validUrls, status: 'pendente' }) });
+      console.log(`[Library] ${validUrls.length} URLs salvas para contentId ${contentId}`);
+    } catch(e) { console.warn('PATCH imageUrls:', e); }
   }
   toast(`${ok} slides compostos com o novo motor de design! 🎨`, 'success');
 
@@ -1277,7 +1431,11 @@ function loadCMFromHistory(i){const h=cmSessionHistory[i];if(!h)return;cmSelecte
 
 /* ── INIT ── */
 initCalendarMonths();
+initDesignStyles();
 loadDashboard();
+// Drag scroll precisa de DOM pronto e pode ser reiniciado ao abrir a secção carousel
+document.addEventListener('DOMContentLoaded', () => { initSlidesDragScroll(); });
+setTimeout(initSlidesDragScroll, 500);
 </script>
 </body>
 </html>
