@@ -250,6 +250,26 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .photo-suggestions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .photo-suggestion-item{width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid transparent;cursor:pointer;transition:border-color .2s;}
 .photo-suggestion-item:hover,.photo-suggestion-item.selected{border-color:var(--magenta);}
+/* ── Slide Renderer ─────────────────────────────────────────────────────── */
+.sr-slide-wrapper{position:relative;width:1024px;height:1536px;overflow:hidden;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0;}
+.sr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.sr-overlay{position:absolute;inset:0;z-index:1;}
+.sr-overlay-dark-bottom{background:linear-gradient(to bottom,transparent 0%,transparent 25%,rgba(0,0,0,.15) 45%,rgba(0,0,0,.55) 70%,rgba(0,0,0,.82) 100%);}
+.sr-overlay-dark-full{background:rgba(0,0,0,.42);}
+.sr-overlay-none{background:transparent;}
+.sr-content{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:72px 80px;}
+.sr-content-center{justify-content:center;}
+.sr-handle{font-size:24px;font-weight:700;letter-spacing:.04em;text-transform:lowercase;margin-bottom:32px;opacity:.85;}
+.sr-funcao-label{font-size:20px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:22px;opacity:.7;}
+.sr-heading{font-family:'Plus Jakarta Sans',sans-serif;font-size:92px;font-weight:800;line-height:1.04;letter-spacing:-.02em;margin-bottom:32px;}
+.sr-heading-light{color:#FFFFFF;}
+.sr-heading-dark{color:#111111;}
+.sr-body{font-size:34px;font-weight:400;line-height:1.55;letter-spacing:-.01em;max-width:880px;}
+.sr-body-light{color:rgba(255,255,255,.78);}
+.sr-body-dark{color:rgba(17,17,17,.72);}
+.sr-bottom-bar{position:absolute;bottom:0;left:0;right:0;height:6px;z-index:3;}
+.sr-slide-num{position:absolute;top:56px;right:80px;font-size:20px;font-weight:600;letter-spacing:.06em;opacity:.45;z-index:3;}
+#sr-render-container{position:fixed;top:-9999px;left:-9999px;width:1024px;height:1536px;z-index:-1;pointer-events:none;}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--light);border-radius:99px;}
@@ -499,6 +519,12 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     </div>
   </div>
 </div>
+
+<!-- Container oculto para renderização dos slides -->
+<div id="sr-render-container"></div>
+
+<!-- html2canvas CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
 /* ── STATE ── */
@@ -775,74 +801,202 @@ function lbUpdateStrip(){
 document.addEventListener('keydown',e=>{const lb=document.getElementById('slideLightbox');if(!lb?.classList.contains('visible'))return;if(e.key==='ArrowLeft')lbNavigate(-1);if(e.key==='ArrowRight')lbNavigate(1);if(e.key==='Escape')closeLightbox();});
 document.addEventListener('click',e=>{const lb=document.getElementById('slideLightbox');if(e.target===lb)closeLightbox();});
 
-/* ── GERAR IMAGENS ── */
+/* ── BRAND ACCENT (mantido para Gemini) ── */
 const BRAND_ACCENT={marca:{accent:'#C8A020',bg:'#0A0A0A',handle:'@caseaceleradora'},pessoal:{accent:'#8B7355',bg:'#1A1612',handle:'@analuisa.moutinho'},virttus:{accent:'#00D4AA',bg:'#050B18',handle:'@virttus'}};
 
-async function generateCarouselImages(autoPublishConfig=null){
-  if(!currentCarouselData)return;
-  const engine=document.getElementById('imageEngine').value;
-  if(engine==='none')return toast('Selecciona um gerador','info');
-  const slides=currentCarouselData.slides,topic=currentCarouselData.title||currentCarouselData.tema||'',contentId=currentCarouselContentId;
-  const btn=document.getElementById('btnGenImages');btn.disabled=true;
-  const progressBar=document.getElementById('imageProgress'),progressFill=document.getElementById('imageProgressFill'),statusEl=document.getElementById('imageGenStatus');
-  progressBar.style.display='block';
-  currentCarouselImages=[];
-  const msgs=['🎨 Compondo layout...','✒️ Renderizando tipografia...','🖼️ Integrando identidade visual...','⚡ Aplicando accent color...','✨ Finalizando slide...'];
+/* ══════════════════════════════════════════════════════════════════════════
+   MOTOR DE DESIGN — SlideRenderer
+   Foto limpa (GPT) + HTML/CSS overlay → html2canvas → PNG final
+   ══════════════════════════════════════════════════════════════════════════ */
+const SlideRenderer = {
+  _applyAccentWords(text, accentColor) {
+    if (!text) return '';
+    const words = text.split(/\s+/);
+    const accentCount = Math.min(3, Math.ceil(words.length / 3));
+    const normal   = words.slice(0, words.length - accentCount).join(' ');
+    const accented = words.slice(words.length - accentCount).join(' ');
+    return `${normal ? normal + ' ' : ''}<span style="color:${accentColor}">${accented}</span>`;
+  },
 
-  for(let i=0;i<slides.length;i++){
-    const s=slides[i],pct=Math.round((i/slides.length)*100);
-    progressFill.style.width=`${pct}%`;
-    statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${msgs[i%msgs.length]}`;
-    const card=document.getElementById(`slideCard_${i}`);
-    if(card){card.style.opacity='0.55';card.style.outline='2px solid var(--magenta)';}
-    try{
-      const funcao=s.funcao||(i===0?'CAPA':i===slides.length-1?'ASSINATURA':i<3?'TRAÇÃO':i<6?'AVANÇO':'CONSEQUÊNCIA');
-      const heading=s.heading||s.textos?.[0]?.texto||'',body=s.body||s.textos?.[1]?.texto||'';
-      let url=null;
-      if(engine==='gpt'){
-        const r=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading,body,slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||''})});
-        const d=await r.json();if(d.error)throw new Error(d.error);
-        url=d.url||(d.b64?`data:image/png;base64,${d.b64}`:null);
-      }else{
-        const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.marca,isCapa=i===0;
-        const geminiPrompt=[`Premium Instagram carousel slide ${i+1}/${slides.length}.`,`Topic: "${topic}". Function: ${funcao}.`,`Brand colors: background ${brand.bg}, accent ${brand.accent}, white text.`,isCapa?`COVER SLIDE: cinematic hero image. MASSIVE heading: "${heading}". Last words in ${brand.accent}. Dark overlay.`:`Clean editorial layout. Bold heading "${heading}" — key words in ${brand.accent}. Body: "${body}".`,`Portrait 4:5. Professional quality.`].join(' ');
-        const r=await fetch('/api/gemini-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:geminiPrompt})});
-        const d=await r.json();const b64=d.b64||null;url=d.url||(b64?`data:image/png;base64,${b64}`:null);
-        if(b64&&contentId){try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,contentId,slideIndex:i})});const svd=await sv.json();if(svd.url)url=svd.url;}catch(e){}}
+  _buildSlideHTML(photoUrl, designMeta) {
+    const { heading, body, accent, bgDark, bgLight, handle, isDark, mood, slideNumber, totalSlides, funcao } = designMeta;
+    const textColor    = isDark ? 'light' : 'dark';
+    const overlayClass = isDark
+      ? (mood.includes('HERO') ? 'sr-overlay-dark-bottom' : 'sr-overlay-dark-full')
+      : 'sr-overlay-none';
+    const isCenter = ['TYPE_LIGHT','TYPE_CREME','TYPE_DARK','TYPE_DARK_WARM','FRASE_IMPACTO','TABLE_LIGHT'].includes(mood);
+    const headingLen  = heading.length;
+    const headingSize = headingLen > 80 ? '68px' : headingLen > 55 ? '78px' : headingLen > 35 ? '88px' : '96px';
+    const headingHTML = this._applyAccentWords(heading, accent);
+    return `
+      <div class="sr-slide-wrapper" style="background:${isDark ? bgDark : bgLight};">
+        <img class="sr-bg" src="${photoUrl}" crossorigin="anonymous" />
+        <div class="sr-overlay ${overlayClass}"></div>
+        <div class="sr-slide-num" style="color:${isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.3)'};">${slideNumber}/${totalSlides}</div>
+        <div class="sr-content ${isCenter ? 'sr-content-center' : ''}">
+          <div class="sr-handle" style="color:${accent};">${handle}</div>
+          ${funcao && funcao !== 'CAPA' ? `<div class="sr-funcao-label" style="color:${accent};">${funcao}</div>` : ''}
+          <div class="sr-heading sr-heading-${textColor}" style="font-size:${headingSize};">${headingHTML}</div>
+          ${body ? `<div class="sr-body sr-body-${textColor}">${body}</div>` : ''}
+        </div>
+        <div class="sr-bottom-bar" style="background:${accent};"></div>
+      </div>`;
+  },
+
+  async renderSlide(photoUrl, designMeta) {
+    const container = document.getElementById('sr-render-container');
+    container.innerHTML = this._buildSlideHTML(photoUrl, designMeta);
+    const slideEl = container.querySelector('.sr-slide-wrapper');
+    await new Promise((resolve) => {
+      const img = slideEl.querySelector('.sr-bg');
+      if (!img) return resolve();
+      if (img.complete && img.naturalWidth > 0) return resolve();
+      img.onload  = resolve;
+      img.onerror = resolve;
+      setTimeout(resolve, 8000);
+    });
+    await new Promise(r => setTimeout(r, 120));
+    try {
+      const canvas = await html2canvas(slideEl, {
+        width: 1024, height: 1536, scale: 1,
+        useCORS: true, allowTaint: false,
+        backgroundColor: designMeta.isDark ? designMeta.bgDark : designMeta.bgLight,
+        logging: false,
+      });
+      const pngB64 = canvas.toDataURL('image/png').split(',')[1];
+      container.innerHTML = '';
+      return pngB64;
+    } catch(err) {
+      container.innerHTML = '';
+      console.error('html2canvas error:', err);
+      return null;
+    }
+  },
+};
+
+/* ── GERAR IMAGENS — versão com Diretor de Arte IA + html2canvas ── */
+async function generateCarouselImages(autoPublishConfig = null) {
+  if (!currentCarouselData) return;
+  const engine = document.getElementById('imageEngine').value;
+  if (engine === 'none') return toast('Selecciona um gerador', 'info');
+
+  const slides    = currentCarouselData.slides;
+  const topic     = currentCarouselData.title || currentCarouselData.tema || '';
+  const contentId = currentCarouselContentId;
+
+  const btn          = document.getElementById('btnGenImages');
+  const progressBar  = document.getElementById('imageProgress');
+  const progressFill = document.getElementById('imageProgressFill');
+  const statusEl     = document.getElementById('imageGenStatus');
+
+  btn.disabled = true;
+  progressBar.style.display = 'block';
+  currentCarouselImages = [];
+
+  const phase1Msgs = ['🎨 Diretor de Arte gerando visão...','📷 Definindo composição fotográfica...','🎬 Calculando luz e enquadramento...','✦ Direcionando estética visual...','🖼️ Criando direção de arte...'];
+  const phase2Msgs = ['⚡ GPT gerando fotografia limpa...','🖼️ Renderizando imagem editorial...','✨ Finalizando fotografia...','🎞️ Processando resolução alta...','📸 Compondo cena fotográfica...'];
+  const phase3Msgs = ['✒️ Montando tipografia...','🎨 Aplicando identidade visual...','💎 Compondo layout final...','⚡ Aplicando accent color...','✅ Exportando slide...'];
+
+  for (let i = 0; i < slides.length; i++) {
+    const s   = slides[i];
+    const pct = Math.round((i / slides.length) * 100);
+    progressFill.style.width = `${pct}%`;
+
+    const card = document.getElementById(`slideCard_${i}`);
+    if (card) { card.style.opacity = '0.5'; card.style.outline = '2px solid var(--magenta)'; }
+
+    try {
+      const funcao  = s.funcao || (i === 0 ? 'CAPA' : i === slides.length - 1 ? 'ASSINATURA' : 'CONTEÚDO');
+      const heading = s.heading || s.textos?.[0]?.texto || '';
+      const body    = s.body    || s.textos?.[1]?.texto || '';
+
+      let finalUrl    = null;
+      let finalPngB64 = null;
+
+      if (engine === 'gpt') {
+        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase1Msgs[i % phase1Msgs.length]}`;
+        await new Promise(r => setTimeout(r, 50));
+
+        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase2Msgs[i % phase2Msgs.length]}`;
+
+        const slideRes = await fetch('/api/image/carousel-slide', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ heading, body, slideNumber: i+1, totalSlides: slides.length, funcao, topic, profile: currentProfile, contentId, imagePromptHint: s.imagePrompt || '' }),
+        });
+        const slideData = await slideRes.json();
+        if (slideData.error) throw new Error(slideData.error);
+
+        const photoUrl   = slideData.url || (slideData.b64 ? `data:image/png;base64,${slideData.b64}` : null);
+        const designMeta = slideData.designMeta;
+        if (!photoUrl || !designMeta) throw new Error('Foto ou metadados não retornados');
+
+        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase3Msgs[i % phase3Msgs.length]}`;
+
+        finalPngB64 = await SlideRenderer.renderSlide(photoUrl, designMeta);
+
+        if (finalPngB64) {
+          if (contentId) {
+            try {
+              const saveRes  = await fetch('/api/image/save-b64', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ b64: finalPngB64, contentId, slideIndex: i }) });
+              const saveData = await saveRes.json();
+              if (saveData.url) finalUrl = saveData.url;
+            } catch(e) { console.warn('Save b64 failed:', e.message); }
+          }
+          finalUrl = finalUrl || `data:image/png;base64,${finalPngB64}`;
+        } else {
+          finalUrl = photoUrl; // fallback: foto sem overlay
+        }
+
+      } else {
+        // Gemini — fluxo original mantido
+        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase2Msgs[i % phase2Msgs.length]}`;
+        const brand = BRAND_ACCENT[currentProfile] || BRAND_ACCENT.marca;
+        const geminiPrompt = [`Premium Instagram carousel slide ${i+1}/${slides.length}.`,`Topic: "${topic}". Function: ${funcao}.`,`Brand colors: background ${brand.bg}, accent ${brand.accent}, white text.`,i===0?`COVER: cinematic hero image. MASSIVE heading: "${heading}". Last words in ${brand.accent}. Dark overlay.`:`Clean editorial layout. Bold heading "${heading}" — key words in ${brand.accent}. Body: "${body}".`,`Portrait 4:5. Professional quality.`].join(' ');
+        const r = await fetch('/api/gemini-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: geminiPrompt }) });
+        const d = await r.json();
+        const b64 = d.b64 || null;
+        finalUrl  = d.url || (b64 ? `data:image/png;base64,${b64}` : null);
+        if (b64 && contentId) {
+          try { const sv = await fetch('/api/image/save-b64', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ b64, contentId, slideIndex: i }) }); const svd = await sv.json(); if (svd.url) finalUrl = svd.url; } catch(e) {}
+        }
       }
-      currentCarouselImages.push(url);
-      if(card&&url){
-        let img=card.querySelector('.slide-img');
-        if(!img){img=document.createElement('img');img.className='slide-img';card.insertBefore(img,card.firstChild);}
-        img.style.opacity='0';img.src=url;
-        img.onload=()=>{img.style.transition='opacity 0.5s ease';img.style.opacity='1';};
+
+      currentCarouselImages.push(finalUrl);
+
+      if (card && finalUrl) {
+        let img = card.querySelector('.slide-img');
+        if (!img) { img = document.createElement('img'); img.className = 'slide-img'; card.insertBefore(img, card.firstChild); }
+        img.style.opacity = '0'; img.src = finalUrl;
+        img.onload = () => { img.style.transition = 'opacity 0.5s ease'; img.style.opacity = '1'; };
       }
-      if(card){card.style.opacity='1';card.style.outline='2px solid #10B981';setTimeout(()=>{if(card)card.style.outline='none';},1800);}
-    }catch(e){
-      console.error(`Slide ${i+1}:`,e);currentCarouselImages.push(null);
-      if(card){card.style.opacity='1';card.style.outline='2px solid #EF4444';}
+      if (card) { card.style.opacity = '1'; card.style.outline = '2px solid #10B981'; setTimeout(() => { if (card) card.style.outline = 'none'; }, 1800); }
+
+    } catch(e) {
+      console.error(`Slide ${i+1}:`, e);
+      currentCarouselImages.push(null);
+      if (card) { card.style.opacity = '1'; card.style.outline = '2px solid #EF4444'; }
     }
   }
 
-  progressFill.style.width='100%';
-  const ok=currentCarouselImages.filter(Boolean).length;
-  statusEl.innerHTML=`<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides gerados!</span>${ok<slides.length?` <span style="color:#EF4444;">(${slides.length-ok} falharam)</span>`:''}`;
-  btn.disabled=false;btn.textContent='🔄 Regenerar imagens';
+  progressFill.style.width = '100%';
+  const ok = currentCarouselImages.filter(Boolean).length;
+  statusEl.innerHTML = `<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides compostos!</span>${ok < slides.length ? ` <span style="color:#EF4444;">(${slides.length-ok} falharam)</span>` : ''}`;
+  btn.disabled = false; btn.textContent = '🔄 Regenerar imagens';
 
-  if(currentCarouselData)currentCarouselData.imageUrls=currentCarouselImages.filter(Boolean);
-
-  const validUrls=currentCarouselImages.filter(Boolean);
-  if(contentId&&validUrls.length){
-    await fetch(`/api/content/${contentId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls:validUrls,status:'pendente'})}).catch(e=>console.warn('PATCH:',e));
+  if (currentCarouselData) currentCarouselData.imageUrls = currentCarouselImages.filter(Boolean);
+  const validUrls = currentCarouselImages.filter(Boolean);
+  if (contentId && validUrls.length) {
+    await fetch(`/api/content/${contentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrls: validUrls, status: 'pendente' }) }).catch(e => console.warn('PATCH:', e));
   }
-  toast(`${ok} slides gerados! 🎨`,'success');
+  toast(`${ok} slides compostos com o novo motor de design! 🎨`, 'success');
 
-  if(autoPublishConfig){
-    const{action,scheduledAt,caption,calendarPost}=autoPublishConfig;
-    await _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost});
-  }else{
+  if (autoPublishConfig) {
+    const { action, scheduledAt, caption, calendarPost } = autoPublishConfig;
+    await _autoPublishAfterImages({ action, scheduledAt, caption, contentId, calendarPost });
+  } else {
     document.getElementById('publishPanel').classList.add('visible');
-    document.getElementById('carouselPreviewCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+    document.getElementById('carouselPreviewCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 
@@ -938,358 +1092,129 @@ async function suggestPhotos(){
   catch(e){resultEl.innerHTML=`<div style="color:#EF4444;">Erro: ${e.message}</div>`;}
 }
 
-/* ══════════════════════════════════════════════════════════
-   CALENDÁRIO — VERSÃO CORRIGIDA
-   Fixes: 
-   1. Number(entry.day) — normaliza chave string→número
-   2. topic fallback robusto (topic || tema || '')
-   3. saveCalendarToLocal persiste imediatamente
-   4. loadSavedCalendar tenta localStorage antes do servidor
-══════════════════════════════════════════════════════════ */
-
+/* ── CALENDÁRIO ── */
 function initCalendarMonths(){
   const sel=document.getElementById('calMonth');
   ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{
-    const opt=document.createElement('option');
-    opt.value=i+1;opt.textContent=m;
-    if(i+1===new Date().getMonth()+1)opt.selected=true;
-    sel.appendChild(opt);
+    const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);
   });
 }
-
-function saveCalendarToLocal(calendarData,profile,month,year){
-  try{
-    localStorage.setItem(
-      `calendar_${profile}_${year}_${month}`,
-      JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()})
-    );
-  }catch(e){console.warn('localStorage save failed:',e);}
-}
-
-function loadCalendarFromLocal(profile,month,year){
-  try{
-    const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);
-    if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}
-    return null;
-  }catch(e){return null;}
-}
+function saveCalendarToLocal(calendarData,profile,month,year){try{localStorage.setItem(`calendar_${profile}_${year}_${month}`,JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()}));}catch(e){console.warn('localStorage save failed:',e);}}
+function loadCalendarFromLocal(profile,month,year){try{const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}return null;}catch(e){return null;}}
 
 async function generateCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),
-        year=parseInt(document.getElementById('calYear').value),
-        postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);
-
-  document.getElementById('calendarLoading').style.display='flex';
-  document.getElementById('calendarContainer').style.display='none';
-  document.getElementById('calendarPreviewBar').style.display='none';
-  document.getElementById('calApprovedBadge').style.display='none';
-  calendarApproved=false;
-
-  const btn=document.getElementById('btnGenCalendar');
-  btn.disabled=true;btn.textContent='⏳ A gerar...';
-
+  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value),postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);
+  document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='none';calendarApproved=false;
+  const btn=document.getElementById('btnGenCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';
   try{
-    const r=await fetch('/api/calendar/generate',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})
-    });
-    const d=await r.json();
-    if(d.error)throw new Error(d.error);
-
-    // FIX: log para diagnóstico
+    const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});
+    const d=await r.json();if(d.error)throw new Error(d.error);
     console.log('[Calendar] Amostra recebida:', JSON.stringify((d.calendar||[]).slice(0,2)));
-
-    currentCalendarData=d;
-    saveCalendarToLocal(d.calendar,currentProfile,month,year);
-    renderCalendar(d,month,year);
-    document.getElementById('calendarPreviewBar').style.display='block';
-    toast('Sugestão gerada! Revê e aprova.','info');
-  }catch(e){
-    toast('Erro: '+e.message,'error');
-  }finally{
-    document.getElementById('calendarLoading').style.display='none';
-    btn.disabled=false;btn.textContent='✨ Gerar calendário';
-  }
+    currentCalendarData=d;saveCalendarToLocal(d.calendar,currentProfile,month,year);
+    renderCalendar(d,month,year);document.getElementById('calendarPreviewBar').style.display='block';toast('Sugestão gerada! Revê e aprova.','info');
+  }catch(e){toast('Erro: '+e.message,'error');}
+  finally{document.getElementById('calendarLoading').style.display='none';btn.disabled=false;btn.textContent='✨ Gerar calendário';}
 }
 
 function approveCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),
-        year=parseInt(document.getElementById('calYear').value);
-  calendarApproved=true;
-  document.getElementById('calendarPreviewBar').style.display='none';
-  document.getElementById('calApprovedBadge').style.display='inline-block';
-  if(currentCalendarData)saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);
-  toast('Calendário aprovado e salvo!','success');
+  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
+  calendarApproved=true;document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='inline-block';
+  if(currentCalendarData)saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);toast('Calendário aprovado e salvo!','success');
 }
-
-function rejectCalendar(){
-  document.getElementById('calendarPreviewBar').style.display='none';
-  document.getElementById('calendarContainer').style.display='none';
-  currentCalendarData=null;calendarApproved=false;
-  toast('Calendário rejeitado.','info');
-}
+function rejectCalendar(){document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calendarContainer').style.display='none';currentCalendarData=null;calendarApproved=false;toast('Calendário rejeitado.','info');}
 
 async function loadSavedCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),
-        year=parseInt(document.getElementById('calYear').value);
-
-  // 1. localStorage primeiro (instantâneo)
+  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
   const local=loadCalendarFromLocal(currentProfile,month,year);
-  if(local?.calendar?.length){
-    currentCalendarData={calendar:local.calendar};
-    renderCalendar(currentCalendarData,month,year);
-    calendarApproved=true;
-    document.getElementById('calApprovedBadge').style.display='inline-block';
-    document.getElementById('calendarPreviewBar').style.display='none';
-    _refreshCalendarFromServer(month,year);
-    return;
-  }
-
-  // 2. servidor como fallback
+  if(local?.calendar?.length){currentCalendarData={calendar:local.calendar};renderCalendar(currentCalendarData,month,year);calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('calendarPreviewBar').style.display='none';_refreshCalendarFromServer(month,year);return;}
   await _refreshCalendarFromServer(month,year);
 }
 
 async function _refreshCalendarFromServer(month,year){
   try{
-    const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);
-    const d=await r.json();
-    if(d.found&&d.calendar?.length){
-      currentCalendarData={calendar:d.calendar};
-      saveCalendarToLocal(d.calendar,currentProfile,month,year);
-      if(!calendarApproved){
-        renderCalendar(currentCalendarData,month,year);
-        calendarApproved=true;
-        document.getElementById('calApprovedBadge').style.display='inline-block';
-        document.getElementById('calendarPreviewBar').style.display='none';
-        toast('Calendário anterior carregado.','info');
-      }
-    }
+    const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);const d=await r.json();
+    if(d.found&&d.calendar?.length){currentCalendarData={calendar:d.calendar};saveCalendarToLocal(d.calendar,currentProfile,month,year);if(!calendarApproved){renderCalendar(currentCalendarData,month,year);calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('calendarPreviewBar').style.display='none';toast('Calendário anterior carregado.','info');}}
   }catch(e){console.warn('server calendar load:',e);}
 }
 
-/* ── renderCalendar — VERSÃO CORRIGIDA ── */
 function renderCalendar(data,month,year){
   const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   document.getElementById('calendarTitle').textContent=`${months[month-1]} ${year}`;
-
-  const grid=document.getElementById('calendarGrid');
-  grid.innerHTML='';
-
-  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>
-    grid.insertAdjacentHTML('beforeend',`<div class="cal-header">${d}</div>`)
-  );
-
-  const firstDay=new Date(year,month-1,1).getDay();
-  const offset=firstDay===0?6:firstDay-1;
+  const grid=document.getElementById('calendarGrid');grid.innerHTML='';
+  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>grid.insertAdjacentHTML('beforeend',`<div class="cal-header">${d}</div>`));
+  const firstDay=new Date(year,month-1,1).getDay();const offset=firstDay===0?6:firstDay-1;
   for(let i=0;i<offset;i++)grid.insertAdjacentHTML('beforeend','<div class="cal-day empty"></div>');
-
-  const today=new Date();
-  const daysInMonth=new Date(year,month,0).getDate();
-
-  // FIX 1: normalizar chave para número (entry.day pode chegar como string "1" ou número 1)
+  const today=new Date();const daysInMonth=new Date(year,month,0).getDate();
   const postsByDay={};
-  (data.calendar||[]).forEach(entry=>{
-    const dayKey=Number(entry.day);
-    if(!isNaN(dayKey))postsByDay[dayKey]=entry.posts||[];
-  });
-
+  (data.calendar||[]).forEach(entry=>{const dayKey=Number(entry.day);if(!isNaN(dayKey))postsByDay[dayKey]=entry.posts||[];});
   console.log('[Calendar] postsByDay keys:', Object.keys(postsByDay));
-
   for(let d=1;d<=daysInMonth;d++){
     const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d;
     const posts=postsByDay[d]||[];
-
-    const postsHtml=posts.map((p,pi)=>{
-      // FIX 2: topic pode estar em p.topic ou p.tema; fallback para tipo
-      const rawTopic=(p.topic||p.tema||'').trim();
-      const label=rawTopic?rawTopic.slice(0,22):(p.type||'post');
-      const status=p.status||'pendente';
-
-      return `<div class="cal-post ${status}" onclick="openCalendarPost(${d},${pi})" title="${p.type||''} — ${rawTopic}">
-        <span class="cal-post-icon">${typeIcon(p.type)}</span>
-        <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.time?p.time+' ':''}<strong>${label}</strong></span>
-      </div>`;
-    }).join('');
-
-    grid.insertAdjacentHTML('beforeend',
-      `<div class="cal-day${isToday?' today':''}">
-        <div class="cal-day-num">${d}</div>
-        <div class="cal-posts">${postsHtml}</div>
-      </div>`
-    );
+    const postsHtml=posts.map((p,pi)=>{const rawTopic=(p.topic||p.tema||'').trim();const label=rawTopic?rawTopic.slice(0,22):(p.type||'post');const status=p.status||'pendente';return`<div class="cal-post ${status}" onclick="openCalendarPost(${d},${pi})" title="${p.type||''} — ${rawTopic}"><span class="cal-post-icon">${typeIcon(p.type)}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.time?p.time+' ':''}<strong>${label}</strong></span></div>`;}).join('');
+    grid.insertAdjacentHTML('beforeend',`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div><div class="cal-posts">${postsHtml}</div></div>`);
   }
-
   document.getElementById('calendarContainer').style.display='block';
 }
 
 function saveCalendarPostEdit(day,postIndex){
-  if(!currentCalendarData)return;
-  const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);
-  if(!dayEntry||!dayEntry.posts[postIndex])return;
-  const newTopic=document.getElementById('calEditTopic')?.value?.trim(),
-        newType=document.getElementById('calEditType')?.value,
-        newTime=document.getElementById('calEditTime')?.value;
-  if(newTopic)dayEntry.posts[postIndex].topic=newTopic;
-  if(newType)dayEntry.posts[postIndex].type=newType;
-  if(newTime)dayEntry.posts[postIndex].time=newTime;
-  if(currentCalendarPost&&currentCalendarPost.day===day){
-    currentCalendarPost.topic=dayEntry.posts[postIndex].topic;
-    currentCalendarPost.type=dayEntry.posts[postIndex].type;
-    currentCalendarPost.time=dayEntry.posts[postIndex].time;
-  }
-  const month=parseInt(document.getElementById('calMonth').value),
-        year=parseInt(document.getElementById('calYear').value);
-  saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);
-  renderCalendar(currentCalendarData,month,year);
-  closeModal('calPostModal');
-  toast('Post actualizado!','success');
+  if(!currentCalendarData)return;const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);if(!dayEntry||!dayEntry.posts[postIndex])return;
+  const newTopic=document.getElementById('calEditTopic')?.value?.trim(),newType=document.getElementById('calEditType')?.value,newTime=document.getElementById('calEditTime')?.value;
+  if(newTopic)dayEntry.posts[postIndex].topic=newTopic;if(newType)dayEntry.posts[postIndex].type=newType;if(newTime)dayEntry.posts[postIndex].time=newTime;
+  if(currentCalendarPost&&currentCalendarPost.day===day){currentCalendarPost.topic=dayEntry.posts[postIndex].topic;currentCalendarPost.type=dayEntry.posts[postIndex].type;currentCalendarPost.time=dayEntry.posts[postIndex].time;}
+  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
+  saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);renderCalendar(currentCalendarData,month,year);closeModal('calPostModal');toast('Post actualizado!','success');
 }
 
 function openCalendarPost(day,postIndex){
-  if(!currentCalendarData)return;
-  // FIX 3: comparar com Number() para garantir match
-  const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);
-  if(!dayEntry)return;
-  const post=dayEntry.posts[postIndex];
-  if(!post)return;
-
-  currentCalendarPost={
-    ...post,day,
-    month:parseInt(document.getElementById('calMonth').value),
-    year:parseInt(document.getElementById('calYear').value)
-  };
-
-  // FIX 4: topic pode estar em post.topic ou post.tema
+  if(!currentCalendarData)return;const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);if(!dayEntry)return;const post=dayEntry.posts[postIndex];if(!post)return;
+  currentCalendarPost={...post,day,month:parseInt(document.getElementById('calMonth').value),year:parseInt(document.getElementById('calYear').value)};
   const topicVal=(post.topic||post.tema||'').replace(/"/g,'&quot;');
-
   document.getElementById('calPostModalTitle').textContent=`${typeIcon(post.type)} Dia ${day}`;
   document.getElementById('calPostModalBody').innerHTML=`
-    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-      <span class="badge badge-${post.status||'pendente'}">${statusLabel(post.status||'pendente')}</span>
-      <span class="badge" style="background:#F3E8FF;color:var(--purple);">${post.type}</span>
-      <span style="font-size:.78rem;color:var(--mid);">📅 Dia ${day}</span>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Tema do post</label>
-      <input class="input" id="calEditTopic" value="${topicVal}" placeholder="Tema específico com ângulo"/>
-    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;"><span class="badge badge-${post.status||'pendente'}">${statusLabel(post.status||'pendente')}</span><span class="badge" style="background:#F3E8FF;color:var(--purple);">${post.type}</span><span style="font-size:.78rem;color:var(--mid);">📅 Dia ${day}</span></div>
+    <div class="form-group"><label class="form-label">Tema do post</label><input class="input" id="calEditTopic" value="${topicVal}" placeholder="Tema específico com ângulo"/></div>
     <div style="display:flex;gap:12px;">
-      <div class="form-group" style="flex:1;margin-bottom:0;">
-        <label class="form-label">Tipo</label>
-        <select class="select" id="calEditType">
-          <option value="tendencia" ${post.type==='tendencia'?'selected':''}>📡 Análise de Tendência</option>
-          <option value="case" ${post.type==='case'?'selected':''}>🏆 Case de Sucesso</option>
-          <option value="educativo" ${post.type==='educativo'?'selected':''}>📚 Educativo</option>
-          <option value="comparacao" ${post.type==='comparacao'?'selected':''}>⚖️ Comparação</option>
-          <option value="lista" ${post.type==='lista'?'selected':''}>📋 Lista</option>
-          <option value="prova_social" ${post.type==='prova_social'?'selected':''}>🌟 Prova Social</option>
-          <option value="oferta" ${post.type==='oferta'?'selected':''}>🎯 Oferta</option>
-        </select>
-      </div>
-      <div class="form-group" style="width:120px;margin-bottom:0;">
-        <label class="form-label">Horário</label>
-        <input class="input" type="time" id="calEditTime" value="${post.time||'09:00'}"/>
-      </div>
+      <div class="form-group" style="flex:1;margin-bottom:0;"><label class="form-label">Tipo</label><select class="select" id="calEditType"><option value="tendencia" ${post.type==='tendencia'?'selected':''}>📡 Análise de Tendência</option><option value="case" ${post.type==='case'?'selected':''}>🏆 Case de Sucesso</option><option value="educativo" ${post.type==='educativo'?'selected':''}>📚 Educativo</option><option value="comparacao" ${post.type==='comparacao'?'selected':''}>⚖️ Comparação</option><option value="lista" ${post.type==='lista'?'selected':''}>📋 Lista</option><option value="prova_social" ${post.type==='prova_social'?'selected':''}>🌟 Prova Social</option><option value="oferta" ${post.type==='oferta'?'selected':''}>🎯 Oferta</option></select></div>
+      <div class="form-group" style="width:120px;margin-bottom:0;"><label class="form-label">Horário</label><input class="input" type="time" id="calEditTime" value="${post.time||'09:00'}"/></div>
     </div>
-    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day},${postIndex})">💾 Guardar alterações</button>
-    </div>
+    <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day},${postIndex})">💾 Guardar alterações</button></div>
     ${post.status==='pendente'||!post.status?`
     <hr style="border:none;border-top:1px solid var(--light);margin:16px 0;"/>
     <div style="background:var(--pale);border-radius:var(--radius);padding:12px;">
       <div class="form-row">
-        <div class="form-group" style="margin:0;">
-          <label class="form-label">Agendar para</label>
-          <input type="datetime-local" class="input" id="calPostScheduleTime" value="${currentCalendarPost.year}-${String(currentCalendarPost.month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${post.time||'09:00'}"/>
-        </div>
-        <div class="form-group" style="margin:0;">
-          <label class="form-label">Ação</label>
-          <select class="select" id="calPostAction">
-            <option value="generate">Só gerar criativo</option>
-            <option value="schedule">Gerar e agendar</option>
-            <option value="now">Gerar e publicar agora</option>
-          </select>
-        </div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Agendar para</label><input type="datetime-local" class="input" id="calPostScheduleTime" value="${currentCalendarPost.year}-${String(currentCalendarPost.month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${post.time||'09:00'}"/></div>
+        <div class="form-group" style="margin:0;"><label class="form-label">Ação</label><select class="select" id="calPostAction"><option value="generate">Só gerar criativo</option><option value="schedule">Gerar e agendar</option><option value="now">Gerar e publicar agora</option></select></div>
       </div>
-    </div>`:`
-    <div style="font-size:.82rem;margin-top:12px;color:${post.status==='publicado'?'#065F46':'#1E40AF'};">
-      ${post.status==='agendado'?`📆 Agendado para ${formatDate(post.scheduledAt)}`:`✅ Publicado em ${formatDate(post.publishedAt)}`}
-    </div>`}`;
-
+    </div>`:`<div style="font-size:.82rem;margin-top:12px;color:${post.status==='publicado'?'#065F46':'#1E40AF'};">${post.status==='agendado'?`📆 Agendado para ${formatDate(post.scheduledAt)}`:`✅ Publicado em ${formatDate(post.publishedAt)}`}</div>`}`;
   document.getElementById('modalBtnGenerate').style.display=(!post.status||post.status==='pendente')?'inline-flex':'none';
   document.getElementById('modalBtnPublish').style.display=(!post.status||post.status==='pendente')?'inline-flex':'none';
   showModal('calPostModal');
 }
 
 async function generateFromCalendarPost(){
-  if(!currentCalendarPost)return;
-  const p=currentCalendarPost;
-  const genBtn=document.getElementById('modalBtnGenerate');
-  genBtn.disabled=true;genBtn.textContent='⏳ A gerar copy...';
+  if(!currentCalendarPost)return;const p=currentCalendarPost;
+  const genBtn=document.getElementById('modalBtnGenerate');genBtn.disabled=true;genBtn.textContent='⏳ A gerar copy...';
   try{
-    const r=await fetch('/api/carousel/generate-and-save',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})
-    });
+    const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})});
     const d=await r.json();if(d.error)throw new Error(d.error);
-    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;
-    currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
+    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
     toast('Copy gerada!','success');closeModal('calPostModal');showSection('carousel',null);
-    setTimeout(()=>{
-      renderSlidesPreview(d.slides||[]);
-      document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides — ${p.topic||p.tema}`;
-      document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;
-      document.getElementById('carouselPreviewTitle').textContent=d.title||p.topic||p.tema;
-      document.getElementById('carouselPreviewCard').style.display='block';
-      const scheduledDT=`${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}T${p.time||'09:00'}`;
-      document.getElementById('publishAction').value='schedule';
-      document.getElementById('scheduleDateTime').value=scheduledDT;
-      document.getElementById('scheduleTimeGroup').style.display='block';
-      document.getElementById('publishPanel').classList.add('visible');
-    },300);
+    setTimeout(()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides — ${p.topic||p.tema}`;document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewTitle').textContent=d.title||p.topic||p.tema;document.getElementById('carouselPreviewCard').style.display='block';const scheduledDT=`${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}T${p.time||'09:00'}`;document.getElementById('publishAction').value='schedule';document.getElementById('scheduleDateTime').value=scheduledDT;document.getElementById('scheduleTimeGroup').style.display='block';document.getElementById('publishPanel').classList.add('visible');},300);
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{genBtn.disabled=false;genBtn.textContent='✨ Gerar criativo';}
 }
 
 async function publishFromCalendarPost(){
-  if(!currentCalendarPost)return;
-  const p=currentCalendarPost,
-        action=document.getElementById('calPostAction')?.value||'generate',
-        dt=document.getElementById('calPostScheduleTime')?.value,
-        pubBtn=document.getElementById('modalBtnPublish');
+  if(!currentCalendarPost)return;const p=currentCalendarPost,action=document.getElementById('calPostAction')?.value||'generate',dt=document.getElementById('calPostScheduleTime')?.value,pubBtn=document.getElementById('modalBtnPublish');
   pubBtn.disabled=true;pubBtn.textContent='⏳ A processar...';
   try{
-    const r=await fetch('/api/carousel/generate-and-save',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})
-    });
+    const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})});
     const d=await r.json();if(d.error)throw new Error(d.error);
-    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;
-    currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
+    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
     closeModal('calPostModal');
-    if(action==='generate'){
-      showSection('carousel',null);
-      setTimeout(()=>{
-        renderSlidesPreview(d.slides||[]);
-        document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;
-        document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;
-        document.getElementById('carouselPreviewCard').style.display='block';
-        document.getElementById('publishPanel').classList.add('visible');
-      },300);
-      toast('Copy gerada! Clica em "Gerar imagens" para continuar.','success');
-    }else{
-      showSection('carousel',null);
-      setTimeout(async()=>{
-        renderSlidesPreview(d.slides||[]);
-        document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;
-        document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;
-        document.getElementById('carouselPreviewCard').style.display='block';
-        const scheduledAt=dt?new Date(dt).toISOString():null;
-        toast(`A gerar ${(d.slides||[]).length} slides...`,'info');
-        await generateCarouselImages({action:action==='now'?'now':'schedule',scheduledAt,caption:d.caption||'',contentId:d.contentId,calendarPost:p});
-      },400);
-    }
+    if(action==='generate'){showSection('carousel',null);setTimeout(()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewCard').style.display='block';document.getElementById('publishPanel').classList.add('visible');},300);toast('Copy gerada! Clica em "Gerar imagens" para continuar.','success');}
+    else{showSection('carousel',null);setTimeout(async()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides`;document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewCard').style.display='block';const scheduledAt=dt?new Date(dt).toISOString():null;toast(`A gerar ${(d.slides||[]).length} slides...`,'info');await generateCarouselImages({action:action==='now'?'now':'schedule',scheduledAt,caption:d.caption||'',contentId:d.contentId,calendarPost:p});},400);}
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{pubBtn.disabled=false;pubBtn.textContent='🚀 Agendar / Publicar';}
 }
@@ -1298,13 +1223,7 @@ async function publishFromCalendarPost(){
 const CM_TYPES={tendencia:{label:'Análise de Tendência',emoji:'📡',tag:'Awareness',color:'#7C3AED'},case:{label:'Case de Sucesso',emoji:'🏆',tag:'Awareness',color:'#059669'},educativo:{label:'Educativo / Framework',emoji:'📚',tag:'Autoridade',color:'#0369A1'},comparacao:{label:'Comparação / Antes & Depois',emoji:'⚖️',tag:'Alcance',color:'#D97706'},lista:{label:'Lista Valiosa',emoji:'📋',tag:'Alcance',color:'#BE185D'},prova_social:{label:'Prova Social',emoji:'🌟',tag:'Conversão',color:'#7C2D12'},oferta:{label:'Oferta',emoji:'🎯',tag:'Conversão',color:'#1D4ED8'},dump:{label:'Dump / Bastidores',emoji:'📸',tag:'Comunidade',color:'#4B5563'}};
 let cmSelectedType=null,cmCurrentSlides=[],cmCurrentSlideIdx=0,cmSessionHistory=[];
 
-function selectCMType(btn){
-  cmSelectedType=btn.dataset.tipo;document.querySelectorAll('.cm-type-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');
-  const t=CM_TYPES[cmSelectedType];
-  document.getElementById('cmTypeSelector').style.display='none';document.getElementById('cmInputPanel').style.display='block';document.getElementById('cmResultPanel').style.display='none';
-  document.getElementById('cmInputTitle').textContent=`${t.emoji} ${t.label}`;document.getElementById('cmTypeInfo').innerHTML=`<strong>${t.tag}</strong> · ${btn.querySelector('.cm-type-desc').textContent}`;
-  document.getElementById('cmTema').value='';document.getElementById('cmError').style.display='none';document.getElementById('cmTema').focus();
-}
+function selectCMType(btn){cmSelectedType=btn.dataset.tipo;document.querySelectorAll('.cm-type-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');const t=CM_TYPES[cmSelectedType];document.getElementById('cmTypeSelector').style.display='none';document.getElementById('cmInputPanel').style.display='block';document.getElementById('cmResultPanel').style.display='none';document.getElementById('cmInputTitle').textContent=`${t.emoji} ${t.label}`;document.getElementById('cmTypeInfo').innerHTML=`<strong>${t.tag}</strong> · ${btn.querySelector('.cm-type-desc').textContent}`;document.getElementById('cmTema').value='';document.getElementById('cmError').style.display='none';document.getElementById('cmTema').focus();}
 function resetCMType(){cmSelectedType=null;document.getElementById('cmTypeSelector').style.display='block';document.getElementById('cmInputPanel').style.display='none';document.getElementById('cmResultPanel').style.display='none';}
 function resetCM(){resetCMType();}
 
@@ -1316,9 +1235,7 @@ async function generateContentMachine(){
   try{
     const r=await fetch('/api/content-machine/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo:cmSelectedType,tema,profile:currentProfile})});
     const d=await r.json();if(d.error)throw new Error(d.error);
-    cmCurrentSlides=d.slides||[];cmCurrentSlideIdx=0;
-    cmSessionHistory.unshift({tipo:cmSelectedType,tema,slides:cmCurrentSlides,ts:new Date()});
-    renderCMHistory();renderCMResult(d);
+    cmCurrentSlides=d.slides||[];cmCurrentSlideIdx=0;cmSessionHistory.unshift({tipo:cmSelectedType,tema,slides:cmCurrentSlides,ts:new Date()});renderCMHistory();renderCMResult(d);
   }catch(e){errEl.textContent='Erro: '+e.message;errEl.style.display='block';}
   finally{clearInterval(interval);btn.disabled=false;btn.textContent='⚡ Gerar copy';}
 }
