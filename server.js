@@ -340,6 +340,7 @@ app.post('/api/image/carousel-slide', async (req, res) => {
       funcao = '', topic = '',
       profile = 'marca',
       imagePromptHint = '',
+      designStyleHint = '',  // estilo visual escolhido pelo utilizador
       contentId = null
     } = req.body;
 
@@ -347,8 +348,8 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     const isAna = profile === 'pessoal';
     const mood  = brand.moods[Math.min(slideNumber - 1, brand.moods.length - 1)];
 
-    const h = heading.replace(/"/g, "'").replace(/—/g, '-').trim();
-    const b = body.replace(/"/g, "'").replace(/—/g, '-').trim().slice(0, 180);
+    const h = heading.replace(/"/g, "'").replace(/—/g, '-').replace(/–/g, '-').trim();
+    const b = body.replace(/"/g, "'").replace(/—/g, '-').replace(/–/g, '-').trim().slice(0, 180);
 
     // ── Etapa 1: Diretor de Arte IA (Claude Haiku ~150 palavras) ─────────
     const needsPhoto = ['HERO_DARK','HERO_LOFI','COLAGEM_REAL','SPLIT_LIGHT','EDITORIAL_LIGHT','DIARIO_EDITORIAL'].includes(mood);
@@ -377,9 +378,14 @@ Avoid: startup hustle, motivational clichés, busy distracting backgrounds.`;
         ? 'CLOSING SLIDE — warmer, intimate feel, invites connection.'
         : `Slide ${slideNumber}/${totalSlides} — clean, uncluttered supporting visual.`;
 
+      // Enriquecer o DNA visual com o estilo escolhido pelo utilizador
+      const styleLayer = designStyleHint
+        ? `\nSELECTED VISUAL STYLE (highest priority): ${designStyleHint}`
+        : '';
+
       const artPrompt = `You are a world-class art director for premium Instagram editorial content.
 
-${visualDNA}
+${visualDNA}${styleLayer}
 
 TOPIC: "${topic}"
 SLIDE HEADING: "${h}"
@@ -821,10 +827,22 @@ app.post('/api/carousel/generate-and-save', async (req, res) => {
     const systemPrompt = isAna
       ? `Você é o gerador de carrosseis da Ana Moutinho — marca pessoal "Ana mais real".
 ${brand.copyDNA || ''}
-REGRAS: Retornar APENAS JSON válido, sem markdown. Nunca travessão (—). Proibido: "Descubra", "Seja sua melhor versão".`
+REGRAS OBRIGATÓRIAS:
+- Retornar APENAS JSON válido, sem markdown
+- NUNCA usar travessão (—) nem hífen no meio de frases
+- NUNCA usar: "Descubra", "Seja sua melhor versão", "Desbloqueie", "Transforme"
+- NUNCA começar frases com vírgula separada por travessão
+- Máximo 4 hashtags na legenda (nunca mais do que isso)
+- Hashtags devem ser específicas, não genéricas`
       : `Você é o gerador de carrosseis da BrandsDecoded — padrão mais alto de copy para Instagram.
-PRINCÍPIOS: Slide 1 hook (14-18 palavras), afirmação provocativa. Proibido: travessão (—), frases genéricas.
-Retornar APENAS JSON válido, sem markdown.`;
+REGRAS OBRIGATÓRIAS:
+- Slide 1: hook de 14-18 palavras, afirmação provocativa que nomeia algo
+- NUNCA usar travessão (—) nem hífen no meio de frases
+- NUNCA usar: "Descubra", "Saiba como", "Conheça", "Transforme"
+- NUNCA começar frases com "E", "Mas" isolados ou usar vírgula-travessão
+- Máximo 4 hashtags na legenda (nunca mais do que isso)
+- Hashtags devem ser específicas e relevantes ao nicho
+- Retornar APENAS JSON válido, sem markdown`;
 
     let prompt;
     if (mode === 'blocks') {
@@ -832,13 +850,13 @@ Retornar APENAS JSON válido, sem markdown.`;
 ${manualNote ? 'Diretrizes: ' + manualNote : ''}
 Converte estes blocos em slides (1 bloco = 1 slide):
 ${blocks}
-JSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"...","hashtags":"#tag1 #tag2"}`;
+JSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"legenda com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
     } else {
       prompt = `Perfil: ${account.name} (${account.handle})
 ${manualNote ? 'Diretrizes: ' + manualNote + '\n' : ''}
 Tema: "${topic}"
 Total: ${isAna ? '7-8' : '10'} slides.
-JSON: {"title":"...","slideCount":${isAna ? 8 : 10},"slides":[{"slideNumber":1,"heading":"hook","body":"","imagePrompt":"scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"#hashtag1 #hashtag2"}`;
+JSON: {"title":"...","slideCount":${isAna ? 8 : 10},"slides":[{"slideNumber":1,"heading":"hook","body":"","imagePrompt":"scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}`;
     }
 
     const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -850,6 +868,29 @@ JSON: {"title":"...","slideCount":${isAna ? 8 : 10},"slides":[{"slideNumber":1,"
     if (d.error) return res.status(500).json({ error: d.error.message });
 
     const carouselData = extractJSON(d.content[0].text.trim());
+
+    // ── Sanitização pós-geração ──────────────────────────────────────────
+    // Fix: remover travessões e padrões típicos de IA dos textos
+    function sanitizeCopy(text) {
+      if (!text) return text;
+      return text
+        .replace(/\s*—\s*/g, ' ')   // travessão em dash por espaço
+        .replace(/\s*–\s*/g, ' ')   // en dash
+        .replace(/^\s*[–—]\s*/gm, '') // travessão no início de linha
+        .trim();
+    }
+    if (carouselData.slides) {
+      carouselData.slides = carouselData.slides.map(s => ({
+        ...s,
+        heading: sanitizeCopy(s.heading),
+        body:    sanitizeCopy(s.body),
+      }));
+    }
+    // Fix: máx 4 hashtags
+    if (carouselData.hashtags) {
+      const tags = carouselData.hashtags.match(/#\w+/g) || [];
+      carouselData.hashtags = tags.slice(0, 4).join(' ');
+    }
 
     const item = saveGeneratedContent({
       id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente',
@@ -884,7 +925,11 @@ ${brand.copyDNA || ''}
 CTA FIXO (último texto): "salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você."
 Retornar APENAS JSON válido, sem markdown.`
       : `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded.
-REGRAS: Nunca inventar fatos. Proibido travessão (—). Sem "Descubra/Saiba/Conheça".
+REGRAS OBRIGATÓRIAS:
+- Nunca inventar fatos
+- NUNCA usar travessão (—) nem hífen no meio de frases
+- Sem "Descubra/Saiba/Conheça/Transforme"
+- Máximo 4 hashtags
 ASSINATURA FIXA: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
 Retornar APENAS JSON válido, sem markdown.`;
 
