@@ -19,6 +19,7 @@ const GENERATED_FILE = path.join(DATA_DIR, 'generated_content.json');
 const CALENDAR_FILE  = path.join(DATA_DIR, 'calendar_data.json');
 const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
 const IMAGES_DIR     = path.join(DATA_DIR, 'carousel_images');
+const PROFILES_FILE  = path.join(DATA_DIR, 'profiles_manual.json');
 
 try { fs.mkdirSync('uploads/',        { recursive: true }); } catch(e) {}
 try { fs.mkdirSync(MANUALS_DIR,       { recursive: true }); } catch(e) {}
@@ -61,6 +62,128 @@ function writeJSON(file, data) {
     fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf-8');
   } catch(e) { console.error('writeJSON:', file, e.message); }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PERFIS ESTRUTURADOS — Manual do Cliente
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DEFAULT_PROFILES = {
+  marca: {
+    profileId: 'marca', tipo: 'corporativa', nome: 'Case Aceleradora',
+    handle: '@caseaceleradora', niche: 'Aceleração de negócios digitais, B2B, growth hacking',
+    bio: 'Aceleramos negócios digitais com estratégia, dados e criatividade.',
+    tom: 'Autoritário, estratégico, direto. Premium B2B. Sem hype.',
+    proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como', 'Riqueza', 'Fórmula secreta'],
+    pilares: ['Estratégia de negócio', 'Cases de sucesso', 'Tendências de mercado', 'Frameworks de growth'],
+    publicoAlvo: 'Fundadores, CEOs e diretores de empresas digitais em fase de escala',
+    cta: 'Comente "CASE" que nossa equipe te chama.',
+    referencias: ['Monocle', 'FT Weekend', 'McKinsey Digital', 'The Economist'],
+    tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
+    observacoes: '', pdfUploadedAt: null, updatedAt: null,
+  },
+  pessoal: {
+    profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
+    handle: '@analuisa.moutinho', niche: 'Marca pessoal, construção de vida intencional, estratégia pessoal',
+    bio: 'Construindo a própria vida com intenção. Sem fórmulas, sem guru.',
+    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional. Tom de quem observa e compartilha, não de quem ensina.',
+    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula'],
+    pilares: ['Construção pessoal', 'Estratégia de vida', 'Estética de vida real', 'Marca pessoal inteligente'],
+    publicoAlvo: 'Mulheres 25-38 anos construindo identidade profissional e vida própria',
+    cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',
+    referencias: ['Sofia Coppola', 'Lana Del Rey visual universe', 'Lo-fi diary aesthetic', 'Candid editorial'],
+    tiposConteudo: ['tendencia', 'case', 'educativo', 'lista', 'dump', 'prova_social'],
+    observacoes: 'Não é coach, não é guru. É uma mulher que observa o mundo de jeito diferente e compartilha isso com inteligência.',
+    pdfUploadedAt: null, updatedAt: null,
+  },
+  virttus: {
+    profileId: 'virttus', tipo: 'corporativa', nome: 'Virttus',
+    handle: '@virttus', niche: 'Tech B2B, transformação digital, precision software',
+    bio: 'Tecnologia de precisão para empresas que não aceitam mediano.',
+    tom: 'Técnico, forward-looking, preciso. B2B premium. Sem buzzwords vazios.',
+    proibidos: ['Incrível', 'Revolucionário', 'Disruptivo', 'Mudando o jogo', 'Next-level'],
+    pilares: ['Tecnologia e inovação', 'Casos de uso B2B', 'Data & Analytics', 'Transformação digital'],
+    publicoAlvo: 'CTOs, gerentes de TI e diretores de operações em médias e grandes empresas',
+    cta: 'Quer saber como aplicar isso? Nos chame no direct.',
+    referencias: ['Bloomberg Businessweek', 'Wired', 'MIT Tech Review'],
+    tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'oferta'],
+    observacoes: '', pdfUploadedAt: null, updatedAt: null,
+  },
+};
+
+function loadProfiles() {
+  try {
+    if (!fs.existsSync(PROFILES_FILE)) {
+      fs.writeFileSync(PROFILES_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2));
+      return { ...DEFAULT_PROFILES };
+    }
+    const raw = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf-8'));
+    const merged = {};
+    for (const key of Object.keys(DEFAULT_PROFILES)) {
+      merged[key] = { ...DEFAULT_PROFILES[key], ...(raw[key] || {}) };
+    }
+    for (const key of Object.keys(raw)) {
+      if (!merged[key]) merged[key] = raw[key];
+    }
+    return merged;
+  } catch(e) {
+    console.error('loadProfiles:', e.message);
+    return { ...DEFAULT_PROFILES };
+  }
+}
+
+function saveProfiles(profiles) {
+  try { fs.writeFileSync(PROFILES_FILE, JSON.stringify(profiles, null, 2)); }
+  catch(e) { console.error('saveProfiles:', e.message); }
+}
+
+// Gera contexto enriquecido do perfil para injetar nos prompts da IA
+function getProfileManualContext(profileId) {
+  const profiles = loadProfiles();
+  const p = profiles[profileId];
+  if (!p) return '';
+  return [
+    `TIPO DE MARCA: ${p.tipo === 'pessoal' ? 'Marca Pessoal' : 'Marca Corporativa'}`,
+    p.niche        ? `NICHO: ${p.niche}`                      : '',
+    p.publicoAlvo  ? `PÚBLICO-ALVO: ${p.publicoAlvo}`        : '',
+    p.tom          ? `TOM DE VOZ: ${p.tom}`                   : '',
+    p.pilares?.length    ? `PILARES DE CONTEÚDO: ${p.pilares.join(', ')}`       : '',
+    p.proibidos?.length  ? `TERMOS PROIBIDOS (nunca usar): ${p.proibidos.join(', ')}` : '',
+    p.cta          ? `CTA PADRÃO DO PERFIL: ${p.cta}`         : '',
+    p.observacoes  ? `CONTEXTO ADICIONAL: ${p.observacoes}`   : '',
+  ].filter(Boolean).join('\n');
+}
+
+app.get('/api/profiles', (req, res) => { res.json(loadProfiles()); });
+
+app.get('/api/profiles/:id', (req, res) => {
+  const p = loadProfiles()[req.params.id];
+  if (!p) return res.status(404).json({ error: 'Perfil não encontrado' });
+  res.json(p);
+});
+
+app.patch('/api/profiles/:id', (req, res) => {
+  try {
+    const profiles = loadProfiles();
+    if (!profiles[req.params.id]) return res.status(404).json({ error: 'Perfil não encontrado' });
+    profiles[req.params.id] = {
+      ...profiles[req.params.id], ...req.body,
+      profileId: req.params.id, updatedAt: new Date().toISOString(),
+    };
+    saveProfiles(profiles);
+    res.json({ success: true, profile: profiles[req.params.id] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/profiles', (req, res) => {
+  try {
+    const profiles = loadProfiles();
+    const id = req.body.profileId || `profile_${Date.now()}`;
+    if (profiles[id]) return res.status(409).json({ error: 'ID já existe' });
+    profiles[id] = { ...DEFAULT_PROFILES.marca, ...req.body, profileId: id, updatedAt: new Date().toISOString() };
+    saveProfiles(profiles);
+    res.json({ success: true, profile: profiles[id] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ── Conteúdo gerado ───────────────────────────────────────────────────────
 function saveGeneratedContent(item) {
@@ -128,14 +251,20 @@ const ACCOUNTS = {
 };
 function getAccount(profile) { return ACCOUNTS[profile] || ACCOUNTS.marca; }
 
+// ── Manual text — agora usa dados estruturados do perfil ──────────────────
 function getManualText(profile) {
-  const p = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
-  if (!fs.existsSync(p)) return '';
-  return '[Manual do cliente carregado — aplicar diretrizes de tom, identidade visual e linguagem definidas no PDF]';
+  // Contexto estruturado do perfil (pilares, tom, proibidos, etc.)
+  const profileContext = getProfileManualContext(profile);
+  // PDF do cliente (se existir)
+  const pdfPath = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
+  const pdfNote = fs.existsSync(pdfPath)
+    ? '[Manual PDF do cliente carregado — aplicar diretrizes visuais e de identidade do documento]'
+    : '';
+  return [profileContext, pdfNote].filter(Boolean).join('\n\n');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// IDENTIDADES VISUAIS
+// IDENTIDADES VISUAIS (mantidas para retrocompatibilidade com o motor de imagens)
 // ═══════════════════════════════════════════════════════════════════════════
 const BRAND_IDENTITIES = {
   marca: {
@@ -182,6 +311,12 @@ app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Nenhum ficheiro enviado' });
   const dest = path.join(MANUALS_DIR, `${profile || 'marca'}.pdf`);
   fs.renameSync(req.file.path, dest);
+  // Atualizar timestamp no perfil
+  const profiles = loadProfiles();
+  if (profiles[profile]) {
+    profiles[profile].pdfUploadedAt = new Date().toISOString();
+    saveProfiles(profiles);
+  }
   res.json({ success: true, message: `Manual do perfil "${profile}" guardado.` });
 });
 
@@ -266,7 +401,7 @@ app.post('/api/claude', async (req, res) => {
 Responda sempre em português do Brasil.
 ${brand.aestheticDNA ? `\n## Identidade da marca\n${brand.aestheticDNA}` : ''}
 ${brand.copyDNA ? `\n## Diretrizes de copy\n${brand.copyDNA}` : ''}
-${manualNote ? `\n## Manual do cliente\n${manualNote}` : ''}
+${manualNote ? `\n## Manual do perfil\n${manualNote}` : ''}
 ${systemExtra || ''}`;
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -331,7 +466,6 @@ app.post('/api/gemini-image', async (req, res) => {
 });
 
 // ── Slide de carrossel — VERSÃO COM DIRETOR DE ARTE IA ────────────────────
-// Fluxo: Claude Haiku (direção de arte ~150 palavras) → GPT Image (só foto) → retorna foto + designMeta
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
     const {
@@ -340,7 +474,7 @@ app.post('/api/image/carousel-slide', async (req, res) => {
       funcao = '', topic = '',
       profile = 'marca',
       imagePromptHint = '',
-      designStyleHint = '',  // estilo visual escolhido pelo utilizador
+      designStyleHint = '',
       contentId = null
     } = req.body;
 
@@ -351,7 +485,6 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     const h = heading.replace(/"/g, "'").replace(/—/g, '-').replace(/–/g, '-').trim();
     const b = body.replace(/"/g, "'").replace(/—/g, '-').replace(/–/g, '-').trim().slice(0, 180);
 
-    // ── Etapa 1: Diretor de Arte IA (Claude Haiku ~150 palavras) ─────────
     const needsPhoto = ['HERO_DARK','HERO_LOFI','COLAGEM_REAL','SPLIT_LIGHT','EDITORIAL_LIGHT','DIARIO_EDITORIAL'].includes(mood);
 
     let artDirection = imagePromptHint || '';
@@ -378,7 +511,6 @@ Avoid: startup hustle, motivational clichés, busy distracting backgrounds.`;
         ? 'CLOSING SLIDE — warmer, intimate feel, invites connection.'
         : `Slide ${slideNumber}/${totalSlides} — clean, uncluttered supporting visual.`;
 
-      // Enriquecer o DNA visual com o estilo escolhido pelo utilizador
       const styleLayer = designStyleHint
         ? `\nSELECTED VISUAL STYLE (highest priority): ${designStyleHint}`
         : '';
@@ -408,16 +540,8 @@ Output ONLY the photographic direction. No preamble, no labels.`;
       try {
         const sr = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
-          headers: {
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 280,
-            messages: [{ role: 'user', content: artPrompt }]
-          }),
+          headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 280, messages: [{ role: 'user', content: artPrompt }] }),
         });
         const sd = await sr.json();
         if (sd.content?.[0]?.text) {
@@ -432,7 +556,6 @@ Output ONLY the photographic direction. No preamble, no labels.`;
       }
     }
 
-    // ── Etapa 2: GPT Image gera APENAS a fotografia limpa ────────────────
     let photoPrompt = '';
 
     if (needsPhoto && artDirection) {
@@ -446,7 +569,6 @@ CRITICAL REQUIREMENTS:
 - Ultra high quality, ${mood.includes('LOFI') ? 'authentic film grain, lo-fi aesthetic' : 'luxury magazine editorial quality'}
 - Portrait orientation composition, 2:3 aspect ratio`;
     } else {
-      // Slides tipográficos puros — gera fundo textural limpo
       const bgMap = {
         TYPE_LIGHT:     `Minimalist flat surface. Warm off-white tone like ${brand.bgLight}. Very subtle paper or linen texture, barely perceptible. Completely clean, no objects, no shadows, no text.`,
         TYPE_CREME:     `Warm cream minimalist background. Soft beige tone. Very subtle organic texture. Pure clean surface, no elements whatsoever.`,
@@ -467,20 +589,10 @@ CRITICAL REQUIREMENTS:
 
     console.log(`[Slide ${slideNumber}] mood=${mood} needsPhoto=${needsPhoto} promptLen=${photoPrompt.length}`);
 
-    // ── Etapa 3: Chamar GPT Image ─────────────────────────────────────────
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: photoPrompt,
-        n: 1,
-        size: '1024x1536',
-        quality: 'high',
-      }),
+      headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt: photoPrompt, n: 1, size: '1024x1536', quality: 'high' }),
     });
 
     const imgData = await imgRes.json();
@@ -489,7 +601,6 @@ CRITICAL REQUIREMENTS:
     const b64out = imgData.data[0].b64_json || null;
     let   urlOut = imgData.data[0].url      || null;
 
-    // Salvar imagem localmente e retornar URL persistente
     if (b64out && contentId) {
       try {
         const filename = `${contentId}_slide${slideNumber}_${Date.now()}.png`;
@@ -499,25 +610,14 @@ CRITICAL REQUIREMENTS:
       } catch(e) { console.warn('Auto-save failed:', e.message); }
     }
 
-    // Retorna foto limpa + designMeta para o frontend montar o overlay HTML/CSS
     res.json({
-      url: urlOut,
-      b64: b64out,
-      mood,
-      artDirection,
+      url: urlOut, b64: b64out, mood, artDirection,
       designMeta: {
-        heading: h,
-        body: b,
-        accent: brand.accent,
-        accentAlt: brand.accentAlt || '#FFFFFF',
-        bgDark: brand.bgDark,
-        bgLight: brand.bgLight,
-        handle: brand.handle,
-        isDark: ['HERO_DARK','HERO_LOFI','TYPE_DARK','TYPE_DARK_WARM','BRAND_PUNCH','VIRADA','FRASE_IMPACTO','CTA_INTIMO'].includes(mood),
-        mood,
-        slideNumber,
-        totalSlides,
-        funcao,
+        heading: h, body: b,
+        accent: brand.accent, accentAlt: brand.accentAlt || '#FFFFFF',
+        bgDark: brand.bgDark, bgLight: brand.bgLight,
+        handle: brand.handle, isDark: ['HERO_DARK','HERO_LOFI','TYPE_DARK','TYPE_DARK_WARM','BRAND_PUNCH','VIRADA','FRASE_IMPACTO','CTA_INTIMO'].includes(mood),
+        mood, slideNumber, totalSlides, funcao,
       }
     });
 
@@ -707,7 +807,7 @@ NICHO: ${brand.aestheticDNA?.split('\n')[0] || 'marketing e negócios'}`;
       const blockPrompt = `Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ${account.name} — ${month}/${year}.
 
 ${brandContext}
-${manualNote ? `DIRETRIZES ADICIONAIS: ${manualNote}` : ''}
+${manualNote ? `DIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
 TIPOS DISPONÍVEIS: tendencia | case | educativo | comparacao | lista | prova_social | oferta
 
@@ -847,13 +947,13 @@ REGRAS OBRIGATÓRIAS:
     let prompt;
     if (mode === 'blocks') {
       prompt = `Perfil: ${account.name} (${account.handle})
-${manualNote ? 'Diretrizes: ' + manualNote : ''}
+${manualNote ? 'Diretrizes do perfil:\n' + manualNote : ''}
 Converte estes blocos em slides (1 bloco = 1 slide):
 ${blocks}
 JSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"legenda com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
     } else {
       prompt = `Perfil: ${account.name} (${account.handle})
-${manualNote ? 'Diretrizes: ' + manualNote + '\n' : ''}
+${manualNote ? 'Diretrizes do perfil:\n' + manualNote + '\n' : ''}
 Tema: "${topic}"
 Total: ${isAna ? '7-8' : '10'} slides.
 JSON: {"title":"...","slideCount":${isAna ? 8 : 10},"slides":[{"slideNumber":1,"heading":"hook","body":"","imagePrompt":"scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}`;
@@ -869,24 +969,19 @@ JSON: {"title":"...","slideCount":${isAna ? 8 : 10},"slides":[{"slideNumber":1,"
 
     const carouselData = extractJSON(d.content[0].text.trim());
 
-    // ── Sanitização pós-geração ──────────────────────────────────────────
-    // Fix: remover travessões e padrões típicos de IA dos textos
     function sanitizeCopy(text) {
       if (!text) return text;
       return text
-        .replace(/\s*—\s*/g, ' ')   // travessão em dash por espaço
-        .replace(/\s*–\s*/g, ' ')   // en dash
-        .replace(/^\s*[–—]\s*/gm, '') // travessão no início de linha
+        .replace(/\s*—\s*/g, ' ')
+        .replace(/\s*–\s*/g, ' ')
+        .replace(/^\s*[–—]\s*/gm, '')
         .trim();
     }
     if (carouselData.slides) {
       carouselData.slides = carouselData.slides.map(s => ({
-        ...s,
-        heading: sanitizeCopy(s.heading),
-        body:    sanitizeCopy(s.body),
+        ...s, heading: sanitizeCopy(s.heading), body: sanitizeCopy(s.body),
       }));
     }
-    // Fix: máx 4 hashtags
     if (carouselData.hashtags) {
       const tags = carouselData.hashtags.match(/#\w+/g) || [];
       carouselData.hashtags = tags.slice(0, 4).join(' ');
@@ -922,9 +1017,11 @@ app.post('/api/content-machine/generate', async (req, res) => {
     const systemPrompt = isAna
       ? `Você é o gerador de carrosseis da Ana Moutinho — marca pessoal "Ana mais real".
 ${brand.copyDNA || ''}
+${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 CTA FIXO (último texto): "salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você."
 Retornar APENAS JSON válido, sem markdown.`
       : `Você é o gerador oficial de carrosseis de alta performance da BrandsDecoded.
+${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 REGRAS OBRIGATÓRIAS:
 - Nunca inventar fatos
 - NUNCA usar travessão (—) nem hífen no meio de frases
@@ -946,7 +1043,6 @@ Retornar APENAS JSON válido, sem markdown.`;
 
     const userPrompt = `Tipo: ${tipoLabels[tipo] || tipo}
 Perfil: ${account.name} (${account.handle})
-${manualNote ? `Diretrizes: ${manualNote}` : ''}
 Tema: "${tema}"
 ${tipoInstrucoes[tipo] || tipoInstrucoes.tendencia}
 
