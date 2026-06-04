@@ -51,17 +51,12 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .profile-btn.active .profile-dot{background:var(--magenta);}
 .profile-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;}
 .profile-handle{font-size:.7rem;color:rgba(255,255,255,.4);margin-top:1px;}
-.nav{flex:1;padding:10px 16px;display:flex;flex-direction:column;gap:2px;}
+.nav{flex:1;padding:10px 16px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
 .nav-section-title{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);padding:14px 8px 4px;}
 .nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--radius);border:none;background:transparent;color:rgba(255,255,255,.6);font-family:var(--font-body);font-size:.85rem;cursor:pointer;transition:all .2s;text-align:left;width:100%;}
 .nav-item:hover{background:rgba(255,255,255,.08);color:var(--white);}
 .nav-item.active{background:var(--gradient);color:var(--white);box-shadow:0 4px 16px rgba(228,0,124,.3);}
 .nav-icon{font-size:1.1rem;width:22px;text-align:center;flex-shrink:0;}
-.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08);}
-.manual-area{background:rgba(255,255,255,.06);border-radius:var(--radius);padding:12px;}
-.manual-title{font-size:.72rem;color:rgba(255,255,255,.5);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.manual-upload-btn{width:100%;padding:7px;border-radius:8px;border:1px dashed rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.5);font-size:.72rem;cursor:pointer;transition:all .2s;}
-.manual-upload-btn:hover{border-color:var(--magenta);color:var(--magenta);}
 .main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh;}
 .topbar{height:64px;background:var(--white);border-bottom:1px solid var(--light);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:50;}
 .topbar-title{font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--dark);}
@@ -254,7 +249,6 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .photo-suggestions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .photo-suggestion-item{width:64px;height:64px;border-radius:8px;object-fit:cover;border:2px solid transparent;cursor:pointer;transition:border-color .2s;}
 .photo-suggestion-item:hover,.photo-suggestion-item.selected{border-color:var(--magenta);}
-/* ── Design Style Selector ── */
 .ds-btn{background:var(--white);border:1.5px solid var(--light);border-radius:10px;padding:10px 12px;text-align:left;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
 .ds-btn:hover{border-color:var(--magenta);box-shadow:0 2px 10px rgba(228,0,124,.1);}
 .ds-btn.active{border-color:var(--magenta);background:rgba(228,0,124,.05);box-shadow:0 0 0 2px rgba(228,0,124,.15);}
@@ -283,6 +277,261 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--light);border-radius:99px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--mid);}
+/* Layout 2 colunas */
+.manual-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+  padding-bottom: 80px; /* espaço para a barra de ações */
+}
+.manual-col-left,
+.manual-col-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card base do manual */
+.manual-card {
+  padding: 20px 22px;
+}
+.manual-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.manual-card-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+.manual-card-title {
+  font-family: var(--font-head);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--dark);
+  line-height: 1.2;
+}
+.manual-card-sub {
+  font-size: .72rem;
+  color: var(--mid);
+  margin-top: 2px;
+}
+
+/* Seletor tipo de marca */
+.manual-tipo-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.manual-tipo-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--light);
+  border-radius: 10px;
+  background: var(--white);
+  cursor: pointer;
+  text-align: left;
+  transition: all .18s;
+  font-family: var(--font-body);
+}
+.manual-tipo-btn:hover {
+  border-color: var(--magenta);
+  box-shadow: 0 0 0 3px rgba(228,0,124,.07);
+}
+.manual-tipo-btn.active {
+  border-color: var(--magenta);
+  background: rgba(228,0,124,.05);
+  box-shadow: 0 0 0 3px rgba(228,0,124,.12);
+}
+.manual-tipo-icon { font-size: 1.4rem; flex-shrink: 0; line-height: 1; margin-top: 1px; }
+.manual-tipo-label { font-size: .82rem; font-weight: 700; color: var(--dark); }
+.manual-tipo-desc { font-size: .68rem; color: var(--mid); margin-top: 2px; line-height: 1.4; }
+
+/* Badge de tipo */
+.manual-tipo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 99px;
+  letter-spacing: .03em;
+}
+.manual-tipo-badge.pessoal {
+  background: rgba(139,115,85,.12);
+  color: #6B4F2A;
+}
+.manual-tipo-badge.corporativa {
+  background: rgba(59,15,76,.1);
+  color: var(--purple);
+}
+
+/* Profile switcher da seção */
+.manual-profile-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.manual-ps-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1.5px solid var(--light);
+  background: var(--white);
+  font-family: var(--font-body);
+  font-size: .8rem;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--mid);
+}
+.manual-ps-btn:hover { border-color: var(--magenta); color: var(--dark); }
+.manual-ps-btn.active {
+  border-color: var(--magenta);
+  background: rgba(228,0,124,.06);
+  color: var(--dark);
+  font-weight: 600;
+}
+.manual-ps-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--magenta);
+  flex-shrink: 0;
+}
+
+/* Tags reutilizáveis: pilares, proibidos, refs */
+.manual-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: .75rem;
+  font-weight: 500;
+}
+.manual-tag.pilar {
+  background: rgba(59,130,246,.1);
+  color: #1D4ED8;
+  border: 1px solid rgba(59,130,246,.2);
+}
+.manual-tag.proibido {
+  background: rgba(239,68,68,.08);
+  color: #B91C1C;
+  border: 1px solid rgba(239,68,68,.2);
+}
+.manual-tag.ref {
+  background: rgba(139,115,85,.1);
+  color: #6B4F2A;
+  border: 1px solid rgba(139,115,85,.2);
+}
+.manual-tag-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: .8rem;
+  line-height: 1;
+  color: inherit;
+  opacity: .5;
+  padding: 0;
+  transition: opacity .1s;
+}
+.manual-tag-remove:hover { opacity: 1; }
+
+/* Grid de tipos de conteúdo */
+.manual-tipos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.manual-tipo-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--light);
+  background: var(--white);
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font-body);
+  font-size: .78rem;
+  color: var(--mid);
+}
+.manual-tipo-check.active {
+  border-color: var(--magenta);
+  background: rgba(228,0,124,.05);
+  color: var(--dark);
+  font-weight: 600;
+}
+.manual-tipo-check-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--light);
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.manual-tipo-check.active .manual-tipo-check-dot {
+  background: var(--magenta);
+}
+.manual-tipos-legend {
+  font-size: .7rem;
+  color: var(--mid);
+  padding: 8px 10px;
+  background: var(--pale);
+  border-radius: 8px;
+}
+
+/* PDF upload zone */
+.manual-pdf-zone {
+  border: 2px dashed var(--light);
+  border-radius: 10px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.manual-pdf-zone:hover {
+  border-color: var(--magenta);
+  background: rgba(228,0,124,.03);
+}
+.manual-pdf-zone.has-file {
+  border-color: #10B981;
+  background: rgba(16,185,129,.04);
+}
+.manual-pdf-icon { font-size: 1.6rem; margin-bottom: 6px; }
+.manual-pdf-text { font-size: .82rem; font-weight: 600; color: var(--dark); }
+.manual-pdf-sub  { font-size: .72rem; color: var(--mid); margin-top: 2px; }
+
+/* Barra de ações fixa na base */
+.manual-actions-bar {
+  position: fixed;
+  bottom: 0;
+  left: var(--sidebar);
+  right: 0;
+  height: 64px;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 200;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.06);
+}
 </style>
 </head>
 <body>
@@ -305,8 +554,8 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     <div class="nav-section-title">Recursos</div>
     <button class="nav-item" data-section="photos" onclick="showSection('photos',this)"><span class="nav-icon">📸</span>Banco de Fotos</button>
     <button class="nav-item" data-section="contentmachine" onclick="showSection('contentmachine',this)"><span class="nav-icon">⚡</span>Content Machine</button>
+    <button class="nav-item" data-section="manual" onclick="showSection('manual',this)"><span class="nav-icon">📖</span>Manual</button>
   </nav>
-  <div class="sidebar-footer"><div class="manual-area"><div class="manual-title">📄 Manual do Cliente</div><input type="file" id="manualFile" accept=".pdf" style="display:none" onchange="uploadManual()"/><button class="manual-upload-btn" onclick="document.getElementById('manualFile').click()">+ Carregar PDF</button></div></div>
 </aside>
 <main class="main">
   <div class="topbar"><div class="topbar-title" id="topbarTitle">Dashboard</div><div class="topbar-actions"><span id="activeProfileBadge" style="font-size:.78rem;color:var(--mid);">Case Aceleradora</span><button class="btn btn-primary btn-sm" onclick="showSection('carousel',null)">+ Criar conteúdo</button></div></div>
@@ -510,6 +759,234 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
       <div class="photos-grid" id="photosGrid"><div style="color:var(--mid);grid-column:1/-1;text-align:center;padding:40px;">A carregar fotos...</div></div>
     </div>
   </section>
+
+<!-- MANUAL DO PERFIL -->
+  <section class="section" id="section-manual">
+    <div class="section-header">
+      <h2>Manual do Perfil</h2>
+      <p>Identidade, diretrizes e contexto de cada conta. A IA usa tudo isso na geração.</p>
+    </div>
+
+    <!-- Tipo Badge + seletor de perfil da seção -->
+    <div class="manual-profile-switcher" id="manualProfileSwitcher"></div>
+
+    <!-- Cards principais -->
+    <div class="manual-layout">
+
+      <!-- COL ESQUERDA: identidade base -->
+      <div class="manual-col-left">
+
+        <!-- Card: Tipo de Marca -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🏷️</span>
+            <div>
+              <div class="manual-card-title">Tipo de Marca</div>
+              <div class="manual-card-sub">Define a linha editorial e os tipos de conteúdo disponíveis</div>
+            </div>
+          </div>
+          <div class="manual-tipo-selector" id="manualTipoSelector">
+            <button class="manual-tipo-btn" data-tipo="pessoal" onclick="setManualTipo('pessoal')">
+              <div class="manual-tipo-icon">👤</div>
+              <div class="manual-tipo-info">
+                <div class="manual-tipo-label">Marca Pessoal</div>
+                <div class="manual-tipo-desc">Diário editorial, intimidade, perspectiva única, dump, bastidores</div>
+              </div>
+            </button>
+            <button class="manual-tipo-btn" data-tipo="corporativa" onclick="setManualTipo('corporativa')">
+              <div class="manual-tipo-icon">🏢</div>
+              <div class="manual-tipo-info">
+                <div class="manual-tipo-label">Marca Corporativa</div>
+                <div class="manual-tipo-desc">Cases, tendências, frameworks, autoridade de mercado, oferta</div>
+              </div>
+            </button>
+          </div>
+          <div class="manual-tipo-badge" id="manualTipoBadge"></div>
+        </div>
+
+        <!-- Card: Identidade -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">✦</span>
+            <div>
+              <div class="manual-card-title">Identidade</div>
+              <div class="manual-card-sub">Nome, handle e bio resumida do perfil</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nome do perfil</label>
+            <input type="text" class="input" id="manualNome" placeholder="Ex: Ana Moutinho / Case Aceleradora"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Handle Instagram</label>
+            <input type="text" class="input" id="manualHandle" placeholder="@handle"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nicho / Segmento</label>
+            <input type="text" class="input" id="manualNiche" placeholder="Ex: Marca pessoal feminina, B2B tech, aceleração de negócios..."/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bio em uma linha</label>
+            <textarea class="textarea" id="manualBio" rows="2" placeholder="O que esse perfil representa em uma frase directa"></textarea>
+          </div>
+        </div>
+
+        <!-- Card: Público-alvo -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🎯</span>
+            <div>
+              <div class="manual-card-title">Público-alvo</div>
+              <div class="manual-card-sub">Para quem esse conteúdo é feito</div>
+            </div>
+          </div>
+          <div class="form-group" style="margin:0">
+            <textarea class="textarea" id="manualPublico" rows="3" placeholder="Ex: Mulheres 25-38 anos construindo identidade profissional e vida própria, sem paciência para guru..."></textarea>
+          </div>
+        </div>
+
+        <!-- Card: Upload PDF -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">📄</span>
+            <div>
+              <div class="manual-card-title">Manual em PDF</div>
+              <div class="manual-card-sub">Documento completo de briefing do cliente</div>
+            </div>
+          </div>
+          <div class="manual-pdf-zone" id="manualPdfZone" onclick="document.getElementById('manualPdfInput').click()">
+            <div class="manual-pdf-icon">📎</div>
+            <div class="manual-pdf-text" id="manualPdfText">Clica para carregar o PDF do cliente</div>
+            <div class="manual-pdf-sub" id="manualPdfSub">Briefing, brand book, diretrizes — até 20MB</div>
+          </div>
+          <input type="file" id="manualPdfInput" accept=".pdf" style="display:none" onchange="uploadManualFromProfile(event)"/>
+          <div id="manualPdfStatus" style="margin-top:8px;font-size:.75rem;"></div>
+        </div>
+
+      </div>
+
+      <!-- COL DIREITA: diretrizes editoriais -->
+      <div class="manual-col-right">
+
+        <!-- Card: Tom de voz -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🎙️</span>
+            <div>
+              <div class="manual-card-title">Tom de voz</div>
+              <div class="manual-card-sub">Como esse perfil fala — personalidade e estilo</div>
+            </div>
+          </div>
+          <div class="form-group" style="margin:0">
+            <textarea class="textarea" id="manualTom" rows="3" placeholder="Ex: Reflexivo, íntimo, direto. Nunca motivacional. Tom de quem observa e compartilha, não de quem ensina..."></textarea>
+          </div>
+        </div>
+
+        <!-- Card: Pilares de conteúdo -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🧱</span>
+            <div>
+              <div class="manual-card-title">Pilares de Conteúdo</div>
+              <div class="manual-card-sub">Temas recorrentes que definem a presença digital</div>
+            </div>
+          </div>
+          <div id="manualPilaresContainer" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="input" id="manualPilarInput" placeholder="Adicionar pilar..." style="flex:1"/>
+            <button class="btn btn-outline btn-sm" onclick="addManualPilar()">+ Adicionar</button>
+          </div>
+        </div>
+
+        <!-- Card: Palavras proibidas -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🚫</span>
+            <div>
+              <div class="manual-card-title">Palavras & Expressões Proibidas</div>
+              <div class="manual-card-sub">A IA nunca usará esses termos</div>
+            </div>
+          </div>
+          <div id="manualProibidosContainer" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="input" id="manualProibidoInput" placeholder="Palavra ou expressão..." style="flex:1" onkeydown="if(event.key==='Enter')addManualProibido()"/>
+            <button class="btn btn-outline btn-sm" onclick="addManualProibido()">+ Banir</button>
+          </div>
+        </div>
+
+        <!-- Card: Tipos de conteúdo permitidos -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">📋</span>
+            <div>
+              <div class="manual-card-title">Tipos de Conteúdo</div>
+              <div class="manual-card-sub">Formatos permitidos para esse perfil</div>
+            </div>
+          </div>
+          <div class="manual-tipos-grid" id="manualTiposGrid"></div>
+          <div class="manual-tipos-legend" id="manualTiposLegend"></div>
+        </div>
+
+        <!-- Card: CTA padrão -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🔖</span>
+            <div>
+              <div class="manual-card-title">CTA Padrão</div>
+              <div class="manual-card-sub">Chamada para ação usada no slide final</div>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <textarea class="textarea" id="manualCta" rows="2" placeholder="Ex: Comente CASE que nossa equipe te chama."></textarea>
+          </div>
+        </div>
+
+        <!-- Card: Referências visuais -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">🎨</span>
+            <div>
+              <div class="manual-card-title">Referências Visuais</div>
+              <div class="manual-card-sub">Estética, publicações e criadores de referência</div>
+            </div>
+          </div>
+          <div id="manualRefContainer" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="input" id="manualRefInput" placeholder="Ex: Monocle, Sofia Coppola..." style="flex:1" onkeydown="if(event.key==='Enter')addManualRef()"/>
+            <button class="btn btn-outline btn-sm" onclick="addManualRef()">+ Ref</button>
+          </div>
+        </div>
+
+        <!-- Card: Observações livres -->
+        <div class="card manual-card">
+          <div class="manual-card-header">
+            <span class="manual-card-icon">📝</span>
+            <div>
+              <div class="manual-card-title">Observações Gerais</div>
+              <div class="manual-card-sub">Contexto adicional, briefing livre, notas importantes</div>
+            </div>
+          </div>
+          <div class="form-group" style="margin:0">
+            <textarea class="textarea" id="manualObservacoes" rows="4" placeholder="Qualquer contexto adicional que a IA deva considerar ao gerar conteúdo para este perfil..."></textarea>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Barra de ações fixa -->
+    <div class="manual-actions-bar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="manualSaveStatus" style="font-size:.78rem;color:var(--mid);"></div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="resetManualForm()">↺ Descartar alterações</button>
+        <button class="btn btn-primary" onclick="saveManualProfile()" id="btnSaveManual">💾 Salvar manual</button>
+      </div>
+    </div>
+
+  </section>
+
 </main>
 
 <!-- MODAL CALENDÁRIO -->
@@ -543,7 +1020,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 <script>
 /* ── STATE ── */
 let currentProfile = 'marca';
-let currentDesignStyle = null; // estilo visual selecionado
+let currentDesignStyle = null;
 let currentCalendarData = null;
 let currentCalendarPost = null;
 let currentCarouselData = null;
@@ -557,129 +1034,31 @@ let calendarApproved = false;
 /* ── DESIGN STYLES ── */
 const DESIGN_STYLES = {
   marca: [
-    {
-      id: 'premium_editorial',
-      name: '📰 Premium Editorial',
-      sub: 'Monocle · FT Weekend · McKinsey',
-      desc: 'Fotos executivas com enquadramento arquitetônico. Tipografia geométrica bold, hierarquia clara, palette desaturada. Autoridade máxima.',
-      promptStyle: 'Premium B2B editorial. Think Monocle magazine meets McKinsey Digital. Executive photography, architectural precision, desaturated tones, quiet luxury.',
-      overlayStyle: 'HERO_DARK',
-    },
-    {
-      id: 'data_visual',
-      name: '📊 Data Visual',
-      sub: 'Bloomberg · Economist · Wired',
-      desc: 'Fundos tipográficos limpos com dados em destaque. Gráficos e números como elemento visual principal.',
-      promptStyle: 'Data-driven visual design. Bloomberg/Economist aesthetic. Clean backgrounds, bold numbers as hero element, information hierarchy, structured grid.',
-      overlayStyle: 'TYPE_LIGHT',
-    },
+    {id:'premium_editorial',name:'📰 Premium Editorial',sub:'Monocle · FT Weekend · McKinsey',desc:'Fotos executivas com enquadramento arquitetônico. Tipografia geométrica bold, hierarquia clara, palette desaturada. Autoridade máxima.',promptStyle:'Premium B2B editorial. Think Monocle magazine meets McKinsey Digital. Executive photography, architectural precision, desaturated tones, quiet luxury.',overlayStyle:'HERO_DARK'},
+    {id:'data_visual',name:'📊 Data Visual',sub:'Bloomberg · Economist · Wired',desc:'Fundos tipográficos limpos com dados em destaque. Gráficos e números como elemento visual principal.',promptStyle:'Data-driven visual design. Bloomberg/Economist aesthetic. Clean backgrounds, bold numbers as hero element, information hierarchy, structured grid.',overlayStyle:'TYPE_LIGHT'},
   ],
   pessoal: [
-    {
-      id: 'lofi_diary',
-      name: '📷 Lo-fi Diary',
-      sub: 'iPhone grain · Sofia Coppola · real',
-      desc: 'Fotos íntimas com grão de filme. Luz natural, momentos espontâneos, sem estúdio. A "Ana mais real".',
-      promptStyle: 'Lo-fi diary aesthetic. Like a candid iPhone photo from a thoughtful woman. Warm grain, natural light, honest imperfect moment. Sofia Coppola visual universe.',
-      overlayStyle: 'HERO_LOFI',
-    },
-    {
-      id: 'editorial_minimal',
-      name: '✦ Editorial Minimal',
-      sub: 'Clean · reflexivo · feminino',
-      desc: 'Fundos creme limpos com tipografia como elemento central. Sofisticado e intimista.',
-      promptStyle: 'Soft editorial minimal. Warm cream backgrounds, clean surfaces, subtle organic textures. Intimate and sophisticated without being corporate.',
-      overlayStyle: 'TYPE_CREME',
-    },
-    {
-      id: 'colagem_real',
-      name: '🌿 Colagem Real',
-      sub: 'Textura · objetos · próximo',
-      desc: 'Mix de texturas reais, objetos cotidianos como café, caderno, janela. Muito próximo e humano.',
-      promptStyle: 'Real life collage. Everyday objects shot close-up: coffee cup, open journal, morning window light, hands. Warm tactile textures, very human and relatable.',
-      overlayStyle: 'COLAGEM_REAL',
-    },
+    {id:'lofi_diary',name:'📷 Lo-fi Diary',sub:'iPhone grain · Sofia Coppola · real',desc:'Fotos íntimas com grão de filme. Luz natural, momentos espontâneos, sem estúdio. A "Ana mais real".',promptStyle:'Lo-fi diary aesthetic. Like a candid iPhone photo from a thoughtful woman. Warm grain, natural light, honest imperfect moment. Sofia Coppola visual universe.',overlayStyle:'HERO_LOFI'},
+    {id:'editorial_minimal',name:'✦ Editorial Minimal',sub:'Clean · reflexivo · feminino',desc:'Fundos creme limpos com tipografia como elemento central. Sofisticado e intimista.',promptStyle:'Soft editorial minimal. Warm cream backgrounds, clean surfaces, subtle organic textures. Intimate and sophisticated without being corporate.',overlayStyle:'TYPE_CREME'},
+    {id:'colagem_real',name:'🌿 Colagem Real',sub:'Textura · objetos · próximo',desc:'Mix de texturas reais, objetos cotidianos como café, caderno, janela. Muito próximo e humano.',promptStyle:'Real life collage. Everyday objects shot close-up: coffee cup, open journal, morning window light, hands. Warm tactile textures, very human and relatable.',overlayStyle:'COLAGEM_REAL'},
   ],
   virttus: [
-    {
-      id: 'tech_precision',
-      name: '⚡ Tech Precision',
-      sub: 'Sharp · forward · digital',
-      desc: 'Abstração digital, luzes azuis e verdes sobre escuro. B2B tech premium.',
-      promptStyle: 'Tech B2B precision. Abstract digital visuals, sharp geometry, teal and electric green accents on deep dark backgrounds. Forward-looking, data-driven.',
-      overlayStyle: 'HERO_DARK',
-    },
-    {
-      id: 'corporate_clean',
-      name: '🏢 Corporate Clean',
-      sub: 'Profissional · estruturado · confiança',
-      desc: 'Backgrounds limpos com tipografia estruturada. Seriedade corporativa sem ser genérico.',
-      promptStyle: 'Clean corporate precision. Light backgrounds, structured typography focus, professional imagery without clichés. Trust and authority.',
-      overlayStyle: 'TYPE_LIGHT',
-    },
+    {id:'tech_precision',name:'⚡ Tech Precision',sub:'Sharp · forward · digital',desc:'Abstração digital, luzes azuis e verdes sobre escuro. B2B tech premium.',promptStyle:'Tech B2B precision. Abstract digital visuals, sharp geometry, teal and electric green accents on deep dark backgrounds. Forward-looking, data-driven.',overlayStyle:'HERO_DARK'},
+    {id:'corporate_clean',name:'🏢 Corporate Clean',sub:'Profissional · estruturado · confiança',desc:'Backgrounds limpos com tipografia estruturada. Seriedade corporativa sem ser genérico.',promptStyle:'Clean corporate precision. Light backgrounds, structured typography focus, professional imagery without clichés. Trust and authority.',overlayStyle:'TYPE_LIGHT'},
   ],
 };
 
-function initDesignStyles() {
-  const styles = DESIGN_STYLES[currentProfile] || DESIGN_STYLES.marca;
-  const container = document.getElementById('designStyleOptions');
-  if (!container) return;
-  container.innerHTML = styles.map((s, i) => `
-    <button class="ds-btn${i === 0 ? ' active' : ''}" data-style-id="${s.id}" onclick="selectDesignStyle('${s.id}')">
-      <div class="ds-btn-name">${s.name}</div>
-      <div class="ds-btn-sub">${s.sub}</div>
-    </button>`).join('');
-  currentDesignStyle = styles[0].id;
-  updateDesignStyleDesc();
-}
+function initDesignStyles(){const styles=DESIGN_STYLES[currentProfile]||DESIGN_STYLES.marca;const container=document.getElementById('designStyleOptions');if(!container)return;container.innerHTML=styles.map((s,i)=>`<button class="ds-btn${i===0?' active':''}" data-style-id="${s.id}" onclick="selectDesignStyle('${s.id}')"><div class="ds-btn-name">${s.name}</div><div class="ds-btn-sub">${s.sub}</div></button>`).join('');currentDesignStyle=styles[0].id;updateDesignStyleDesc();}
+function selectDesignStyle(id){document.querySelectorAll('.ds-btn').forEach(b=>b.classList.toggle('active',b.dataset.styleId===id));currentDesignStyle=id;updateDesignStyleDesc();}
+function updateDesignStyleDesc(){const styles=DESIGN_STYLES[currentProfile]||[];const s=styles.find(x=>x.id===currentDesignStyle);const el=document.getElementById('designStyleDesc');if(!el||!s)return;el.textContent=s.desc;el.style.display='block';}
+function getActiveDesignStyle(){const styles=DESIGN_STYLES[currentProfile]||DESIGN_STYLES.marca;return styles.find(s=>s.id===currentDesignStyle)||styles[0];}
 
-function selectDesignStyle(id) {
-  document.querySelectorAll('.ds-btn').forEach(b => b.classList.toggle('active', b.dataset.styleId === id));
-  currentDesignStyle = id;
-  updateDesignStyleDesc();
-}
-
-function updateDesignStyleDesc() {
-  const styles = DESIGN_STYLES[currentProfile] || [];
-  const s = styles.find(x => x.id === currentDesignStyle);
-  const el = document.getElementById('designStyleDesc');
-  if (!el || !s) return;
-  el.textContent = s.desc;
-  el.style.display = 'block';
-}
-
-function getActiveDesignStyle() {
-  const styles = DESIGN_STYLES[currentProfile] || DESIGN_STYLES.marca;
-  return styles.find(s => s.id === currentDesignStyle) || styles[0];
-}
-
-/* ── DRAG SCROLL no slides-preview ── */
-function initSlidesDragScroll() {
-  const el = document.getElementById('slidesPreview');
-  if (!el) return;
-  let isDown = false, startX = 0, scrollLeft = 0;
-  el.addEventListener('mousedown', e => {
-    if (e.target.closest('.slide-card')) return; // clique normal no card
-    isDown = true; el.classList.add('active');
-    startX = e.pageX - el.offsetLeft; scrollLeft = el.scrollLeft;
-  });
-  el.addEventListener('mouseleave', () => { isDown = false; el.classList.remove('active'); });
-  el.addEventListener('mouseup', () => { isDown = false; el.classList.remove('active'); });
-  el.addEventListener('mousemove', e => {
-    if (!isDown) return;
-    e.preventDefault();
-    const x = e.pageX - el.offsetLeft;
-    el.scrollLeft = scrollLeft - (x - startX) * 1.4;
-  });
-}
+/* ── DRAG SCROLL ── */
+function initSlidesDragScroll(){const el=document.getElementById('slidesPreview');if(!el)return;let isDown=false,startX=0,scrollLeft=0;el.addEventListener('mousedown',e=>{if(e.target.closest('.slide-card'))return;isDown=true;el.classList.add('active');startX=e.pageX-el.offsetLeft;scrollLeft=el.scrollLeft;});el.addEventListener('mouseleave',()=>{isDown=false;el.classList.remove('active');});el.addEventListener('mouseup',()=>{isDown=false;el.classList.remove('active');});el.addEventListener('mousemove',e=>{if(!isDown)return;e.preventDefault();const x=e.pageX-el.offsetLeft;el.scrollLeft=scrollLeft-(x-startX)*1.4;});}
 
 /* ── LIGHTBOX STATE ── */
-let lbCurrentIndex = 0;
-let lbSlides       = [];
-let lbCommentStore = {};
-let lbStatusStore  = {};
-
-const API = '';
+let lbCurrentIndex=0,lbSlides=[],lbCommentStore={},lbStatusStore={};
+const API='';
 
 /* ── UTILS ── */
 function toast(msg,type='info'){const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span> ${msg}`;document.body.appendChild(el);setTimeout(()=>el.remove(),4000);}
@@ -694,19 +1073,16 @@ function showSection(id,navBtn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   const t=document.getElementById('section-'+id);if(t)t.classList.add('active');
   setNavActive(id,navBtn);
-  const titles={dashboard:'Dashboard',library:'Biblioteca',carousel:'Carrossel',feed:'Post Feed',calendar:'Calendário',photos:'Banco de Fotos',contentmachine:'Content Machine'};
+  const titles={dashboard:'Dashboard',library:'Biblioteca',carousel:'Carrossel',feed:'Post Feed',calendar:'Calendário',photos:'Banco de Fotos',contentmachine:'Content Machine',manual:'Manual do Perfil',manual:'Manual do Perfil'};
   document.getElementById('topbarTitle').textContent=titles[id]||id;
   if(id==='calendar')setTimeout(loadSavedCalendar,100);
   if(id==='dashboard')loadDashboard();
   if(id==='library')loadLibrary();
   if(id==='photos')loadPhotos();
-  if(id==='carousel')setTimeout(initSlidesDragScroll, 250);
+  if(id==='manual')initManualSection();
+  if(id==='carousel')setTimeout(initSlidesDragScroll,250);
 }
-function setNavActive(id,btn){
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  else{const m=document.querySelector(`.nav-item[data-section="${id}"]`);if(m)m.classList.add('active');}
-}
+function setNavActive(id,btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');else{const m=document.querySelector(`.nav-item[data-section="${id}"]`);if(m)m.classList.add('active');}}
 function setProfile(profile,btn){
   currentProfile=profile;
   document.querySelectorAll('.profile-btn').forEach(b=>b.classList.remove('active'));
@@ -716,11 +1092,14 @@ function setProfile(profile,btn){
   toast(`Perfil: ${names[profile]}`,'info');
   initDesignStyles();
   loadDashboard();
+  if(document.getElementById('section-manual')?.classList.contains('active')){
+    loadManualProfile(profile);
+  }
 }
 
-/* ── MANUAL ── */
+/* ── MANUAL (legacy — kept for backward compat) ── */
 async function uploadManual(){
-  const file=document.getElementById('manualFile').files[0];if(!file)return;
+  const file=document.getElementById('manualFile')?.files[0];if(!file)return;
   const fd=new FormData();fd.append('pdf',file);fd.append('profile',currentProfile);
   toast('A carregar manual...','info');
   try{const r=await fetch('/api/manual/upload',{method:'POST',body:fd});const d=await r.json();if(d.success)toast('Manual carregado!','success');else toast('Erro: '+d.error,'error');}
@@ -815,13 +1194,7 @@ async function quickPublish(contentId){
 
 /* ── CARROSSEL ── */
 let carouselMode='blocks';
-function setCarouselMode(mode){
-  carouselMode=mode;
-  document.getElementById('modeBtnBlocks').classList.toggle('active',mode==='blocks');
-  document.getElementById('modeBtnTopic').classList.toggle('active',mode==='topic');
-  document.getElementById('modeBlocks').style.display=mode==='blocks'?'block':'none';
-  document.getElementById('modeTopic').style.display=mode==='topic'?'block':'none';
-}
+function setCarouselMode(mode){carouselMode=mode;document.getElementById('modeBtnBlocks').classList.toggle('active',mode==='blocks');document.getElementById('modeBtnTopic').classList.toggle('active',mode==='topic');document.getElementById('modeBlocks').style.display=mode==='blocks'?'block':'none';document.getElementById('modeTopic').style.display=mode==='topic'?'block':'none';}
 
 async function generateCarousel(){
   let body={};
@@ -831,10 +1204,7 @@ async function generateCarousel(){
   try{
     const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await r.json();if(d.error)throw new Error(d.error);
-    currentCarouselData={...d,imageUrls:[]};
-    currentCarouselContentId=d.contentId;
-    currentCarouselImages=[];
-    lbCommentStore={};lbStatusStore={};
+    currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};
     renderSlidesPreview(d.slides);
     document.getElementById('carouselSlideCount').textContent=`${d.slides.length} slides gerados pela IA`;
     document.getElementById('carouselGeneratedCaption').value=`${d.caption}\n\n${d.hashtags}`;
@@ -879,19 +1249,12 @@ function renderSlidesPreview(slides){
       </div>
     </div>`;
   }).join('');
-  setTimeout(initSlidesDragScroll, 80);
+  setTimeout(initSlidesDragScroll,80);
 }
 
 /* ── LIGHTBOX ── */
-function openLightbox(index){
-  lbCurrentIndex=index;
-  document.getElementById('slideLightbox').classList.add('visible');
-  lbRenderSlide();lbBuildStrip();
-}
-function closeLightbox(){
-  document.getElementById('slideLightbox').classList.remove('visible');
-  if(lbSlides.length)renderSlidesPreview(lbSlides);
-}
+function openLightbox(index){lbCurrentIndex=index;document.getElementById('slideLightbox').classList.add('visible');lbRenderSlide();lbBuildStrip();}
+function closeLightbox(){document.getElementById('slideLightbox').classList.remove('visible');if(lbSlides.length)renderSlidesPreview(lbSlides);}
 function lbRenderSlide(){
   const i=lbCurrentIndex,slide=lbSlides[i],img=currentCarouselImages[i],total=lbSlides.length;
   document.getElementById('lbSlideNum').textContent=`Slide ${i+1} / ${total}`;
@@ -909,254 +1272,82 @@ function lbRenderSlide(){
 }
 function lbNavigate(dir){const next=lbCurrentIndex+dir;if(next<0||next>=lbSlides.length)return;lbCurrentIndex=next;lbRenderSlide();}
 function lbGoto(i){lbCurrentIndex=i;lbRenderSlide();}
-function lbSetStatus(status){
-  const i=lbCurrentIndex,prev=lbStatusStore[i];
-  lbStatusStore[i]=(prev===status)?'pendente':status;
-  if(lbStatusStore[i]==='aprovado'){const c=lbCommentStore[i]||[];if(!c.some(x=>x.type==='aprovacao'))lbAddComment(i,'Slide aprovado ✓','aprovacao');}
-  lbRenderSlide();lbUpdateStrip();
-}
+function lbSetStatus(status){const i=lbCurrentIndex,prev=lbStatusStore[i];lbStatusStore[i]=(prev===status)?'pendente':status;if(lbStatusStore[i]==='aprovado'){const c=lbCommentStore[i]||[];if(!c.some(x=>x.type==='aprovacao'))lbAddComment(i,'Slide aprovado ✓','aprovacao');}lbRenderSlide();lbUpdateStrip();}
 function lbSendComment(){const input=document.getElementById('lbCommentInput');const text=input.value.trim();if(!text)return;lbAddComment(lbCurrentIndex,text,'usuario');input.value='';}
-function lbAddComment(slideIndex,text,type='usuario'){
-  if(!lbCommentStore[slideIndex])lbCommentStore[slideIndex]=[];
-  lbCommentStore[slideIndex].push({text,type,ts:new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})});
-  if(slideIndex===lbCurrentIndex)lbRenderComments(slideIndex);
-}
-function lbRenderComments(slideIndex){
-  const area=document.getElementById('lbComments'),empty=document.getElementById('lbCommentsEmpty'),comments=lbCommentStore[slideIndex]||[];
-  area.querySelectorAll('.lb-comment').forEach(el=>el.remove());
-  if(!comments.length){if(empty)empty.style.display='block';return;}
-  if(empty)empty.style.display='none';
-  comments.forEach(c=>{const isSystem=c.type==='aprovacao';const el=document.createElement('div');el.className='lb-comment';el.innerHTML=`<div class="lb-comment-avatar user">${isSystem?'✓':'U'}</div><div class="lb-comment-bubble" style="${isSystem?'background:#f0fdf4;':''}"><div class="lb-comment-text" style="${isSystem?'color:#166534;font-size:.78rem;':''}">${c.text}</div><div class="lb-comment-time">${c.ts}</div></div>`;area.appendChild(el);});
-  area.scrollTop=area.scrollHeight;
-}
-function lbBuildStrip(){
-  document.getElementById('lbStrip').innerHTML=lbSlides.map((_,i)=>{const status=lbStatusStore[i]||'pendente';const cls=i===lbCurrentIndex?'active':status!=='pendente'?status:'';return`<div class="lb-strip-dot ${cls}" onclick="lbGoto(${i})" title="Slide ${i+1}"></div>`;}).join('');
-}
-function lbUpdateStrip(){
-  document.querySelectorAll('.lb-strip-dot').forEach((dot,i)=>{const status=lbStatusStore[i]||'pendente';dot.className='lb-strip-dot';if(i===lbCurrentIndex)dot.classList.add('active');else if(status!=='pendente')dot.classList.add(status);});
-}
+function lbAddComment(slideIndex,text,type='usuario'){if(!lbCommentStore[slideIndex])lbCommentStore[slideIndex]=[];lbCommentStore[slideIndex].push({text,type,ts:new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})});if(slideIndex===lbCurrentIndex)lbRenderComments(slideIndex);}
+function lbRenderComments(slideIndex){const area=document.getElementById('lbComments'),empty=document.getElementById('lbCommentsEmpty'),comments=lbCommentStore[slideIndex]||[];area.querySelectorAll('.lb-comment').forEach(el=>el.remove());if(!comments.length){if(empty)empty.style.display='block';return;}if(empty)empty.style.display='none';comments.forEach(c=>{const isSystem=c.type==='aprovacao';const el=document.createElement('div');el.className='lb-comment';el.innerHTML=`<div class="lb-comment-avatar user">${isSystem?'✓':'U'}</div><div class="lb-comment-bubble" style="${isSystem?'background:#f0fdf4;':''}"><div class="lb-comment-text" style="${isSystem?'color:#166534;font-size:.78rem;':''}">${c.text}</div><div class="lb-comment-time">${c.ts}</div></div>`;area.appendChild(el);});area.scrollTop=area.scrollHeight;}
+function lbBuildStrip(){document.getElementById('lbStrip').innerHTML=lbSlides.map((_,i)=>{const status=lbStatusStore[i]||'pendente';const cls=i===lbCurrentIndex?'active':status!=='pendente'?status:'';return`<div class="lb-strip-dot ${cls}" onclick="lbGoto(${i})" title="Slide ${i+1}"></div>`;}).join('');}
+function lbUpdateStrip(){document.querySelectorAll('.lb-strip-dot').forEach((dot,i)=>{const status=lbStatusStore[i]||'pendente';dot.className='lb-strip-dot';if(i===lbCurrentIndex)dot.classList.add('active');else if(status!=='pendente')dot.classList.add(status);});}
 document.addEventListener('keydown',e=>{const lb=document.getElementById('slideLightbox');if(!lb?.classList.contains('visible'))return;if(e.key==='ArrowLeft')lbNavigate(-1);if(e.key==='ArrowRight')lbNavigate(1);if(e.key==='Escape')closeLightbox();});
 document.addEventListener('click',e=>{const lb=document.getElementById('slideLightbox');if(e.target===lb)closeLightbox();});
 
-/* ── BRAND ACCENT (mantido para Gemini) ── */
+/* ── BRAND ACCENT ── */
 const BRAND_ACCENT={marca:{accent:'#C8A020',bg:'#0A0A0A',handle:'@caseaceleradora'},pessoal:{accent:'#8B7355',bg:'#1A1612',handle:'@analuisa.moutinho'},virttus:{accent:'#00D4AA',bg:'#050B18',handle:'@virttus'}};
 
-/* ══════════════════════════════════════════════════════════════════════════
-   MOTOR DE DESIGN — SlideRenderer
-   Foto limpa (GPT) + HTML/CSS overlay → html2canvas → PNG final
-   ══════════════════════════════════════════════════════════════════════════ */
-const SlideRenderer = {
-  _applyAccentWords(text, accentColor) {
-    if (!text) return '';
-    const words = text.split(/\s+/);
-    const accentCount = Math.min(3, Math.ceil(words.length / 3));
-    const normal   = words.slice(0, words.length - accentCount).join(' ');
-    const accented = words.slice(words.length - accentCount).join(' ');
-    return `${normal ? normal + ' ' : ''}<span style="color:${accentColor}">${accented}</span>`;
-  },
-
-  _buildSlideHTML(photoUrl, designMeta) {
-    const { heading, body, accent, bgDark, bgLight, handle, isDark, mood, slideNumber, totalSlides, funcao, designStyleHint } = designMeta;
-    const textColor    = isDark ? 'light' : 'dark';
-    const overlayClass = isDark
-      ? (mood.includes('HERO') ? 'sr-overlay-dark-bottom' : 'sr-overlay-dark-full')
-      : 'sr-overlay-none';
-    const isCenter = ['TYPE_LIGHT','TYPE_CREME','TYPE_DARK','TYPE_DARK_WARM','FRASE_IMPACTO','TABLE_LIGHT'].includes(mood);
-    const headingLen  = heading.length;
-    const headingSize = headingLen > 80 ? '68px' : headingLen > 55 ? '78px' : headingLen > 35 ? '88px' : '96px';
-    const headingHTML = this._applyAccentWords(heading, accent);
-
-    // Contraste garantido: handle e funcao sempre com sombra forte em fundos mistos
-    // Em fundos claros: cor escura. Em fundos escuros: accent ou branco
-    const handleColor  = isDark ? accent : accent; // accent tem contraste em ambos
-    const handleShadow = isDark
-      ? '0 1px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4)'  // sombra escura
-      : '0 1px 3px rgba(255,255,255,0.8)'; // halo branco em fundos claros
-    const funcaoColor  = isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.55)';
-    const funcaoShadow = isDark
-      ? '0 1px 4px rgba(0,0,0,0.8)'
-      : '0 1px 2px rgba(255,255,255,0.9)';
-    const numColor     = isDark ? 'rgba(255,255,255,0.38)' : 'rgba(0,0,0,0.28)';
-
-    return `
-      <div class="sr-slide-wrapper" style="background:${isDark ? bgDark : bgLight};">
-        <img class="sr-bg" src="${photoUrl}" crossorigin="anonymous" />
-        <div class="sr-overlay ${overlayClass}"></div>
-        <div class="sr-slide-num" style="color:${numColor};text-shadow:0 1px 4px rgba(0,0,0,0.3);">${slideNumber}/${totalSlides}</div>
-        <div class="sr-content ${isCenter ? 'sr-content-center' : ''}">
-          <div class="sr-handle" style="color:${handleColor};text-shadow:${handleShadow};letter-spacing:.05em;font-size:22px;font-weight:800;">${handle}</div>
-          ${funcao && funcao !== 'CAPA' ? `<div class="sr-funcao-label" style="color:${funcaoColor};text-shadow:${funcaoShadow};font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px;">${funcao}</div>` : ''}
-          <div class="sr-heading sr-heading-${textColor}" style="font-size:${headingSize};">${headingHTML}</div>
-          ${body ? `<div class="sr-body sr-body-${textColor}">${body}</div>` : ''}
-        </div>
-        <div class="sr-bottom-bar" style="background:${accent};"></div>
-      </div>`;
-  },
-
-  async renderSlide(photoUrl, designMeta) {
-    const container = document.getElementById('sr-render-container');
-    container.innerHTML = this._buildSlideHTML(photoUrl, designMeta);
-    const slideEl = container.querySelector('.sr-slide-wrapper');
-    await new Promise((resolve) => {
-      const img = slideEl.querySelector('.sr-bg');
-      if (!img) return resolve();
-      if (img.complete && img.naturalWidth > 0) return resolve();
-      img.onload  = resolve;
-      img.onerror = resolve;
-      setTimeout(resolve, 8000);
-    });
-    await new Promise(r => setTimeout(r, 120));
-    try {
-      const canvas = await html2canvas(slideEl, {
-        width: 1024, height: 1536, scale: 1,
-        useCORS: true, allowTaint: false,
-        backgroundColor: designMeta.isDark ? designMeta.bgDark : designMeta.bgLight,
-        logging: false,
-      });
-      const pngB64 = canvas.toDataURL('image/png').split(',')[1];
-      container.innerHTML = '';
-      return pngB64;
-    } catch(err) {
-      container.innerHTML = '';
-      console.error('html2canvas error:', err);
-      return null;
-    }
-  },
+/* ── SlideRenderer ── */
+const SlideRenderer={
+  _applyAccentWords(text,accentColor){if(!text)return'';const words=text.split(/\s+/);const accentCount=Math.min(3,Math.ceil(words.length/3));const normal=words.slice(0,words.length-accentCount).join(' ');const accented=words.slice(words.length-accentCount).join(' ');return`${normal?normal+' ':''}<span style="color:${accentColor}">${accented}</span>`;},
+  _buildSlideHTML(photoUrl,designMeta){const{heading,body,accent,bgDark,bgLight,handle,isDark,mood,slideNumber,totalSlides,funcao}=designMeta;const textColor=isDark?'light':'dark';const overlayClass=isDark?(mood.includes('HERO')?'sr-overlay-dark-bottom':'sr-overlay-dark-full'):'sr-overlay-none';const isCenter=['TYPE_LIGHT','TYPE_CREME','TYPE_DARK','TYPE_DARK_WARM','FRASE_IMPACTO','TABLE_LIGHT'].includes(mood);const headingLen=heading.length;const headingSize=headingLen>80?'68px':headingLen>55?'78px':headingLen>35?'88px':'96px';const headingHTML=this._applyAccentWords(heading,accent);const handleColor=isDark?accent:accent;const handleShadow=isDark?'0 1px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.4)':'0 1px 3px rgba(255,255,255,0.8)';const funcaoColor=isDark?'rgba(255,255,255,0.75)':'rgba(0,0,0,0.55)';const funcaoShadow=isDark?'0 1px 4px rgba(0,0,0,0.8)':'0 1px 2px rgba(255,255,255,0.9)';const numColor=isDark?'rgba(255,255,255,0.38)':'rgba(0,0,0,0.28)';return`<div class="sr-slide-wrapper" style="background:${isDark?bgDark:bgLight};"><img class="sr-bg" src="${photoUrl}" crossorigin="anonymous" /><div class="sr-overlay ${overlayClass}"></div><div class="sr-slide-num" style="color:${numColor};text-shadow:0 1px 4px rgba(0,0,0,0.3);">${slideNumber}/${totalSlides}</div><div class="sr-content ${isCenter?'sr-content-center':''}"><div class="sr-handle" style="color:${handleColor};text-shadow:${handleShadow};letter-spacing:.05em;font-size:22px;font-weight:800;">${handle}</div>${funcao&&funcao!=='CAPA'?`<div class="sr-funcao-label" style="color:${funcaoColor};text-shadow:${funcaoShadow};font-size:18px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px;">${funcao}</div>`:''}<div class="sr-heading sr-heading-${textColor}" style="font-size:${headingSize};">${headingHTML}</div>${body?`<div class="sr-body sr-body-${textColor}">${body}</div>`:''}</div><div class="sr-bottom-bar" style="background:${accent};"></div></div>`;},
+  async renderSlide(photoUrl,designMeta){const container=document.getElementById('sr-render-container');container.innerHTML=this._buildSlideHTML(photoUrl,designMeta);const slideEl=container.querySelector('.sr-slide-wrapper');await new Promise((resolve)=>{const img=slideEl.querySelector('.sr-bg');if(!img)return resolve();if(img.complete&&img.naturalWidth>0)return resolve();img.onload=resolve;img.onerror=resolve;setTimeout(resolve,8000);});await new Promise(r=>setTimeout(r,120));try{const canvas=await html2canvas(slideEl,{width:1024,height:1536,scale:1,useCORS:true,allowTaint:false,backgroundColor:designMeta.isDark?designMeta.bgDark:designMeta.bgLight,logging:false});const pngB64=canvas.toDataURL('image/png').split(',')[1];container.innerHTML='';return pngB64;}catch(err){container.innerHTML='';console.error('html2canvas error:',err);return null;}},
 };
 
-/* ── GERAR IMAGENS — versão com Diretor de Arte IA + html2canvas ── */
-async function generateCarouselImages(autoPublishConfig = null) {
-  if (!currentCarouselData) return;
-  const engine = document.getElementById('imageEngine').value;
-  if (engine === 'none') return toast('Selecciona um gerador', 'info');
-
-  const slides    = currentCarouselData.slides;
-  const topic     = currentCarouselData.title || currentCarouselData.tema || '';
-  const contentId = currentCarouselContentId;
-
-  const btn          = document.getElementById('btnGenImages');
-  const progressBar  = document.getElementById('imageProgress');
-  const progressFill = document.getElementById('imageProgressFill');
-  const statusEl     = document.getElementById('imageGenStatus');
-
-  btn.disabled = true;
-  progressBar.style.display = 'block';
-  currentCarouselImages = [];
-
-  const phase1Msgs = ['🎨 Diretor de Arte gerando visão...','📷 Definindo composição fotográfica...','🎬 Calculando luz e enquadramento...','✦ Direcionando estética visual...','🖼️ Criando direção de arte...'];
-  const phase2Msgs = ['⚡ GPT gerando fotografia limpa...','🖼️ Renderizando imagem editorial...','✨ Finalizando fotografia...','🎞️ Processando resolução alta...','📸 Compondo cena fotográfica...'];
-  const phase3Msgs = ['✒️ Montando tipografia...','🎨 Aplicando identidade visual...','💎 Compondo layout final...','⚡ Aplicando accent color...','✅ Exportando slide...'];
-
-  for (let i = 0; i < slides.length; i++) {
-    const s   = slides[i];
-    const pct = Math.round((i / slides.length) * 100);
-    progressFill.style.width = `${pct}%`;
-
-    const card = document.getElementById(`slideCard_${i}`);
-    if (card) { card.style.opacity = '0.5'; card.style.outline = '2px solid var(--magenta)'; }
-
-    try {
-      const funcao  = s.funcao || (i === 0 ? 'CAPA' : i === slides.length - 1 ? 'ASSINATURA' : 'CONTEÚDO');
-      const heading = s.heading || s.textos?.[0]?.texto || '';
-      const body    = s.body    || s.textos?.[1]?.texto || '';
-
-      let finalUrl    = null;
-      let finalPngB64 = null;
-
-      if (engine === 'gpt') {
-        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase1Msgs[i % phase1Msgs.length]}`;
-        await new Promise(r => setTimeout(r, 50));
-
-        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase2Msgs[i % phase2Msgs.length]}`;
-
-        const slideRes = await fetch('/api/image/carousel-slide', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ heading, body, slideNumber: i+1, totalSlides: slides.length, funcao, topic, profile: currentProfile, contentId, imagePromptHint: s.imagePrompt || '', designStyleHint: getActiveDesignStyle()?.promptStyle || '' }),
-        });
-        const slideData = await slideRes.json();
-        if (slideData.error) throw new Error(slideData.error);
-
-        const photoUrl   = slideData.url || (slideData.b64 ? `data:image/png;base64,${slideData.b64}` : null);
-        const designMeta = slideData.designMeta;
-        if (!photoUrl || !designMeta) throw new Error('Foto ou metadados não retornados');
-
-        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase3Msgs[i % phase3Msgs.length]}`;
-
-        finalPngB64 = await SlideRenderer.renderSlide(photoUrl, designMeta);
-
-        if (finalPngB64) {
-          // Sempre salvar no servidor para ter URL pública persistente
-          try {
-            const saveRes  = await fetch('/api/image/save-b64', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ b64: finalPngB64, contentId: contentId || `tmp_${Date.now()}`, slideIndex: i }) });
-            const saveData = await saveRes.json();
-            if (saveData.url) finalUrl = saveData.url;
-          } catch(e) { console.warn('Save b64 failed:', e.message); }
-          finalUrl = finalUrl || `data:image/png;base64,${finalPngB64}`;
-        } else {
-          finalUrl = photoUrl; // fallback: foto sem overlay
-        }
-
-      } else {
-        // Gemini — fluxo original mantido
-        statusEl.innerHTML = `<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase2Msgs[i % phase2Msgs.length]}`;
-        const brand = BRAND_ACCENT[currentProfile] || BRAND_ACCENT.marca;
-        const geminiPrompt = [`Premium Instagram carousel slide ${i+1}/${slides.length}.`,`Topic: "${topic}". Function: ${funcao}.`,`Brand colors: background ${brand.bg}, accent ${brand.accent}, white text.`,i===0?`COVER: cinematic hero image. MASSIVE heading: "${heading}". Last words in ${brand.accent}. Dark overlay.`:`Clean editorial layout. Bold heading "${heading}" — key words in ${brand.accent}. Body: "${body}".`,`Portrait 4:5. Professional quality.`].join(' ');
-        const r = await fetch('/api/gemini-image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: geminiPrompt }) });
-        const d = await r.json();
-        const b64 = d.b64 || null;
-        finalUrl  = d.url || (b64 ? `data:image/png;base64,${b64}` : null);
-        if (b64 && contentId) {
-          try { const sv = await fetch('/api/image/save-b64', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ b64, contentId, slideIndex: i }) }); const svd = await sv.json(); if (svd.url) finalUrl = svd.url; } catch(e) {}
-        }
+/* ── GERAR IMAGENS ── */
+async function generateCarouselImages(autoPublishConfig=null){
+  if(!currentCarouselData)return;
+  const engine=document.getElementById('imageEngine').value;
+  if(engine==='none')return toast('Selecciona um gerador','info');
+  const slides=currentCarouselData.slides,topic=currentCarouselData.title||currentCarouselData.tema||'',contentId=currentCarouselContentId;
+  const btn=document.getElementById('btnGenImages'),progressBar=document.getElementById('imageProgress'),progressFill=document.getElementById('imageProgressFill'),statusEl=document.getElementById('imageGenStatus');
+  btn.disabled=true;progressBar.style.display='block';currentCarouselImages=[];
+  const phase1Msgs=['🎨 Diretor de Arte gerando visão...','📷 Definindo composição fotográfica...','🎬 Calculando luz e enquadramento...','✦ Direcionando estética visual...','🖼️ Criando direção de arte...'];
+  const phase2Msgs=['⚡ GPT gerando fotografia limpa...','🖼️ Renderizando imagem editorial...','✨ Finalizando fotografia...','🎞️ Processando resolução alta...','📸 Compondo cena fotográfica...'];
+  const phase3Msgs=['✒️ Montando tipografia...','🎨 Aplicando identidade visual...','💎 Compondo layout final...','⚡ Aplicando accent color...','✅ Exportando slide...'];
+  for(let i=0;i<slides.length;i++){
+    const s=slides[i];const pct=Math.round((i/slides.length)*100);progressFill.style.width=`${pct}%`;
+    const card=document.getElementById(`slideCard_${i}`);if(card){card.style.opacity='0.5';card.style.outline='2px solid var(--magenta)';}
+    try{
+      const funcao=s.funcao||(i===0?'CAPA':i===slides.length-1?'ASSINATURA':'CONTEÚDO');
+      const heading=s.heading||s.textos?.[0]?.texto||'';const body=s.body||s.textos?.[1]?.texto||'';
+      let finalUrl=null,finalPngB64=null;
+      if(engine==='gpt'){
+        statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase1Msgs[i%phase1Msgs.length]}`;
+        await new Promise(r=>setTimeout(r,50));
+        statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase2Msgs[i%phase2Msgs.length]}`;
+        const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading,body,slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||''})});
+        const slideData=await slideRes.json();if(slideData.error)throw new Error(slideData.error);
+        const photoUrl=slideData.url||(slideData.b64?`data:image/png;base64,${slideData.b64}`:null);const designMeta=slideData.designMeta;
+        if(!photoUrl||!designMeta)throw new Error('Foto ou metadados não retornados');
+        statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase3Msgs[i%phase3Msgs.length]}`;
+        finalPngB64=await SlideRenderer.renderSlide(photoUrl,designMeta);
+        if(finalPngB64){try{const saveRes=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:finalPngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const saveData=await saveRes.json();if(saveData.url)finalUrl=saveData.url;}catch(e){console.warn('Save b64 failed:',e.message);}finalUrl=finalUrl||`data:image/png;base64,${finalPngB64}`;}
+        else{finalUrl=photoUrl;}
+      }else{
+        statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> &nbsp;${phase2Msgs[i%phase2Msgs.length]}`;
+        const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.marca;
+        const geminiPrompt=[`Premium Instagram carousel slide ${i+1}/${slides.length}.`,`Topic: "${topic}". Function: ${funcao}.`,`Brand colors: background ${brand.bg}, accent ${brand.accent}, white text.`,i===0?`COVER: cinematic hero image. MASSIVE heading: "${heading}". Last words in ${brand.accent}. Dark overlay.`:`Clean editorial layout. Bold heading "${heading}" — key words in ${brand.accent}. Body: "${body}".`,`Portrait 4:5. Professional quality.`].join(' ');
+        const r=await fetch('/api/gemini-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:geminiPrompt})});
+        const d=await r.json();const b64=d.b64||null;finalUrl=d.url||(b64?`data:image/png;base64,${b64}`:null);
+        if(b64&&contentId){try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,contentId,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}}
       }
-
       currentCarouselImages.push(finalUrl);
-
-      if (card && finalUrl) {
-        let img = card.querySelector('.slide-img');
-        if (!img) { img = document.createElement('img'); img.className = 'slide-img'; card.insertBefore(img, card.firstChild); }
-        img.style.opacity = '0'; img.src = finalUrl;
-        img.onload = () => { img.style.transition = 'opacity 0.5s ease'; img.style.opacity = '1'; };
-      }
-      if (card) { card.style.opacity = '1'; card.style.outline = '2px solid #10B981'; setTimeout(() => { if (card) card.style.outline = 'none'; }, 1800); }
-
-    } catch(e) {
-      console.error(`Slide ${i+1}:`, e);
-      currentCarouselImages.push(null);
-      if (card) { card.style.opacity = '1'; card.style.outline = '2px solid #EF4444'; }
-    }
+      if(card&&finalUrl){let img=card.querySelector('.slide-img');if(!img){img=document.createElement('img');img.className='slide-img';card.insertBefore(img,card.firstChild);}img.style.opacity='0';img.src=finalUrl;img.onload=()=>{img.style.transition='opacity 0.5s ease';img.style.opacity='1';};}
+      if(card){card.style.opacity='1';card.style.outline='2px solid #10B981';setTimeout(()=>{if(card)card.style.outline='none';},1800);}
+    }catch(e){console.error(`Slide ${i+1}:`,e);currentCarouselImages.push(null);if(card){card.style.opacity='1';card.style.outline='2px solid #EF4444';}}
   }
-
-  progressFill.style.width = '100%';
-  const ok = currentCarouselImages.filter(Boolean).length;
-  statusEl.innerHTML = `<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides compostos!</span>${ok < slides.length ? ` <span style="color:#EF4444;">(${slides.length-ok} falharam)</span>` : ''}`;
-  btn.disabled = false; btn.textContent = '🔄 Regenerar imagens';
-
-  if (currentCarouselData) currentCarouselData.imageUrls = currentCarouselImages.filter(Boolean);
-  // Salvar na biblioteca apenas URLs absolutas (não data:URLs que não persistem)
-  const validUrls = currentCarouselImages.filter(u => u && !u.startsWith('data:'));
-  const allUrls   = currentCarouselImages.filter(Boolean);
-  if (contentId && validUrls.length) {
-    try {
-      await fetch(`/api/content/${contentId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageUrls: validUrls, status: 'pendente' }) });
-      console.log(`[Library] ${validUrls.length} URLs salvas para contentId ${contentId}`);
-    } catch(e) { console.warn('PATCH imageUrls:', e); }
-  }
-  toast(`${ok} slides compostos com o novo motor de design! 🎨`, 'success');
-
-  if (autoPublishConfig) {
-    const { action, scheduledAt, caption, calendarPost } = autoPublishConfig;
-    await _autoPublishAfterImages({ action, scheduledAt, caption, contentId, calendarPost });
-  } else {
-    document.getElementById('publishPanel').classList.add('visible');
-    document.getElementById('carouselPreviewCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
+  progressFill.style.width='100%';
+  const ok=currentCarouselImages.filter(Boolean).length;
+  statusEl.innerHTML=`<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides compostos!</span>${ok<slides.length?` <span style="color:#EF4444;">(${slides.length-ok} falharam)</span>`:''}`;
+  btn.disabled=false;btn.textContent='🔄 Regenerar imagens';
+  if(currentCarouselData)currentCarouselData.imageUrls=currentCarouselImages.filter(Boolean);
+  const validUrls=currentCarouselImages.filter(u=>u&&!u.startsWith('data:'));
+  if(contentId&&validUrls.length){try{await fetch(`/api/content/${contentId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls:validUrls,status:'pendente'})});}catch(e){console.warn('PATCH imageUrls:',e);}}
+  toast(`${ok} slides compostos com o novo motor de design! 🎨`,'success');
+  if(autoPublishConfig){const{action,scheduledAt,caption,calendarPost}=autoPublishConfig;await _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost});}
+  else{document.getElementById('publishPanel').classList.add('visible');document.getElementById('carouselPreviewCard').scrollIntoView({behavior:'smooth',block:'nearest'});}
 }
 
 async function _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost}){
-  const imageUrls=currentCarouselImages.filter(Boolean);
-  if(!imageUrls.length){toast('Nenhuma imagem gerada para publicar.','error');return;}
+  const imageUrls=currentCarouselImages.filter(Boolean);if(!imageUrls.length){toast('Nenhuma imagem gerada para publicar.','error');return;}
   try{
     if(action==='now'){const r=await fetch('/api/instagram/carousel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls,caption,profile:currentProfile,contentId})});const d=await r.json();if(d.error)throw new Error(d.error);toast('✅ Carrossel publicado!','success');}
     else if(action==='schedule'&&scheduledAt){const r=await fetch('/api/instagram/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId,scheduledAt,profile:currentProfile,type:'carrossel',topic:calendarPost?.topic||'',caption,imageUrls})});const d=await r.json();if(d.error)throw new Error(d.error);toast(`📆 Agendado para ${formatDate(scheduledAt)}`,'success');}
@@ -1169,17 +1360,8 @@ async function publishCarouselDirect(){
   if(!caption)return toast('Adiciona uma legenda','error');
   btn.disabled=true;btn.textContent='⏳ A processar...';
   try{
-    if(action==='now'){
-      if(!imageUrls.length)return toast('Gera as imagens primeiro','error');
-      const r=await fetch('/api/instagram/carousel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls,caption,profile:currentProfile,contentId:currentCarouselContentId})});
-      const d=await r.json();if(d.error)throw new Error(d.error);
-      resultEl.innerHTML='<span style="color:#065F46;">✅ Publicado no Instagram!</span>';toast('Carrossel publicado! ✅','success');
-    }else{
-      const dt=document.getElementById('scheduleDateTime').value;if(!dt)return toast('Escolhe data e hora','error');
-      const r=await fetch('/api/instagram/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:currentCarouselContentId,scheduledAt:new Date(dt).toISOString(),profile:currentProfile,type:'carrossel',topic:currentCarouselData?.title,caption,imageUrls})});
-      const d=await r.json();if(d.error)throw new Error(d.error);
-      resultEl.innerHTML=`<span style="color:#1E40AF;">📆 Agendado para ${formatDate(new Date(dt).toISOString())}</span>`;toast('Agendado!','success');
-    }
+    if(action==='now'){if(!imageUrls.length)return toast('Gera as imagens primeiro','error');const r=await fetch('/api/instagram/carousel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls,caption,profile:currentProfile,contentId:currentCarouselContentId})});const d=await r.json();if(d.error)throw new Error(d.error);resultEl.innerHTML='<span style="color:#065F46;">✅ Publicado no Instagram!</span>';toast('Carrossel publicado! ✅','success');}
+    else{const dt=document.getElementById('scheduleDateTime').value;if(!dt)return toast('Escolhe data e hora','error');const r=await fetch('/api/instagram/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:currentCarouselContentId,scheduledAt:new Date(dt).toISOString(),profile:currentProfile,type:'carrossel',topic:currentCarouselData?.title,caption,imageUrls})});const d=await r.json();if(d.error)throw new Error(d.error);resultEl.innerHTML=`<span style="color:#1E40AF;">📆 Agendado para ${formatDate(new Date(dt).toISOString())}</span>`;toast('Agendado!','success');}
   }catch(e){toast('Erro: '+e.message,'error');resultEl.innerHTML=`<span style="color:#EF4444;">❌ ${e.message}</span>`;}
   finally{btn.disabled=false;btn.textContent='📤 Publicar carrossel';}
 }
@@ -1247,12 +1429,7 @@ async function suggestPhotos(){
 }
 
 /* ── CALENDÁRIO ── */
-function initCalendarMonths(){
-  const sel=document.getElementById('calMonth');
-  ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{
-    const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);
-  });
-}
+function initCalendarMonths(){const sel=document.getElementById('calMonth');['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);});}
 function saveCalendarToLocal(calendarData,profile,month,year){try{localStorage.setItem(`calendar_${profile}_${year}_${month}`,JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()}));}catch(e){console.warn('localStorage save failed:',e);}}
 function loadCalendarFromLocal(profile,month,year){try{const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}return null;}catch(e){return null;}}
 
@@ -1263,18 +1440,13 @@ async function generateCalendar(){
   try{
     const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});
     const d=await r.json();if(d.error)throw new Error(d.error);
-    console.log('[Calendar] Amostra recebida:', JSON.stringify((d.calendar||[]).slice(0,2)));
     currentCalendarData=d;saveCalendarToLocal(d.calendar,currentProfile,month,year);
     renderCalendar(d,month,year);document.getElementById('calendarPreviewBar').style.display='block';toast('Sugestão gerada! Revê e aprova.','info');
   }catch(e){toast('Erro: '+e.message,'error');}
   finally{document.getElementById('calendarLoading').style.display='none';btn.disabled=false;btn.textContent='✨ Gerar calendário';}
 }
 
-function approveCalendar(){
-  const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
-  calendarApproved=true;document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='inline-block';
-  if(currentCalendarData)saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);toast('Calendário aprovado e salvo!','success');
-}
+function approveCalendar(){const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);calendarApproved=true;document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='inline-block';if(currentCalendarData)saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);toast('Calendário aprovado e salvo!','success');}
 function rejectCalendar(){document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calendarContainer').style.display='none';currentCalendarData=null;calendarApproved=false;toast('Calendário rejeitado.','info');}
 
 async function loadSavedCalendar(){
@@ -1285,10 +1457,8 @@ async function loadSavedCalendar(){
 }
 
 async function _refreshCalendarFromServer(month,year){
-  try{
-    const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);const d=await r.json();
-    if(d.found&&d.calendar?.length){currentCalendarData={calendar:d.calendar};saveCalendarToLocal(d.calendar,currentProfile,month,year);if(!calendarApproved){renderCalendar(currentCalendarData,month,year);calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('calendarPreviewBar').style.display='none';toast('Calendário anterior carregado.','info');}}
-  }catch(e){console.warn('server calendar load:',e);}
+  try{const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);const d=await r.json();if(d.found&&d.calendar?.length){currentCalendarData={calendar:d.calendar};saveCalendarToLocal(d.calendar,currentProfile,month,year);if(!calendarApproved){renderCalendar(currentCalendarData,month,year);calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('calendarPreviewBar').style.display='none';toast('Calendário anterior carregado.','info');}}}
+  catch(e){console.warn('server calendar load:',e);}
 }
 
 function renderCalendar(data,month,year){
@@ -1301,7 +1471,6 @@ function renderCalendar(data,month,year){
   const today=new Date();const daysInMonth=new Date(year,month,0).getDate();
   const postsByDay={};
   (data.calendar||[]).forEach(entry=>{const dayKey=Number(entry.day);if(!isNaN(dayKey))postsByDay[dayKey]=entry.posts||[];});
-  console.log('[Calendar] postsByDay keys:', Object.keys(postsByDay));
   for(let d=1;d<=daysInMonth;d++){
     const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d;
     const posts=postsByDay[d]||[];
@@ -1429,13 +1598,454 @@ function saveCMToLibrary(){showSection('library',null);loadLibrary();toast('A ab
 function renderCMHistory(){if(!cmSessionHistory.length)return;document.getElementById('cmHistory').style.display='block';document.getElementById('cmHistoryList').innerHTML=cmSessionHistory.map((h,i)=>{const t=CM_TYPES[h.tipo]||{emoji:'📄',label:h.tipo};return`<button onclick="loadCMFromHistory(${i})" style="display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--light);border-radius:10px;padding:10px 14px;text-align:left;cursor:pointer;width:100%;"><span style="font-size:18px;">${t.emoji}</span><div><div style="font-size:13px;font-weight:700;color:var(--dark);">${t.label}</div><div style="font-size:11px;color:var(--mid);">${h.tema}</div><div style="font-size:10px;color:#CBD5E1;">${h.ts.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}</div></div></button>`;}).join('');}
 function loadCMFromHistory(i){const h=cmSessionHistory[i];if(!h)return;cmSelectedType=h.tipo;cmCurrentSlides=h.slides;cmCurrentSlideIdx=0;renderCMResult({tipo:h.tipo,tema:h.tema,slides:h.slides});}
 
+// ── Estado do manual ──────────────────────────────────────────────────────
+let manualCurrentProfile = 'marca';  // perfil em edição na seção manual
+let manualProfileData    = {};       // cache de todos os perfis
+let manualDirty          = false;    // há alterações não salvas?
+
+// Todos os tipos de conteúdo possíveis com metadados
+const ALL_CONTENT_TYPES = [
+  { id: 'tendencia',    emoji: '📡', label: 'Análise de Tendência', tipos: ['pessoal', 'corporativa'] },
+  { id: 'case',         emoji: '🏆', label: 'Case de Sucesso',       tipos: ['pessoal', 'corporativa'] },
+  { id: 'educativo',    emoji: '📚', label: 'Educativo / Framework', tipos: ['pessoal', 'corporativa'] },
+  { id: 'comparacao',   emoji: '⚖️', label: 'Comparação',           tipos: ['corporativa'] },
+  { id: 'lista',        emoji: '📋', label: 'Lista Valiosa',         tipos: ['pessoal', 'corporativa'] },
+  { id: 'prova_social', emoji: '🌟', label: 'Prova Social',          tipos: ['pessoal', 'corporativa'] },
+  { id: 'oferta',       emoji: '🎯', label: 'Oferta',                tipos: ['corporativa'] },
+  { id: 'dump',         emoji: '📸', label: 'Dump / Bastidores',     tipos: ['pessoal'] },
+];
+
+// ── Inicialização da seção ────────────────────────────────────────────────
+async function initManualSection() {
+  try {
+    const r = await fetch('/api/profiles');
+    manualProfileData = await r.json();
+  } catch(e) {
+    console.warn('Profiles API indisponível, usando defaults locais');
+    manualProfileData = buildLocalProfileDefaults();
+  }
+  renderManualProfileSwitcher();
+  loadManualProfile(currentProfile); // carrega o perfil activo global
+}
+
+function buildLocalProfileDefaults() {
+  return {
+    marca: {
+      profileId: 'marca', tipo: 'corporativa', nome: 'Case Aceleradora',
+      handle: '@caseaceleradora', niche: 'Aceleração de negócios digitais, B2B, growth hacking',
+      bio: 'Aceleramos negócios digitais com estratégia, dados e criatividade.',
+      tom: 'Autoritário, estratégico, direto. Premium B2B.',
+      proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como'],
+      pilares: ['Estratégia de negócio', 'Cases de sucesso', 'Tendências de mercado'],
+      publicoAlvo: 'Fundadores, CEOs e diretores de empresas digitais em fase de escala',
+      cta: 'Comente "CASE" que nossa equipe te chama.',
+      referencias: ['Monocle', 'FT Weekend', 'McKinsey Digital'],
+      tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
+      observacoes: '',
+    },
+    pessoal: {
+      profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
+      handle: '@analuisa.moutinho', niche: 'Marca pessoal, construção de vida intencional',
+      bio: 'Construindo a própria vida com intenção. Sem fórmulas, sem guru.',
+      tom: 'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional.',
+      proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme', 'Coach', 'Sucesso'],
+      pilares: ['Construção pessoal', 'Estratégia de vida', 'Estética de vida real', 'Marca pessoal'],
+      publicoAlvo: 'Mulheres 25-38 anos construindo identidade profissional e vida própria',
+      cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',
+      referencias: ['Sofia Coppola', 'Lo-fi diary aesthetic', 'Candid editorial'],
+      tiposConteudo: ['tendencia', 'case', 'educativo', 'lista', 'dump', 'prova_social'],
+      observacoes: 'Não é coach, não é guru. É uma mulher que observa o mundo de jeito diferente.',
+    },
+    virttus: {
+      profileId: 'virttus', tipo: 'corporativa', nome: 'Virttus',
+      handle: '@virttus', niche: 'Tech B2B, transformação digital, precision software',
+      bio: 'Tecnologia de precisão para empresas que não aceitam mediano.',
+      tom: 'Técnico, forward-looking, preciso. B2B premium.',
+      proibidos: ['Incrível', 'Revolucionário', 'Disruptivo', 'Mudando o jogo'],
+      pilares: ['Tecnologia e inovação', 'Casos de uso B2B', 'Data & Analytics'],
+      publicoAlvo: 'CTOs, gerentes de TI e diretores de operações',
+      cta: 'Quer saber como aplicar isso? Nos chame no direct.',
+      referencias: ['Bloomberg Businessweek', 'Wired', 'MIT Tech Review'],
+      tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'oferta'],
+      observacoes: '',
+    },
+  };
+}
+
+// ── Render: switcher de perfis na seção ──────────────────────────────────
+function renderManualProfileSwitcher() {
+  const el = document.getElementById('manualProfileSwitcher');
+  if (!el) return;
+  const names = { marca: 'Case Aceleradora', pessoal: 'Ana Moutinho', virttus: 'Virttus' };
+  el.innerHTML = Object.keys(manualProfileData).map(id => {
+    const p = manualProfileData[id];
+    const label = p.nome || names[id] || id;
+    const active = id === manualCurrentProfile ? 'active' : '';
+    return `<button class="manual-ps-btn ${active}" onclick="loadManualProfile('${id}')">
+      <div class="manual-ps-dot"></div>
+      <span>${label}</span>
+      <span style="font-size:.68rem;color:var(--mid);">${p.handle || ''}</span>
+    </button>`;
+  }).join('');
+}
+
+// ── Carregar perfil no formulário ────────────────────────────────────────
+function loadManualProfile(profileId) {
+  manualCurrentProfile = profileId;
+  manualDirty = false;
+
+  // Atualizar estado visual do switcher
+  document.querySelectorAll('.manual-ps-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.includes(manualProfileData[profileId]?.nome || profileId));
+  });
+  renderManualProfileSwitcher(); // re-render com active correto
+
+  const p = manualProfileData[profileId];
+  if (!p) return;
+
+  // Campos texto
+  setVal('manualNome',       p.nome || '');
+  setVal('manualHandle',     p.handle || '');
+  setVal('manualNiche',      p.niche || '');
+  setVal('manualBio',        p.bio || '');
+  setVal('manualPublico',    p.publicoAlvo || '');
+  setVal('manualTom',        p.tom || '');
+  setVal('manualCta',        p.cta || '');
+  setVal('manualObservacoes', p.observacoes || '');
+
+  // Tipo de marca
+  setManualTipoUI(p.tipo || 'corporativa');
+
+  // Pilares
+  renderManualTags('manualPilaresContainer', p.pilares || [], 'pilar', removeManualPilar);
+
+  // Proibidos
+  renderManualTags('manualProibidosContainer', p.proibidos || [], 'proibido', removeManualProibido);
+
+  // Referências
+  renderManualTags('manualRefContainer', p.referencias || [], 'ref', removeManualRef);
+
+  // Tipos de conteúdo
+  renderTiposGrid(p.tipo || 'corporativa', p.tiposConteudo || []);
+
+  // PDF status
+  if (p.pdfUploadedAt) {
+    const zone = document.getElementById('manualPdfZone');
+    const txt  = document.getElementById('manualPdfText');
+    const sub  = document.getElementById('manualPdfSub');
+    if (zone) zone.classList.add('has-file');
+    if (txt)  txt.textContent = '✅ PDF carregado';
+    if (sub)  sub.textContent = `Carregado em ${new Date(p.pdfUploadedAt).toLocaleDateString('pt-PT')} — clica para substituir`;
+  }
+
+  // Status
+  updateManualSaveStatus(p.updatedAt ? `Salvo em ${new Date(p.updatedAt).toLocaleString('pt-PT')}` : 'Nunca salvo');
+
+  // Adicionar listeners de dirty
+  setTimeout(attachManualDirtyListeners, 100);
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+
+// ── Tipo de marca UI ─────────────────────────────────────────────────────
+function setManualTipo(tipo) {
+  setManualTipoUI(tipo);
+  markManualDirty();
+  // Rerender tipos de conteúdo com filtro de tipo
+  const p = manualProfileData[manualCurrentProfile];
+  renderTiposGrid(tipo, p?.tiposConteudo || []);
+}
+
+function setManualTipoUI(tipo) {
+  document.querySelectorAll('.manual-tipo-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tipo === tipo);
+  });
+  const badge = document.getElementById('manualTipoBadge');
+  if (badge) {
+    badge.className = `manual-tipo-badge ${tipo}`;
+    badge.textContent = tipo === 'pessoal' ? '👤 Marca Pessoal' : '🏢 Marca Corporativa';
+  }
+}
+
+// ── Grid de tipos de conteúdo ─────────────────────────────────────────────
+function renderTiposGrid(tipoMarca, selected) {
+  const grid   = document.getElementById('manualTiposGrid');
+  const legend = document.getElementById('manualTiposLegend');
+  if (!grid) return;
+
+  // Filtrar por tipo de marca (mostrar todos mas destacar os recomendados)
+  grid.innerHTML = ALL_CONTENT_TYPES.map(t => {
+    const isSelected    = selected.includes(t.id);
+    const isRecommended = t.tipos.includes(tipoMarca);
+    return `<button 
+      class="manual-tipo-check ${isSelected ? 'active' : ''}" 
+      data-tipo-id="${t.id}"
+      onclick="toggleTipoConteudo('${t.id}', this)"
+      title="${isRecommended ? 'Recomendado para ' + (tipoMarca === 'pessoal' ? 'marca pessoal' : 'marca corporativa') : 'Não recomendado para este tipo de marca'}">
+      <div class="manual-tipo-check-dot"></div>
+      <span>${t.emoji} ${t.label}</span>
+      ${!isRecommended ? '<span style="font-size:.6rem;opacity:.4;margin-left:auto;">↗ outro</span>' : ''}
+    </button>`;
+  }).join('');
+
+  if (legend) {
+    const recCount = ALL_CONTENT_TYPES.filter(t => t.tipos.includes(tipoMarca)).length;
+    legend.textContent = `${selected.length} tipos activos · ${recCount} recomendados para ${tipoMarca === 'pessoal' ? 'marca pessoal' : 'marca corporativa'}`;
+  }
+}
+
+function toggleTipoConteudo(tipoId, btn) {
+  btn.classList.toggle('active');
+  markManualDirty();
+}
+
+function getSelectedTipos() {
+  return Array.from(document.querySelectorAll('.manual-tipo-check.active'))
+    .map(b => b.dataset.tipoId);
+}
+
+// ── Tags: Pilares ─────────────────────────────────────────────────────────
+function renderManualTags(containerId, items, className, removeFn) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = items.map((item, i) =>
+    `<span class="manual-tag ${className}">
+      ${item}
+      <button class="manual-tag-remove" onclick="${removeFn.name}(${i})">×</button>
+    </span>`
+  ).join('');
+}
+
+function getTagsFromContainer(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} .manual-tag`))
+    .map(el => el.textContent.replace('×', '').trim())
+    .filter(Boolean);
+}
+
+function addManualPilar() {
+  const input = document.getElementById('manualPilarInput');
+  if (!input?.value.trim()) return;
+  const current = getTagsFromContainer('manualPilaresContainer');
+  current.push(input.value.trim());
+  renderManualTags('manualPilaresContainer', current, 'pilar', removeManualPilar);
+  input.value = '';
+  markManualDirty();
+}
+
+function removeManualPilar(idx) {
+  const items = getTagsFromContainer('manualPilaresContainer');
+  items.splice(idx, 1);
+  renderManualTags('manualPilaresContainer', items, 'pilar', removeManualPilar);
+  markManualDirty();
+}
+
+function addManualProibido() {
+  const input = document.getElementById('manualProibidoInput');
+  if (!input?.value.trim()) return;
+  const current = getTagsFromContainer('manualProibidosContainer');
+  current.push(input.value.trim());
+  renderManualTags('manualProibidosContainer', current, 'proibido', removeManualProibido);
+  input.value = '';
+  markManualDirty();
+}
+
+function removeManualProibido(idx) {
+  const items = getTagsFromContainer('manualProibidosContainer');
+  items.splice(idx, 1);
+  renderManualTags('manualProibidosContainer', items, 'proibido', removeManualProibido);
+  markManualDirty();
+}
+
+function addManualRef() {
+  const input = document.getElementById('manualRefInput');
+  if (!input?.value.trim()) return;
+  const current = getTagsFromContainer('manualRefContainer');
+  current.push(input.value.trim());
+  renderManualTags('manualRefContainer', current, 'ref', removeManualRef);
+  input.value = '';
+  markManualDirty();
+}
+
+function removeManualRef(idx) {
+  const items = getTagsFromContainer('manualRefContainer');
+  items.splice(idx, 1);
+  renderManualTags('manualRefContainer', items, 'ref', removeManualRef);
+  markManualDirty();
+}
+
+// ── Dirty state ──────────────────────────────────────────────────────────
+function attachManualDirtyListeners() {
+  const ids = ['manualNome','manualHandle','manualNiche','manualBio','manualPublico','manualTom','manualCta','manualObservacoes'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', markManualDirty, { once: false });
+  });
+}
+
+function markManualDirty() {
+  if (!manualDirty) {
+    manualDirty = true;
+    updateManualSaveStatus('● Alterações não salvas');
+  }
+}
+
+function updateManualSaveStatus(msg) {
+  const el = document.getElementById('manualSaveStatus');
+  if (el) el.textContent = msg;
+}
+
+// ── Salvar perfil ─────────────────────────────────────────────────────────
+async function saveManualProfile() {
+  const btn = document.getElementById('btnSaveManual');
+  btn.disabled = true;
+  btn.textContent = '⏳ Salvando...';
+
+  // Coletar tipo da marca
+  const tipoBtn = document.querySelector('.manual-tipo-btn.active');
+  const tipo    = tipoBtn?.dataset.tipo || 'corporativa';
+
+  const updated = {
+    tipo,
+    nome:          document.getElementById('manualNome')?.value.trim()        || '',
+    handle:        document.getElementById('manualHandle')?.value.trim()      || '',
+    niche:         document.getElementById('manualNiche')?.value.trim()       || '',
+    bio:           document.getElementById('manualBio')?.value.trim()         || '',
+    publicoAlvo:   document.getElementById('manualPublico')?.value.trim()     || '',
+    tom:           document.getElementById('manualTom')?.value.trim()         || '',
+    cta:           document.getElementById('manualCta')?.value.trim()         || '',
+    observacoes:   document.getElementById('manualObservacoes')?.value.trim() || '',
+    pilares:       getTagsFromContainer('manualPilaresContainer'),
+    proibidos:     getTagsFromContainer('manualProibidosContainer'),
+    referencias:   getTagsFromContainer('manualRefContainer'),
+    tiposConteudo: getSelectedTipos(),
+  };
+
+  // Atualizar cache local imediatamente
+  manualProfileData[manualCurrentProfile] = {
+    ...manualProfileData[manualCurrentProfile],
+    ...updated,
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    const r = await fetch(`/api/profiles/${manualCurrentProfile}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    // Sync com o BRAND_IDENTITIES no server — via atualizar a sidebar
+    manualDirty = false;
+    updateManualSaveStatus(`✅ Salvo em ${new Date().toLocaleString('pt-PT')}`);
+    toast('Manual salvo! A IA usa isso na próxima geração.', 'success');
+
+    // Atualizar nome do perfil na sidebar se mudou
+    syncProfileNameToSidebar(manualCurrentProfile, updated.nome, updated.handle);
+
+  } catch(e) {
+    // Salvo apenas localmente se servidor não responder
+    manualDirty = false;
+    updateManualSaveStatus(`✅ Salvo localmente`);
+    toast('Salvo localmente (servidor offline).', 'info');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '💾 Salvar manual';
+  }
+}
+
+function syncProfileNameToSidebar(profileId, nome, handle) {
+  // Atualiza o texto dos botões da sidebar para refletir o novo nome
+  document.querySelectorAll('.profile-btn').forEach(btn => {
+    const text = btn.textContent;
+    // Heurística: encontrar pelo handle ou posição
+    if (btn.onclick?.toString().includes(`'${profileId}'`)) {
+      const nameEl   = btn.querySelector('div > div:first-child');
+      const handleEl = btn.querySelector('.profile-handle');
+      if (nameEl && nome)     nameEl.childNodes[nameEl.childNodes.length - 1].textContent = nome;
+      if (handleEl && handle) handleEl.textContent = handle;
+    }
+  });
+}
+
+// ── Descartar alterações ──────────────────────────────────────────────────
+function resetManualForm() {
+  if (!manualDirty) return;
+  if (!confirm('Descartar todas as alterações não salvas?')) return;
+  loadManualProfile(manualCurrentProfile);
+}
+
+// ── Upload PDF via seção manual ───────────────────────────────────────────
+async function uploadManualFromProfile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const zone    = document.getElementById('manualPdfZone');
+  const txtEl   = document.getElementById('manualPdfText');
+  const subEl   = document.getElementById('manualPdfSub');
+  const statusEl = document.getElementById('manualPdfStatus');
+
+  if (txtEl) txtEl.textContent = '⏳ A carregar...';
+
+  const fd = new FormData();
+  fd.append('pdf', file);
+  fd.append('profile', manualCurrentProfile);
+
+  try {
+    const r = await fetch('/api/manual/upload', { method: 'POST', body: fd });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+
+    if (zone)    zone.classList.add('has-file');
+    if (txtEl)   txtEl.textContent = `✅ ${file.name}`;
+    if (subEl)   subEl.textContent = `${(file.size / 1024 / 1024).toFixed(1)} MB · Carregado agora — clica para substituir`;
+    if (statusEl) statusEl.innerHTML = '<span style="color:#065F46;">PDF disponível para a IA</span>';
+
+    // Atualizar cache
+    if (manualProfileData[manualCurrentProfile]) {
+      manualProfileData[manualCurrentProfile].pdfUploadedAt = new Date().toISOString();
+    }
+
+    toast('PDF do manual carregado! ✅', 'success');
+  } catch(e) {
+    if (txtEl) txtEl.textContent = 'Clica para carregar o PDF do cliente';
+    if (statusEl) statusEl.innerHTML = `<span style="color:#EF4444;">Erro: ${e.message}</span>`;
+    toast('Erro ao carregar PDF: ' + e.message, 'error');
+  }
+}
+
+// ── Expor contexto do manual para geradores de conteúdo ──────────────────
+// Esta função é chamada pelos endpoints de geração para enriquecer o prompt
+function getManualContextForPrompt(profileId) {
+  const p = manualProfileData[profileId];
+  if (!p) return '';
+
+  const lines = [
+    `TIPO DE MARCA: ${p.tipo === 'pessoal' ? 'Marca Pessoal' : 'Marca Corporativa'}`,
+    p.niche        ? `NICHO: ${p.niche}`                                               : '',
+    p.bio          ? `BIO: ${p.bio}`                                                   : '',
+    p.publicoAlvo  ? `PÚBLICO-ALVO: ${p.publicoAlvo}`                                 : '',
+    p.tom          ? `TOM DE VOZ: ${p.tom}`                                            : '',
+    p.pilares?.length    ? `PILARES: ${p.pilares.join(', ')}`                          : '',
+    p.proibidos?.length  ? `TERMOS PROIBIDOS (nunca usar): ${p.proibidos.join(', ')}`  : '',
+    p.referencias?.length ? `REFERÊNCIAS VISUAIS: ${p.referencias.join(', ')}`         : '',
+    p.cta          ? `CTA PADRÃO: ${p.cta}`                                            : '',
+    p.observacoes  ? `OBSERVAÇÕES: ${p.observacoes}`                                   : '',
+  ].filter(Boolean);
+
+  return lines.join('\n');
+}
+
 /* ── INIT ── */
 initCalendarMonths();
 initDesignStyles();
 loadDashboard();
-// Drag scroll precisa de DOM pronto e pode ser reiniciado ao abrir a secção carousel
-document.addEventListener('DOMContentLoaded', () => { initSlidesDragScroll(); });
-setTimeout(initSlidesDragScroll, 500);
+document.addEventListener('DOMContentLoaded',()=>{initSlidesDragScroll();});
+setTimeout(initSlidesDragScroll,500);
 </script>
 </body>
 </html>
