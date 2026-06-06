@@ -1424,6 +1424,173 @@ JSON:
   }
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TENDÊNCIAS — Google Trends + Twitter/X Trends
+// ═══════════════════════════════════════════════════════════════════════════
+
+const NICHE_CONFIG = {
+  marca:   'negócios, empresas, marketing digital, growth hacking, empreendedorismo, vendas B2B, liderança empresarial, startups, gestão',
+  pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida, autoconhecimento, redes sociais',
+  virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança, cloud, automação empresarial',
+};
+
+const trendsCache = {};
+const TRENDS_TTL  = 60 * 60 * 1000; // 1h
+
+function parseGoogleTrendsRSS(xml) {
+  const items = [];
+  const itemRx = /<item>([\s\S]*?)<\/item>/g;
+  let m;
+  while ((m = itemRx.exec(xml)) !== null) {
+    const block   = m[1];
+    const title   = (/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/.exec(block) || /<title>([\s\S]*?)<\/title>/.exec(block) || [])[1] || '';
+    const traffic = (/<ht:approx_traffic>([\s\S]*?)<\/ht:approx_traffic>/.exec(block) || [])[1] || '';
+    const t = title.replace(/&amp;/g,'&').replace(/&#39;/g,"'").trim();
+    if (t) items.push({ termo: t, volume: traffic.trim(), fonte: 'Google Trends' });
+  }
+  return items;
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = 9000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  try {
+    const r = await fetch(url, { ...options, signal: controller.signal });
+    return r;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function getGoogleTrends() {
+  try {
+    const r = await fetchWithTimeout(
+      'https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR',
+      { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' } }
+    );
+    const xml = await r.text();
+    return parseGoogleTrendsRSS(xml).slice(0, 20);
+  } catch(e) {
+    console.warn('[Trends] Google Trends falhou:', e.message);
+    return [];
+  }
+}
+
+async function getTwitterTrends() {
+  const token = process.env.TWITTER_BEARER_TOKEN;
+  if (!token) return [];
+  try {
+    // WOEID 23424768 = Brasil
+    const r = await fetchWithTimeout(
+      'https://api.twitter.com/1.1/trends/place.json?id=23424768',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const data = await r.json();
+    if (!Array.isArray(data) || !data[0]?.trends) return [];
+    return data[0].trends
+      .filter(t => t.tweet_volume || t.name)
+      .slice(0, 20)
+      .map(t => ({
+        termo: t.name.replace(/^#/, ''),
+        volume: t.tweet_volume ? `${(t.tweet_volume/1000).toFixed(0)}k tweets` : '',
+        fonte: 'Twitter/X',
+      }));
+  } catch(e) {
+    console.warn('[Trends] Twitter Trends falhou:', e.message);
+    return [];
+  }
+}
+
+app.get('/api/trends', async (req, res) => {
+  try {
+    const { profile = 'marca', refresh } = req.query;
+    const now = Date.now();
+
+    if (refresh !== 'true' && trendsCache[profile] && (now - trendsCache[profile].ts) < TRENDS_TTL) {
+      return res.json({ ...trendsCache[profile].data, cached: true });
+    }
+
+    const account = getAccount(profile);
+    const nicho   = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
+    const manualNote = getManualText(profile);
+
+    const [googleTrends, twitterTrends] = await Promise.all([
+      getGoogleTrends(),
+      getTwitterTrends(),
+    ]);
+
+    const allTrends = [...googleTrends, ...twitterTrends];
+
+    if (!allTrends.length) {
+      return res.json({ trends: [], updatedAt: new Date().toISOString(), warning: 'Nenhuma fonte de tendências disponível neste momento.' });
+    }
+
+    const termosList = allTrends
+      .map((t, i) => `${i + 1}. [${t.fonte}] ${t.termo}${t.volume ? ` (${t.volume})` : ''}`)
+      .join('\n');
+
+    const prompt = `Você é estrategista de conteúdo para ${account.name}.
+Nicho: ${nicho}.
+${manualNote ? `Contexto do perfil:\n${manualNote}\n` : ''}
+Abaixo estão os termos que estão em alta agora no Google Trends e Twitter/X Brasil:
+
+${termosList}
+
+TAREFA:
+1. Identifique os 6 termos mais relevantes para o nicho "${nicho}".
+2. Para cada um, crie um card de oportunidade de pauta pronto para usar.
+
+Critério de seleção: o termo deve ter conexão real com o nicho — direta ou por analogia estratégica. Ignore termos sem nenhuma relação.
+
+Retorne APENAS JSON válido (sem markdown, sem texto extra):
+{
+  "trends": [
+    {
+      "termo": "o termo em alta",
+      "fonte": "Google Trends | Twitter/X | Ambos",
+      "volume": "ex: 50k tweets ou 200,000+ buscas",
+      "relevancia": "por que esse termo é oportuno para o perfil (1 frase direta)",
+      "angulo": "como transformar isso em pauta de Instagram para ${account.name} (2 frases, concreto)",
+      "tipo_ideal": "carrossel | post | reels",
+      "gancho": "headline já pronta para usar no post — no estilo da voz do perfil",
+      "urgencia": "alta | media | baixa"
+    }
+  ]
+}`;
+
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2800,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    const aiData = await aiRes.json();
+    if (aiData.error) throw new Error(aiData.error.message);
+
+    const parsed = extractJSON(aiData.content[0].text.trim());
+
+    const result = {
+      trends: parsed.trends || [],
+      updatedAt: new Date().toISOString(),
+      fontes: {
+        google: googleTrends.length > 0,
+        twitter: twitterTrends.length > 0,
+      },
+    };
+
+    trendsCache[profile] = { data: result, ts: now };
+    res.json(result);
+
+  } catch(err) {
+    console.error('[Trends]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Health ────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });

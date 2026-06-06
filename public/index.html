@@ -343,6 +343,34 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .roteiro-copy-btn{width:100%;padding:10px;border-radius:var(--radius);background:var(--gradient);color:#fff;border:none;font-family:var(--font-body);font-size:.85rem;font-weight:600;cursor:pointer;margin-top:12px;transition:opacity .15s;}
 .roteiro-copy-btn:hover{opacity:.9;}
 .roteiro-copy-confirm{text-align:center;font-size:.78rem;color:#065F46;margin-top:6px;display:none;}
+/* Tendências */
+.trend-card{background:var(--white);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow);border-left:4px solid var(--light);transition:box-shadow .2s,border-color .2s;display:flex;flex-direction:column;gap:10px;}
+.trend-card:hover{box-shadow:var(--shadow-lg);}
+.trend-card.urgencia-alta{border-left-color:var(--magenta);}
+.trend-card.urgencia-media{border-left-color:#F59E0B;}
+.trend-card.urgencia-baixa{border-left-color:#10B981;}
+.trend-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.trend-termo{font-family:var(--font-head);font-size:1rem;font-weight:800;color:var(--dark);}
+.trend-badges{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
+.trend-badge{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap;}
+.trend-badge.google{background:#EBF5FB;color:#1A5276;}
+.trend-badge.twitter{background:#E8F4FD;color:#0D6EFD;}
+.trend-badge.ambos{background:#EDE9FE;color:#6D28D9;}
+.trend-badge.urgencia-alta{background:rgba(228,0,124,.1);color:var(--magenta);}
+.trend-badge.urgencia-media{background:#FEF3C7;color:#92400E;}
+.trend-badge.urgencia-baixa{background:#D1FAE5;color:#065F46;}
+.trend-badge.tipo{background:var(--pale);color:var(--mid);border:1px solid var(--light);}
+.trend-volume{font-size:.7rem;color:var(--mid);}
+.trend-relevancia{font-size:.82rem;color:var(--mid);line-height:1.5;}
+.trend-gancho{background:linear-gradient(135deg,rgba(59,15,76,.04),rgba(228,0,124,.04));border:1.5px solid rgba(228,0,124,.15);border-radius:var(--radius);padding:10px 14px;font-size:.88rem;font-weight:600;color:var(--dark);line-height:1.4;font-style:italic;}
+.trend-angulo{font-size:.8rem;color:var(--dark);line-height:1.55;}
+.trend-actions{display:flex;gap:8px;margin-top:2px;}
+.trends-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
+.trends-meta{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.trends-fonte-pill{display:flex;align-items:center;gap:5px;font-size:.73rem;font-weight:600;padding:4px 10px;border-radius:99px;}
+.trends-fonte-pill.ok{background:#D1FAE5;color:#065F46;}
+.trends-fonte-pill.off{background:var(--light);color:var(--mid);opacity:.6;}
+.trends-update{font-size:.72rem;color:var(--mid);margin-left:auto;}
 ::-webkit-scrollbar{width:6px;height:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--light);border-radius:99px;}
@@ -366,6 +394,8 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     <button class="nav-item" data-section="criar" onclick="showSection('criar',this)"><span class="nav-icon">✏️</span>Criar</button>
     <div class="nav-section-title">Publicação</div>
     <button class="nav-item" data-section="calendar" onclick="showSection('calendar',this)"><span class="nav-icon">📅</span>Calendário</button>
+    <div class="nav-section-title">Inteligência</div>
+    <button class="nav-item" data-section="trends" onclick="showSection('trends',this)"><span class="nav-icon">📡</span>Tendências</button>
     <div class="nav-section-title">Recursos</div>
     <button class="nav-item" data-section="photos" onclick="showSection('photos',this)"><span class="nav-icon">📸</span>Banco de Fotos</button>
     <button class="nav-item" data-section="contentmachine" onclick="showSection('contentmachine',this)"><span class="nav-icon">⚡</span>Content Machine</button>
@@ -574,6 +604,28 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     </div>
   </section>
 
+  <!-- TENDÊNCIAS -->
+  <section class="section" id="section-trends">
+    <div class="section-header">
+      <h2>📡 Tendências</h2>
+      <p>O que está em alta agora no Google Trends e Twitter/X Brasil — filtrado pelo nicho do perfil activo.</p>
+    </div>
+    <div class="trends-meta" id="trendsMeta" style="display:none;">
+      <span class="trends-fonte-pill" id="trendsGooglePill">⬤ Google Trends</span>
+      <span class="trends-fonte-pill" id="trendsTwitterPill">⬤ Twitter/X</span>
+      <span class="trends-update" id="trendsUpdatedAt"></span>
+      <button class="btn btn-secondary btn-sm" onclick="loadTrends(true)" style="margin-left:4px;">🔄 Atualizar</button>
+    </div>
+    <div id="trendsLoading" class="loading" style="display:none;"><div class="spinner"></div>A monitorar tendências para este perfil...</div>
+    <div id="trendsError" style="display:none;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:var(--radius);padding:14px 18px;font-size:.85rem;color:#991B1B;margin-bottom:16px;"></div>
+    <div class="trends-grid" id="trendsGrid"></div>
+    <div id="trendsEmpty" style="display:none;text-align:center;padding:48px 0;color:var(--mid);">
+      <div style="font-size:2.5rem;margin-bottom:10px;">📡</div>
+      <div style="font-weight:700;margin-bottom:4px;">Nenhuma tendência encontrada para este nicho agora.</div>
+      <div style="font-size:.82rem;">Tenta atualizar ou volta mais tarde.</div>
+    </div>
+  </section>
+
   <!-- CONTENT MACHINE -->
   <section class="section" id="section-contentmachine">
     <div class="section-header"><h2>⚡ Content Machine</h2><p>Escolhe o tipo, insere o tema — a IA gera a copy ou o roteiro completo.</p></div>
@@ -683,9 +735,10 @@ function showSection(id,navBtn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   const t=document.getElementById('section-'+id);if(t)t.classList.add('active');
   setNavActive(id,navBtn);
-  const titles={dashboard:'Dashboard',library:'Biblioteca',criar:'Criar',carousel:'Carrossel',feed:'Post Feed',roteiro:'Roteiro de Reels',calendar:'Calendário',photos:'Banco de Fotos',contentmachine:'Content Machine',manual:'Manual do Perfil'};
+  const titles={dashboard:'Dashboard',library:'Biblioteca',criar:'Criar',carousel:'Carrossel',feed:'Post Feed',roteiro:'Roteiro de Reels',calendar:'Calendário',trends:'Tendências',photos:'Banco de Fotos',contentmachine:'Content Machine',manual:'Manual do Perfil'};
   document.getElementById('topbarTitle').textContent=titles[id]||id;
   if(id==='calendar')setTimeout(loadSavedCalendar,100);
+  if(id==='trends')loadTrends();
   if(id==='contentmachine')renderCMTypeSelector();
   if(id==='dashboard')loadDashboard();
   if(id==='library')loadLibrary();
@@ -696,6 +749,7 @@ function showSection(id,navBtn){
 function setNavActive(id,btn){document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');else{const m=document.querySelector(`.nav-item[data-section="${id}"]`);if(m)m.classList.add('active');}}
 function setProfile(profile,btn){
   currentProfile=profile;
+  trendsLastProfile=null;
   document.querySelectorAll('.profile-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const names={marca:'Case Aceleradora',pessoal:'Ana Moutinho',virttus:'Virttus'};
@@ -889,6 +943,124 @@ async function generateContentMachine(){
     else{cmCurrentSlides=d.slides||d.slidesNormalizados||[];cmCurrentSlideIdx=0;renderCMResult(d);}
   }catch(e){errEl.textContent='Erro: '+e.message;errEl.style.display='block';}
   finally{clearInterval(interval);btn.disabled=false;btn.textContent='⚡ Gerar copy';}
+}
+
+// ── Tendências ──────────────────────────────────────────────────────────
+let trendsLastProfile = null;
+
+async function loadTrends(forceRefresh = false) {
+  const grid    = document.getElementById('trendsGrid');
+  const loading = document.getElementById('trendsLoading');
+  const errEl   = document.getElementById('trendsError');
+  const empty   = document.getElementById('trendsEmpty');
+  const meta    = document.getElementById('trendsMeta');
+
+  if (!forceRefresh && trendsLastProfile === currentProfile && grid.children.length > 0) return;
+
+  grid.innerHTML = '';
+  errEl.style.display = 'none';
+  empty.style.display = 'none';
+  meta.style.display  = 'none';
+  loading.style.display = 'flex';
+
+  try {
+    const url = `/api/trends?profile=${currentProfile}${forceRefresh ? '&refresh=true' : ''}`;
+    const r   = await fetch(url);
+    const d   = await r.json();
+    loading.style.display = 'none';
+
+    if (d.error) { errEl.textContent = 'Erro: ' + d.error; errEl.style.display = 'block'; return; }
+
+    if (d.warning) { errEl.textContent = d.warning; errEl.style.display = 'block'; }
+
+    // Fontes pill
+    const gPill = document.getElementById('trendsGooglePill');
+    const tPill = document.getElementById('trendsTwitterPill');
+    gPill.className = 'trends-fonte-pill ' + (d.fontes?.google ? 'ok' : 'off');
+    tPill.className = 'trends-fonte-pill ' + (d.fontes?.twitter ? 'ok' : 'off');
+    const upd = document.getElementById('trendsUpdatedAt');
+    if (d.updatedAt) {
+      const dt = new Date(d.updatedAt);
+      upd.textContent = 'Atualizado às ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    }
+    meta.style.display = 'flex';
+
+    if (!d.trends || d.trends.length === 0) { empty.style.display = 'block'; return; }
+
+    trendsLastProfile = currentProfile;
+    d.trends.forEach(t => {
+      const card = renderTrendCard(t);
+      grid.appendChild(card);
+    });
+  } catch(e) {
+    loading.style.display = 'none';
+    errEl.textContent = 'Erro ao carregar tendências: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function renderTrendCard(t) {
+  const urgClass = { alta: 'urgencia-alta', media: 'urgencia-media', baixa: 'urgencia-baixa' }[t.urgencia] || '';
+  const urgLabel = { alta: '🔥 Alta', media: '⚡ Média', baixa: '🌱 Baixa' }[t.urgencia] || t.urgencia;
+  const tipoIcon = { carrossel: '🎠', post: '🖼️', reels: '🎬' }[t.tipo_ideal] || '📄';
+  const fonteClass = { 'Google Trends': 'google', 'Twitter/X': 'twitter', 'Ambos': 'ambos' }[t.fonte] || 'google';
+
+  const div = document.createElement('div');
+  div.className = `trend-card ${urgClass}`;
+  div.innerHTML = `
+    <div class="trend-card-top">
+      <div>
+        <div class="trend-termo">${t.termo}</div>
+        ${t.volume ? `<div class="trend-volume">${t.volume}</div>` : ''}
+      </div>
+      <div class="trend-badges">
+        <span class="trend-badge ${fonteClass}">${t.fonte}</span>
+        <span class="trend-badge urgencia-${t.urgencia}">${urgLabel}</span>
+        <span class="trend-badge tipo">${tipoIcon} ${t.tipo_ideal || ''}</span>
+      </div>
+    </div>
+    <div class="trend-relevancia">${t.relevancia || ''}</div>
+    <div class="trend-gancho">"${t.gancho || ''}"</div>
+    <div class="trend-angulo">${t.angulo || ''}</div>
+    <div class="trend-actions">
+      <button class="btn btn-primary btn-sm" onclick="usarTrendComoTema(${JSON.stringify(JSON.stringify(t))})">✏️ Usar como pauta</button>
+      <button class="btn btn-secondary btn-sm" onclick="copiarGancho(this, ${JSON.stringify(JSON.stringify(t.gancho))})">📋 Copiar gancho</button>
+    </div>`;
+  return div;
+}
+
+function usarTrendComoTema(tJson) {
+  const t = JSON.parse(tJson);
+  if (t.tipo_ideal === 'reels') {
+    showSection('roteiro', null);
+    setTimeout(() => {
+      const el = document.getElementById('roteiroTema');
+      if (el) { el.value = t.gancho || t.termo; el.focus(); }
+    }, 300);
+  } else if (t.tipo_ideal === 'post') {
+    showSection('feed', null);
+    setTimeout(() => {
+      const el = document.getElementById('feedPrompt');
+      if (el) { el.value = t.gancho || t.termo; el.focus(); }
+    }, 300);
+  } else {
+    showSection('carousel', null);
+    setTimeout(() => {
+      setCarouselMode('topic');
+      const el = document.getElementById('carouselTopic');
+      if (el) { el.value = t.gancho || t.termo; el.focus(); }
+    }, 300);
+  }
+  toast(`Pauta carregada: ${t.tipo_ideal}`, 'success');
+}
+
+function copiarGancho(btn, ganchoJson) {
+  const gancho = JSON.parse(ganchoJson);
+  navigator.clipboard?.writeText(gancho).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copiado!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
 }
 
 async function generateRoteiro(){
