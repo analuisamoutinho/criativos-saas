@@ -67,8 +67,6 @@ function writeJSON(file, data) {
 // METODOLOGIAS DE CONTEÚDO
 // ═══════════════════════════════════════════════════════════════════════════
 
-// METODOLOGIA RR — Marca Pessoal (Bolha RR)
-// Filosofia: conteúdo como transformação, autenticidade, profundidade, servir antes de cobrar
 const METODOLOGIA_RR = {
   nome: 'Metodologia RR — Sistema de Conteúdo Viral',
   filosofia: `
@@ -81,57 +79,55 @@ FILOSOFIA BASE (Metodologia RR):
 `,
   estruturaViral: `
 ESTRUTURA DE CONTEÚDO VIRAL (3 pilares obrigatórios):
-1. GANCHO (primeiros 3 segundos / primeiro slide): toca na DOR ou DESEJO real. Não precisa ser sensacionalista — precisa ser verdadeiro. Ex: "Eu não gosto de economizar. Eu gosto de ganhar mais."
-2. HISTÓRIA (desenvolvimento): conecta com o gancho e manteia interesse. Não é sobre algoritmo — é sobre conexão humana real. Gancho forte com história fraca frustra.
-3. CONCLUSÃO / TESE: sem conclusão, o conteúdo é tirado de contexto. É o que faz alguém querer seguir para não perder o próximo.
-4. TEMA ESPECÍFICO: cite seu público pelo nome, profissão, situação. "Mulher que está construindo a própria vida", "empreendedor que faturou o primeiro milhão". Guia o algoritmo.
+1. GANCHO (primeiros 3 segundos / primeiro slide): toca na DOR ou DESEJO real.
+2. HISTÓRIA (desenvolvimento): conecta com o gancho e manteia interesse.
+3. CONCLUSÃO / TESE: sem conclusão, o conteúdo é tirado de contexto.
+4. TEMA ESPECÍFICO: cite seu público pelo nome, profissão, situação.
 `,
   formatos: `
 FORMATOS DISPONÍVEIS PARA MARCA PESSOAL (Metodologia RR):
-- LO-FI (câmera ligada, fala direta): maior ROI para quem tem oratória. Liga a câmera e despeja. Sem edição mirabolante. Formato mais poderoso.
-- CARROSSEL: ideal para quem comunica bem por texto. Forte para educação, listas, comparações. Arraste para o lado.
-- VÍDEO CURTO (até 13s): exige sacada impactante em poucos segundos. Difícil escalar.
-- VÍDEO MÉDIO (até 1min): equilibra alcance e profundidade. Bom para quem está desenvolvendo oratória.
-- FRASE (estilo Twitter): para quem impacta com poucas palavras. Print de texto, post direto.
+- LO-FI (câmera ligada, fala direta): maior ROI para quem tem oratória.
+- CARROSSEL: ideal para quem comunica bem por texto.
+- VÍDEO CURTO (até 13s): exige sacada impactante em poucos segundos.
+- VÍDEO MÉDIO (até 1min): equilibra alcance e profundidade.
+- FRASE (estilo Twitter): para quem impacta com poucas palavras.
 `,
   tonsProibidos: ['motivacional genérico', 'guru', 'coach', 'desbloqueie', 'seja sua melhor versão', 'transforme sua vida', 'fórmula secreta', 'método infalível', 'próximo nível'],
   tonsPermitidos: ['íntimo', 'direto', 'reflexivo', 'provocativo', 'autêntico', 'observador', 'vulnerável sem ser fraco', 'real', 'honesto'],
   tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
 };
 
-// Tipos de conteúdo RR com estruturas específicas
 const TIPOS_RR = {
   lofi: {
     id: 'lofi', emoji: '🎥', label: 'Lo-Fi (câmera ligada)',
-    instrucao: 'Script para vídeo lo-fi direto ao ponto. Gancho nos primeiros 3 segundos, história que sustenta, conclusão com tese clara. Tom conversacional, íntimo, sem roteiro rígido.',
+    instrucao: 'Script para vídeo lo-fi direto ao ponto. Gancho nos primeiros 3 segundos, história que sustenta, conclusão com tese clara.',
   },
   carrossel: {
     id: 'carrossel', emoji: '📋', label: 'Carrossel',
-    instrucao: 'Slide 1: gancho provocativo que nomeia dor ou desejo. Slides do meio: profundidade real, não superficial. Slide final: conclusão + CTA leve e íntimo.',
+    instrucao: 'Slide 1: gancho provocativo que nomeia dor ou desejo. Slides do meio: profundidade real. Slide final: conclusão + CTA leve e íntimo.',
   },
   video_curto: {
     id: 'video_curto', emoji: '⚡', label: 'Vídeo Curto (até 13s)',
-    instrucao: 'Uma única sacada impactante. Sem introdução. Direto ao ponto e corte. Exige genialidade concentrada.',
+    instrucao: 'Uma única sacada impactante. Sem introdução. Direto ao ponto e corte.',
   },
   video_medio: {
     id: 'video_medio', emoji: '🎬', label: 'Vídeo Médio (até 1min)',
-    instrucao: 'Gancho (0-5s) → desenvolvimento que conecta (5-50s) → conclusão com tese (50-60s). Tom natural, como conversa real.',
+    instrucao: 'Gancho (0-5s) → desenvolvimento que conecta (5-50s) → conclusão com tese (50-60s).',
   },
   frase: {
     id: 'frase', emoji: '✍️', label: 'Frase de Impacto',
-    instrucao: 'Uma verdade concentrada em 2-3 linhas. Sem explicação — a frase precisa ressoar sozinha. Estilo Twitter/X.',
+    instrucao: 'Uma verdade concentrada em 2-3 linhas. Sem explicação — a frase precisa ressoar sozinha.',
   },
   dump: {
     id: 'dump', emoji: '📸', label: 'Dump / Bastidores',
-    instrucao: 'Momentos reais com narrativa. Humaniza, cria relacionamento. Não é filler — é conexão intencional.',
+    instrucao: 'Momentos reais com narrativa. Humaniza, cria relacionamento.',
   },
   bastidores: {
     id: 'bastidores', emoji: '🎬', label: 'Bastidores',
-    instrucao: 'Mostra o processo real, não o resultado polido. O que acontece antes, durante, os erros, as decisões. Conecta por autenticidade.',
+    instrucao: 'Mostra o processo real, não o resultado polido. O que acontece antes, durante, os erros, as decisões.',
   },
 };
 
-// METODOLOGIA BRANDSDECODED — Marca Corporativa
 const METODOLOGIA_BRANDSDECODED = {
   nome: 'BrandsDecoded — Padrão Premium de Copy Corporativa',
   filosofia: `
@@ -152,51 +148,47 @@ ESTRUTURA BRANDSDECODED:
   tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
 };
 
-// Tipos de conteúdo BrandsDecoded com estruturas
 const TIPOS_BRANDSDECODED = {
   tendencia: {
     id: 'tendencia', emoji: '📡', label: 'Análise de Tendência', categoria: 'Awareness',
-    instrucao: 'Capa nomeia o fenômeno como declaração. Desenvolvimento: por que acontece, implicações estratégicas, o que muda. Dados e referências concretas.',
+    instrucao: 'Capa nomeia o fenômeno como declaração. Desenvolvimento: por que acontece, implicações estratégicas, o que muda.',
   },
   case: {
     id: 'case', emoji: '🏆', label: 'Case de Sucesso', categoria: 'Awareness',
-    instrucao: 'Capa como fenômeno cultural. Contexto de mercado. Ponto de virada decisivo. Resultados mensuráveis. Lição aplicável.',
+    instrucao: 'Capa como fenômeno cultural. Contexto de mercado. Ponto de virada decisivo. Resultados mensuráveis.',
   },
   educativo: {
     id: 'educativo', emoji: '📚', label: 'Educativo / Framework', categoria: 'Autoridade',
-    instrucao: 'Capa promete método com nome próprio. Um passo por slide, com exemplo concreto em cada. Framework aplicável imediatamente.',
+    instrucao: 'Capa promete método com nome próprio. Um passo por slide, com exemplo concreto em cada.',
   },
   comparacao: {
     id: 'comparacao', emoji: '⚖️', label: 'Comparação / Antes & Depois', categoria: 'Alcance',
-    instrucao: 'Capa ativa contraste com dado ou afirmação. Lado A detalhado. Virada com análise. Lado B com resultado. Conclusão estratégica.',
+    instrucao: 'Capa ativa contraste com dado ou afirmação. Lado A detalhado. Virada com análise. Lado B com resultado.',
   },
   lista: {
     id: 'lista', emoji: '📋', label: 'Lista Valiosa', categoria: 'Alcance',
-    instrucao: 'Capa com número e promessa específica. Um item por slide com profundidade real — não bullet points superficiais. Fácil de guardar e compartilhar.',
+    instrucao: 'Capa com número e promessa específica. Um item por slide com profundidade real.',
   },
   prova_social: {
     id: 'prova_social', emoji: '🌟', label: 'Prova Social', categoria: 'Conversão',
-    instrucao: 'Capa foca no resultado concreto. Antes com contexto real. Processo decisivo. Números e métricas. Lição transferível.',
+    instrucao: 'Capa foca no resultado concreto. Antes com contexto real. Processo decisivo. Números e métricas.',
   },
   oferta: {
     id: 'oferta', emoji: '🎯', label: 'Oferta', categoria: 'Conversão',
-    instrucao: 'Capa ativa desejo, não produto. Problema real. Solução única. Para quem é. Prova de valor. O que inclui. CTA específico.',
+    instrucao: 'Capa ativa desejo, não produto. Problema real. Solução única. Para quem é. Prova de valor. CTA específico.',
   },
 };
 
-// ── Função central: detectar metodologia por tipo de marca ou perfil ──────
 function getMetodologia(profile) {
   const profiles = loadProfiles();
   const p = profiles[profile];
   const tipoBrand = p?.tipo || 'corporativa';
-
   if (tipoBrand === 'pessoal') {
     return { metodologia: METODOLOGIA_RR, tipos: TIPOS_RR, isRR: true };
   }
   return { metodologia: METODOLOGIA_BRANDSDECODED, tipos: TIPOS_BRANDSDECODED, isRR: false };
 }
 
-// ── Prompt base por metodologia ───────────────────────────────────────────
 function buildSystemPromptCarrossel(profile, metodologia, isRR) {
   const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
   const account = getAccount(profile);
@@ -279,14 +271,8 @@ REGRAS:
 - Retornar APENAS JSON válido, sem markdown`;
 }
 
-// ── Todos os tipos de conteúdo agrupados por metodologia ─────────────────
-const ALL_TIPOS_BY_METODOLOGIA = {
-  pessoal: TIPOS_RR,
-  corporativa: TIPOS_BRANDSDECODED,
-};
-
 // ═══════════════════════════════════════════════════════════════════════════
-// PERFIS ESTRUTURADOS — Manual do Cliente
+// PERFIS
 // ═══════════════════════════════════════════════════════════════════════════
 
 const DEFAULT_PROFILES = {
@@ -307,14 +293,14 @@ const DEFAULT_PROFILES = {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
     handle: '@analuisa.moutinho', niche: 'Marca pessoal, construção de vida intencional, estratégia pessoal',
     bio: 'Construindo a própria vida com intenção. Sem fórmulas, sem guru.',
-    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional. Tom de quem observa e compartilha, não de quem ensina.',
+    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional.',
     proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula'],
     pilares: ['Construção pessoal', 'Estratégia de vida', 'Estética de vida real', 'Marca pessoal inteligente'],
     publicoAlvo: 'Mulheres 25-38 anos construindo identidade profissional e vida própria',
     cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',
     referencias: ['Sofia Coppola', 'Lana Del Rey visual universe', 'Lo-fi diary aesthetic', 'Candid editorial'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Não é coach, não é guru. É uma mulher que observa o mundo de jeito diferente e compartilha isso com inteligência.',
+    observacoes: 'Não é coach, não é guru. É uma mulher que observa o mundo de jeito diferente.',
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -374,207 +360,7 @@ function getProfileManualContext(profileId) {
   ].filter(Boolean).join('\n');
 }
 
-// ── Endpoint: listar tipos por metodologia (usado pelo frontend) ──────────
-app.get('/api/tipos-conteudo', (req, res) => {
-  con... chunk1 ok: 9544',
-  },
-  oferta: {
-    id: 'oferta', emoji: '🎯', label: 'Oferta', categoria: 'Conversão',
-    instrucao: 'Capa ativa desejo, não produto. Problema real. Solução única. Para quem é. Prova de valor. O que inclui. CTA específico.',
-  },
-};
-
-// ── Função central: detectar metodologia por tipo de marca ou perfil ──────
-function getMetodologia(profile) {
-  const profiles = loadProfiles();
-  const p = profiles[profile];
-  const tipoBrand = p?.tipo || 'corporativa';
-
-  if (tipoBrand === 'pessoal') {
-    return { metodologia: METODOLOGIA_RR, tipos: TIPOS_RR, isRR: true };
-  }
-  return { metodologia: METODOLOGIA_BRANDSDECODED, tipos: TIPOS_BRANDSDECODED, isRR: false };
-}
-
-// ── Prompt base por metodologia ───────────────────────────────────────────
-function buildSystemPromptCarrossel(profile, metodologia, isRR) {
-  const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
-  const account = getAccount(profile);
-  const manualNote = getManualText(profile);
-
-  if (isRR) {
-    return `Você é o gerador de conteúdo da ${account.name} — marca pessoal seguindo a Metodologia RR (Sistema de Conteúdo Viral).
-
-${METODOLOGIA_RR.filosofia}
-${METODOLOGIA_RR.estruturaViral}
-${brand.copyDNA || ''}
-${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
-
-REGRAS OBRIGATÓRIAS:
-- Retornar APENAS JSON válido, sem markdown
-- NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_RR.tonsProibidos.join(', ')}
-- Máximo 4 hashtags na legenda (nunca mais do que isso)
-- Hashtags específicas ao nicho, não genéricas
-- Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}
-- CTA: íntimo e leve — nunca comercial forçado`;
-  }
-
-  return `Você é o gerador de carrosseis da BrandsDecoded — padrão mais alto de copy corporativa para Instagram.
-
-${METODOLOGIA_BRANDSDECODED.filosofia}
-${METODOLOGIA_BRANDSDECODED.estrutura}
-${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
-
-REGRAS OBRIGATÓRIAS:
-- Slide 1: hook de 14-18 palavras, afirmação provocativa que nomeia fenômeno real
-- NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
-- Máximo 4 hashtags na legenda
-- Hashtags específicas ao nicho
-- ASSINATURA FIXA no último slide: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
-- Retornar APENAS JSON válido, sem markdown`;
-}
-
-function buildSystemPromptContentMachine(profile, tipo, metodologia, isRR) {
-  const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
-  const account = getAccount(profile);
-  const manualNote = getManualText(profile);
-
-  if (isRR) {
-    const tipoInfo = TIPOS_RR[tipo] || TIPOS_RR.carrossel;
-    return `Você é o gerador de conteúdo da ${account.name} — marca pessoal, Metodologia RR.
-
-${METODOLOGIA_RR.filosofia}
-${METODOLOGIA_RR.estruturaViral}
-${brand.copyDNA || ''}
-${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
-
-FORMATO ATUAL: ${tipoInfo.emoji} ${tipoInfo.label}
-INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
-
-REGRAS:
-- NUNCA usar: ${METODOLOGIA_RR.tonsProibidos.join(', ')}
-- Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}
-- CTA FIXO (último texto): "${account.handle === '@analuisa.moutinho' ? 'salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você.' : 'salva esse conteúdo e me conta nos comentários o que mais fez sentido pra você.'}"
-- Retornar APENAS JSON válido, sem markdown`;
-  }
-
-  const tipoInfo = TIPOS_BRANDSDECODED[tipo] || TIPOS_BRANDSDECODED.educativo;
-  return `Você é o gerador oficial de conteúdo de alta performance da BrandsDecoded para ${account.name}.
-
-${METODOLOGIA_BRANDSDECODED.filosofia}
-${METODOLOGIA_BRANDSDECODED.estrutura}
-${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
-
-TIPO ATUAL: ${tipoInfo.emoji} ${tipoInfo.label} (${tipoInfo.categoria})
-INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
-
-REGRAS:
-- Nunca inventar fatos
-- NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
-- Máximo 4 hashtags
-- ASSINATURA FIXA: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
-- Retornar APENAS JSON válido, sem markdown`;
-}
-
-// ── Todos os tipos de conteúdo agrupados por metodologia ─────────────────
-const ALL_TIPOS_BY_METODOLOGIA = {
-  pessoal: TIPOS_RR,
-  corporativa: TIPOS_BRANDSDECODED,
-};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// PERFIS ESTRUTURADOS — Manual do Cliente
-// ═══════════════════════════════════════════════════════════════════════════
-
-const DEFAULT_PROFILES = {
-  marca: {
-    profileId: 'marca', tipo: 'corporativa', nome: 'Case Aceleradora',
-    handle: '@caseaceleradora', niche: 'Aceleração de negócios digitais, B2B, growth hacking',
-    bio: 'Aceleramos negócios digitais com estratégia, dados e criatividade.',
-    tom: 'Autoritário, estratégico, direto. Premium B2B. Sem hype.',
-    proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como', 'Riqueza', 'Fórmula secreta'],
-    pilares: ['Estratégia de negócio', 'Cases de sucesso', 'Tendências de mercado', 'Frameworks de growth'],
-    publicoAlvo: 'Fundadores, CEOs e diretores de empresas digitais em fase de escala',
-    cta: 'Comente "CASE" que nossa equipe te chama.',
-    referencias: ['Monocle', 'FT Weekend', 'McKinsey Digital', 'The Economist'],
-    tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
-    observacoes: '', pdfUploadedAt: null, updatedAt: null,
-  },
-  pessoal: {
-    profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
-    handle: '@analuisa.moutinho', niche: 'Marca pessoal, construção de vida intencional, estratégia pessoal',
-    bio: 'Construindo a própria vida com intenção. Sem fórmulas, sem guru.',
-    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional. Tom de quem observa e compartilha, não de quem ensina.',
-    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula'],
-    pilares: ['Construção pessoal', 'Estratégia de vida', 'Estética de vida real', 'Marca pessoal inteligente'],
-    publicoAlvo: 'Mulheres 25-38 anos construindo identidade profissional e vida própria',
-    cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',
-    referencias: ['Sofia Coppola', 'Lana Del Rey visual universe', 'Lo-fi diary aesthetic', 'Candid editorial'],
-    tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Não é coach, não é guru. É uma mulher que observa o mundo de jeito diferente e compartilha isso com inteligência.',
-    pdfUploadedAt: null, updatedAt: null,
-  },
-  virttus: {
-    profileId: 'virttus', tipo: 'corporativa', nome: 'Virttus',
-    handle: '@virttus', niche: 'Tech B2B, transformação digital, precision software',
-    bio: 'Tecnologia de precisão para empresas que não aceitam mediano.',
-    tom: 'Técnico, forward-looking, preciso. B2B premium. Sem buzzwords vazios.',
-    proibidos: ['Incrível', 'Revolucionário', 'Disruptivo', 'Mudando o jogo', 'Next-level'],
-    pilares: ['Tecnologia e inovação', 'Casos de uso B2B', 'Data & Analytics', 'Transformação digital'],
-    publicoAlvo: 'CTOs, gerentes de TI e diretores de operações em médias e grandes empresas',
-    cta: 'Quer saber como aplicar isso? Nos chame no direct.',
-    referencias: ['Bloomberg Businessweek', 'Wired', 'MIT Tech Review'],
-    tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'oferta'],
-    observacoes: '', pdfUploadedAt: null, updatedAt: null,
-  },
-};
-
-function loadProfiles() {
-  try {
-    if (!fs.existsSync(PROFILES_FILE)) {
-      fs.writeFileSync(PROFILES_FILE, JSON.stringify(DEFAULT_PROFILES, null, 2));
-      return { ...DEFAULT_PROFILES };
-    }
-    const raw = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf-8'));
-    const merged = {};
-    for (const key of Object.keys(DEFAULT_PROFILES)) {
-      merged[key] = { ...DEFAULT_PROFILES[key], ...(raw[key] || {}) };
-    }
-    for (const key of Object.keys(raw)) {
-      if (!merged[key]) merged[key] = raw[key];
-    }
-    return merged;
-  } catch(e) {
-    console.error('loadProfiles:', e.message);
-    return { ...DEFAULT_PROFILES };
-  }
-}
-
-function saveProfiles(profiles) {
-  try { fs.writeFileSync(PROFILES_FILE, JSON.stringify(profiles, null, 2)); }
-  catch(e) { console.error('saveProfiles:', e.message); }
-}
-
-function getProfileManualContext(profileId) {
-  const profiles = loadProfiles();
-  const p = profiles[profileId];
-  if (!p) return '';
-  return [
-    `TIPO DE MARCA: ${p.tipo === 'pessoal' ? 'Marca Pessoal (Metodologia RR)' : 'Marca Corporativa (BrandsDecoded)'}`,
-    p.niche        ? `NICHO: ${p.niche}`                      : '',
-    p.publicoAlvo  ? `PÚBLICO-ALVO: ${p.publicoAlvo}`        : '',
-    p.tom          ? `TOM DE VOZ: ${p.tom}`                   : '',
-    p.pilares?.length    ? `PILARES DE CONTEÚDO: ${p.pilares.join(', ')}`       : '',
-    p.proibidos?.length  ? `TERMOS PROIBIDOS (nunca usar): ${p.proibidos.join(', ')}` : '',
-    p.cta          ? `CTA PADRÃO DO PERFIL: ${p.cta}`         : '',
-    p.observacoes  ? `CONTEXTO ADICIONAL: ${p.observacoes}`   : '',
-  ].filter(Boolean).join('\n');
-}
-
-// ── Endpoint: listar tipos por metodologia (usado pelo frontend) ──────────
+// ── Endpoint: listar tipos por metodologia ────────────────────────────────
 app.get('/api/tipos-conteudo', (req, res) => {
   const { profile } = req.query;
   const { isRR, tipos } = getMetodologia(profile || 'marca');
@@ -680,9 +466,9 @@ async function loadGeneratedContent(profile) {
 
 // ── Accounts ──────────────────────────────────────────────────────────────
 const ACCOUNTS = {
-  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,   token: process.env.INSTAGRAM_TOKEN_MARCA,   name: 'Case Aceleradora', handle: '@caseaceleradora'   },
-  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL, token: process.env.INSTAGRAM_TOKEN_PESSOAL, name: 'Ana Moutinho',     handle: '@analuisa.moutinho' },
-  virttus: { id: process.env.INSTAGRAM_ACCOUNT_ID_VIRTTUS, token: process.env.INSTAGRAM_TOKEN_VIRTTUS, name: 'Virttus',          handle: '@virttus'           },
+  marca:   { id: process.env.INSTAGRAM_ACCOUNT_ID_MARCA,   token: process.env.INSTAGRAM_TOKEN_MARCA   || process.env.INSTAGRAM_ACCESS_TOKEN, name: 'Case Aceleradora', handle: '@caseaceleradora'   },
+  pessoal: { id: process.env.INSTAGRAM_ACCOUNT_ID_PESSOAL, token: process.env.INSTAGRAM_TOKEN_PESSOAL || process.env.INSTAGRAM_ACCESS_TOKEN, name: 'Ana Moutinho',     handle: '@analuisa.moutinho' },
+  virttus: { id: process.env.INSTAGRAM_ACCOUNT_ID_VIRTTUS, token: process.env.INSTAGRAM_TOKEN_VIRTTUS || process.env.INSTAGRAM_ACCESS_TOKEN, name: 'Virttus',          handle: '@virttus'           },
 };
 function getAccount(profile) { return ACCOUNTS[profile] || ACCOUNTS.marca; }
 
@@ -715,8 +501,6 @@ PHOTOGRAPHY: executive boardroom, architectural details, desaturated editorial t
     handle:'@analuisa.moutinho',name:'Ana Moutinho',
     moods:['HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','TYPE_DARK_WARM','DIARIO_EDITORIAL','VIRADA','CTA_INTIMO'],
     aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de uma mulher construindo a própria vida com intenção.
-SENSAÇÃO DESEJADA: ela observa o mundo de um jeito diferente, não está tentando parecer perfeita.
-PERSONALIDADE: realista, observadora, estratégica, feminina sem ser frágil.
 ESTÉTICA: real, crua, íntima, sofisticada, levemente granulada. Luz natural, fotos espontâneas.
 PALETA: off-white/creme (#FAF8F5), preto suave, marrom café (#8B7355), rosa queimado (#C17B6F).
 TOM: reflexivo, direto, levemente provocativo, íntimo, inteligente.
@@ -926,7 +710,7 @@ app.post('/api/image/carousel-slide', async (req, res) => {
 
     if (needsPhoto) {
       const visualDNA = isAna
-        ? `VISUAL DNA — Ana Moutinho "Ana mais real" (Metodologia RR — Lo-Fi, autêntico, real):
+        ? `VISUAL DNA — Ana Moutinho "Ana mais real" (Lo-Fi, autêntico, real):
 Aesthetic: lo-fi diary, intimate, real. Not polished, not corporate.
 Feel: like a photo from her iPhone, warm grain, honest moment.
 References: Sofia Coppola films, Lana Del Rey visuals, candid editorial.
@@ -1217,11 +1001,9 @@ app.post('/api/calendar/generate', async (req, res) => {
     const { month, year, profile, postsPerDay = 1 } = req.body;
     const { isRR, tipos } = getMetodologia(profile);
     const manualNote  = getManualText(profile);
-    const brand       = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account     = getAccount(profile);
     const daysInMonth = new Date(year, month, 0).getDate();
 
-    // Tipos disponíveis para este perfil
     const tiposDisponiveis = Object.values(tipos).map(t => t.id).join(' | ');
     const tiposLabels = Object.values(tipos).map(t => `${t.id} (${t.label})`).join(', ');
 
@@ -1239,7 +1021,6 @@ FORMATOS RR: lofi (câmera ligada), carrossel, video_curto, video_medio, frase, 
         : `PERFIL: ${account.name} (${account.handle}) — MARCA CORPORATIVA, BrandsDecoded.
 TIPOS: ${tiposLabels}`;
 
-      const exampleDay   = blockStart;
       const examplePosts = postsPerDay === 1
         ? isRR
           ? `[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento quando começa a dar certo"}]`
@@ -1256,9 +1037,7 @@ ${manualNote ? `DIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 TIPOS DISPONÍVEIS: ${tiposDisponiveis}
 
 REGRAS DO TOPIC (CRÍTICO):
-✅ Específico com ângulo único: ${isRR ? '"O momento exato em que parei de me explicar para as pessoas e o que aconteceu depois"' : '"Por que o LinkedIn brasileiro cresceu 40% com conteúdo de vulnerabilidade"'}
-✅ Nomeia comportamento ou padrão real
-❌ PROIBIDO genérico: ${isRR ? '"dicas de vida", "como ser feliz", "motivação do dia"' : '"dicas de marketing", "como crescer no Instagram"'}
+Topics devem ser específicos com ângulo único — não genéricos como "dicas de marketing".
 
 HORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.
 
@@ -1267,15 +1046,13 @@ RESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN, SEM TEXTO ANTES OU DEPOIS.
 Formato EXATO:
 {
   "days": [
-    {"day": ${exampleDay}, "posts": ${examplePosts}},
-    {"day": ${exampleDay + 1}, "posts": ${examplePosts}}
+    {"day": ${blockStart}, "posts": ${examplePosts}}
   ]
 }
 
-Gere TODOS os dias de ${blockStart} a ${blockEnd} (total: ${daysInBlock} dias, ${postsPerDay} post(s) por dia).
-Cada dia DEVE ter exactamente ${postsPerDay} post(s) com topic específico e com ângulo único.`;
+Gere TODOS os dias de ${blockStart} a ${blockEnd} (total: ${daysInBlock} dias, ${postsPerDay} post(s) por dia).`;
 
-      console.log(`[Calendar] Gerando bloco dias ${blockStart}–${blockEnd} para ${profile}/${month}/${year} (${isRR ? 'RR' : 'BrandsDecoded'})`);
+      console.log(`[Calendar] Gerando bloco dias ${blockStart}–${blockEnd} para ${profile}/${month}/${year}`);
 
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -1359,7 +1136,6 @@ app.post('/api/carousel/generate-and-save', async (req, res) => {
   try {
     const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags, contentMachineType } = req.body;
     const { isRR, metodologia } = getMetodologia(profile);
-    const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account = getAccount(profile);
     const mode    = blocks ? 'blocks' : 'topic';
 
@@ -1432,7 +1208,6 @@ app.post('/api/content-machine/generate', async (req, res) => {
     const { isRR, tipos, metodologia } = getMetodologia(profile);
     const account = getAccount(profile);
 
-    // Validar se o tipo pertence à metodologia correta
     if (!tipos[tipo]) {
       return res.status(400).json({
         error: `Tipo "${tipo}" não está disponível para ${isRR ? 'marca pessoal (Metodologia RR)' : 'marca corporativa (BrandsDecoded)'}. Tipos disponíveis: ${Object.keys(tipos).join(', ')}`,
@@ -1514,180 +1289,11 @@ JSON:
 });
 
 // ── Health ────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => { res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] }); });
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
+});
 
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | Metodologias: RR (pessoal) + BrandsDecoded (corporativa)`));
-calendar: calendarDays });
-  } catch(err) {
-    console.error('[Calendar] Erro geral:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.get('/api/calendar/saved', async (req, res) => {
-  try {
-    const { profile, month, year } = req.query;
-    if (supabase) {
-      const { data, error } = await supabase.from('calendars').select('data, updated_at').eq('id', `${profile}_${year}_${month}`).single();
-      if (!error && data?.data) {
-        const calendar = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
-        return res.json({ found: true, calendar, savedAt: data.updated_at });
-      }
-    }
-    const saved = readJSON(CALENDAR_FILE);
-    if (saved?.profile === profile && String(saved.month) === String(month) && String(saved.year) === String(year) && saved.calendar?.length) {
-      return res.json({ found: true, calendar: saved.calendar, savedAt: saved.savedAt });
-    }
-    res.json({ found: false });
-  } catch(e) { console.error('calendar/saved error:', e); res.json({ found: false }); }
-});
-
-// ── Gerar + Salvar carrossel ──────────────────────────────────────────────
-app.post('/api/carousel/generate-and-save', async (req, res) => {
-  try {
-    const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags, contentMachineType } = req.body;
-    const { isRR, metodologia } = getMetodologia(profile);
-    const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
-    const account = getAccount(profile);
-    const mode    = blocks ? 'blocks' : 'topic';
-
-    const systemPrompt = buildSystemPromptCarrossel(profile, metodologia, isRR);
-
-    let prompt;
-    if (mode === 'blocks') {
-      prompt = `Perfil: ${account.name} (${account.handle})
-Converte estes blocos em slides (1 bloco = 1 slide):
-${blocks}
-JSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"legenda com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
-    } else {
-      const slideCount = isRR ? '7-8' : '10';
-      prompt = `Perfil: ${account.name} (${account.handle})
-Tema: "${topic}"
-Total: ${slideCount} slides.
-${isRR ? 'ESTRUTURA RR: Slide 1 (gancho que nomeia dor/desejo real) → slides de profundidade → conclusão com tese → CTA íntimo.' : 'ESTRUTURA BRANDSDECODED: Slide 1 (hook 14-18 palavras) → desenvolvimento estratégico → CTA com assinatura.'}
-JSON: {"title":"...","slideCount":${isRR ? 8 : 10},"slides":[{"slideNumber":1,"heading":"gancho","body":"","imagePrompt":"scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}`;
-    }
-
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8192, system: systemPrompt, messages: [{ role: 'user', content: prompt }] }),
-    });
-    const d = await r.json();
-    if (d.error) return res.status(500).json({ error: d.error.message });
-
-    const carouselData = extractJSON(d.content[0].text.trim());
-
-    function sanitizeCopy(text) {
-      if (!text) return text;
-      return text
-        .replace(/\s*—\s*/g, ' ')
-        .replace(/\s*–\s*/g, ' ')
-        .replace(/^\s*[–—]\s*/gm, '')
-        .trim();
-    }
-    if (carouselData.slides) {
-      carouselData.slides = carouselData.slides.map(s => ({
-        ...s, heading: sanitizeCopy(s.heading), body: sanitizeCopy(s.body),
-      }));
-    }
-    if (carouselData.hashtags) {
-      const tags = carouselData.hashtags.match(/#\w+/g) || [];
-      carouselData.hashtags = tags.slice(0, 4).join(' ');
-    }
-
-    const item = saveGeneratedContent({
-      id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente',
-      type: 'carrossel', mode, profile,
-      topic: topic || `Carrossel ${carouselData.slideCount} slides`,
-      caption: caption || carouselData.caption, hashtags: hashtags || carouselData.hashtags,
-      contentMachineType: contentMachineType || null, carouselData,
-      calendarDay: calendarDay || null, calendarMonth: calendarMonth || null, calendarYear: calendarYear || null,
-      imageUrls: [],
-      metodologia: isRR ? 'rr' : 'brandsdecoded',
-    });
-
-    res.json({ success: true, contentId: item.id, ...carouselData });
-  } catch(err) { res.status(500).json({ error: err.message }); }
-});
-
-// ── Content Machine ───────────────────────────────────────────────────────
-app.post('/api/content-machine/generate', async (req, res) => {
-  try {
-    const { tipo, tema, profile } = req.body;
-    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema.' });
-
-    const { isRR, tipos, metodologia } = getMetodologia(profile);
-    const account = getAccount(profile);
-
-    if (!tipos[tipo]) {
-      return res.status(400).json({
-        error: `Tipo "${tipo}" não está disponível para ${isRR ? 'marca pessoal (Metodologia RR)' : 'marca corporativa (BrandsDecoded)'}. Tipos disponíveis: ${Object.keys(tipos).join(', ')}`,
-      });
-    }
-
-    const tipoInfo = tipos[tipo];
-    const systemPrompt = buildSystemPromptContentMachine(profile, tipo, metodologia, isRR);
-
-    const tiposRRLabels = { lofi:'Lo-Fi (câmera ligada)', carrossel:'Carrossel', video_curto:'Vídeo Curto (até 13s)', video_medio:'Vídeo Médio (até 1min)', frase:'Frase de Impacto', dump:'Dump / Bastidores', bastidores:'Bastidores' };
-    const tiposBDLabels = { tendencia:'Análise de Tendência', case:'Case de Sucesso', educativo:'Educativo / Framework', comparacao:'Comparação / Antes & Depois', lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta' };
-    const tipoLabel = isRR ? (tiposRRLabels[tipo] || tipo) : (tiposBDLabels[tipo] || tipo);
-
-    const instrucaoEstrutura = isRR
-      ? `INSTRUÇÃO ESPECÍFICA DO FORMATO:
-${tipoInfo.instrucao}
-
-ESTRUTURA VIRAL RR:
-1. Slide CAPA: gancho que toca na dor ou desejo real.
-2. Slides DESENVOLVIMENTO: profundidade real.
-3. Slide CONCLUSÃO: tese clara que fecha.
-4. CTA FINAL: íntimo e leve.`
-      : `INSTRUÇÃO ESPECÍFICA DO TIPO:
-${tipoInfo.instrucao}
-
-ESTRUTURA BRANDSDECODED:
-1. Slide CAPA: hook de 14-18 palavras.
-2. Slides MEIO: dados, frameworks, exemplos.
-3. Slide FINAL: CTA com assinatura da marca.`;
-
-    const userPrompt = `Tipo: ${tipoLabel}\nPerfil: ${account.name}\nTema: "${tema}"\n\n${instrucaoEstrutura}\n\nJSON: {"tipo":"${tipo}","tipo_label":"${tipoLabel}","tema":"${tema}","profile":"${profile}","metodologia":"${isRR?'rr':'brandsdecoded'}","slides":[]}`;
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-4o', temperature: 1.0, max_tokens: 4500, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }),
-    });
-    const data = await response.json();
-    if (data.error) return res.status(500).json({ error: data.error.message });
-
-    const parsed = extractJSON(data.choices[0].message.content.trim());
-    const slidesNorm = (parsed.slides || []).map(s => {
-      const txs = s.textos || [];
-      return { slideNumber: s.slide, funcao: s.funcao || '', heading: txs[0]?.texto || '', body: txs[1]?.texto || '', textos: txs };
-    });
-
-    const item = saveGeneratedContent({
-      id: 'cnt_' + Date.now(), createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel',
-      contentMachineType: tipo, contentMachineTypeLabel: tipoLabel,
-      profile, topic: tema, imageUrls: [],
-      metodologia: isRR ? 'rr' : 'brandsdecoded',
-      carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption: '', hashtags: '' },
-    });
-
-    res.json({ success: true, contentId: item.id, ...parsed, slidesNormalizados: slidesNorm });
-  } catch(err) {
-    console.error('Content Machine error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ── Health ────────────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => { res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] }); });
-
-app.use(express.static('public'));
-app.use('/api', (req, res) => { res.status(404).json({ error: 'Rota não encontrada: ' + req.method + ' ' + req.originalUrl }); });
-app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log('Máquina de Conteúdo na porta ' + PORT + ' | Metodologias: RR (pessoal) + BrandsDecoded (corporativa)'));
