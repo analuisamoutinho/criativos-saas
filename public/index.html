@@ -363,8 +363,8 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     <button class="nav-item active" data-section="dashboard" onclick="showSection('dashboard',this)"><span class="nav-icon">⚡</span>Dashboard</button>
     <button class="nav-item" data-section="library" onclick="showSection('library',this)"><span class="nav-icon">🗂️</span>Biblioteca</button>
     <div class="nav-section-title">Criar</div>
-    <button class="nav-item" data-section="carousel" onclick="showSection('carousel',this)"><span class="nav-icon">🎠</span>Carrossel</button>
-    <button class="nav-item" data-section="feed" onclick="showSection('feed',this)"><span class="nav-icon">🖼️</span>Post Feed</button>
+    <button class="nav-item" data-section="criar" onclick="showSection('criar',this)"><span class="nav-icon">✏️</span>Criar</button>
+    <div class="nav-section-title">Publicação</div>
     <button class="nav-item" data-section="calendar" onclick="showSection('calendar',this)"><span class="nav-icon">📅</span>Calendário</button>
     <div class="nav-section-title">Recursos</div>
     <button class="nav-item" data-section="photos" onclick="showSection('photos',this)"><span class="nav-icon">📸</span>Banco de Fotos</button>
@@ -373,7 +373,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
   </nav>
 </aside>
 <main class="main">
-  <div class="topbar"><div class="topbar-title" id="topbarTitle">Dashboard</div><div class="topbar-actions"><span id="activeProfileBadge" style="font-size:.78rem;color:var(--mid);">Case Aceleradora</span><button class="btn btn-primary btn-sm" onclick="showSection('carousel',null)">+ Criar conteúdo</button></div></div>
+  <div class="topbar"><div class="topbar-title" id="topbarTitle">Dashboard</div><div class="topbar-actions"><span id="activeProfileBadge" style="font-size:.78rem;color:var(--mid);">Case Aceleradora</span><button class="btn btn-primary btn-sm" onclick="showSection('criar',null)">+ Criar conteúdo</button></div></div>
 
   <!-- DASHBOARD -->
   <section class="section active" id="section-dashboard">
@@ -402,6 +402,28 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
       <button class="filter-chip" onclick="filterLibrary('feed',this)">🖼️ Feed</button>
     </div>
     <div class="library-grid" id="libraryGrid"><div style="color:var(--mid);grid-column:1/-1;text-align:center;padding:48px;">A carregar...</div></div>
+  </section>
+
+  <!-- CRIAR HUB -->
+  <section class="section" id="section-criar">
+    <div class="section-header"><h2>✏️ Criar</h2><p>Escolhe o tipo de conteúdo que queres gerar.</p></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;max-width:900px;">
+      <button class="cm-type-btn" onclick="showSection('carousel',null)" style="padding:28px 24px;">
+        <div class="cm-type-header"><span class="cm-type-emoji">🎠</span><span class="cm-type-tag" style="background:rgba(59,15,76,.1);color:var(--purple);">Carrossel</span></div>
+        <div class="cm-type-name">Carrossel</div>
+        <div class="cm-type-desc">Múltiplos slides com copy gerada por IA. Cola blocos de texto ou descreve um tema.</div>
+      </button>
+      <button class="cm-type-btn" onclick="showSection('feed',null)" style="padding:28px 24px;">
+        <div class="cm-type-header"><span class="cm-type-emoji">🖼️</span><span class="cm-type-tag" style="background:rgba(59,130,246,.1);color:#1D4ED8;">Feed</span></div>
+        <div class="cm-type-name">Post Feed</div>
+        <div class="cm-type-desc">Uma imagem única para o feed do Instagram, com legenda e hashtags geradas por IA.</div>
+      </button>
+      <button class="cm-type-btn" onclick="showSection('roteiro',null)" style="padding:28px 24px;">
+        <div class="cm-type-header"><span class="cm-type-emoji">🎬</span><span class="cm-type-tag" style="background:#EDE9FE;color:#7C3AED;">Roteiro</span></div>
+        <div class="cm-type-name">Roteiro de Reels</div>
+        <div class="cm-type-desc">Roteiro completo com gancho, blocos, direção de câmera e legenda para publicar.</div>
+      </button>
+    </div>
   </section>
 
   <!-- CARROSSEL -->
@@ -482,6 +504,42 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
         </div>
       </div>
     </div>
+  </section>
+
+  <!-- ROTEIRO DE REELS -->
+  <section class="section" id="section-roteiro">
+    <div class="section-header"><h2>🎬 Roteiro de Reels</h2><p>Gera um roteiro completo com gancho, blocos e direção de câmera.</p></div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⚙️ Configuração</div>
+        <div class="form-group">
+          <label class="form-label">Tema do Reel</label>
+          <textarea class="textarea" id="roteiroTema" rows="4" placeholder="Ex: 3 erros que te impedem de vender nas redes sociais..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Duração</label>
+            <select class="select" id="roteiroDuracao">
+              <option value="video_curto">Curto (15–30s)</option>
+              <option value="video_medio" selected>Médio (45–60s)</option>
+              <option value="lofi">LoFi (60–90s)</option>
+            </select>
+          </div>
+        </div>
+        <div id="roteiroError" style="display:none;color:#EF4444;font-size:.82rem;margin-bottom:12px;"></div>
+        <button class="btn btn-primary" onclick="generateRoteiro()" id="btnGenRoteiro" style="width:100%">✨ Gerar roteiro</button>
+      </div>
+      <div id="roteiroResultCard" style="display:none;">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="card-title" style="margin:0;">🎬 Roteiro gerado</div>
+            <button class="btn btn-secondary btn-sm" onclick="resetRoteiro()">+ Novo</button>
+          </div>
+          <div id="roteiroOutput"></div>
+        </div>
+      </div>
+    </div>
+    <div id="roteiroLoading" style="display:none;" class="loading"><div class="spinner"></div>A escrever o roteiro...</div>
   </section>
 
   <!-- CALENDÁRIO -->
@@ -625,7 +683,7 @@ function showSection(id,navBtn){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   const t=document.getElementById('section-'+id);if(t)t.classList.add('active');
   setNavActive(id,navBtn);
-  const titles={dashboard:'Dashboard',library:'Biblioteca',carousel:'Carrossel',feed:'Post Feed',calendar:'Calendário',photos:'Banco de Fotos',contentmachine:'Content Machine',manual:'Manual do Perfil'};
+  const titles={dashboard:'Dashboard',library:'Biblioteca',criar:'Criar',carousel:'Carrossel',feed:'Post Feed',roteiro:'Roteiro de Reels',calendar:'Calendário',photos:'Banco de Fotos',contentmachine:'Content Machine',manual:'Manual do Perfil'};
   document.getElementById('topbarTitle').textContent=titles[id]||id;
   if(id==='calendar')setTimeout(loadSavedCalendar,100);
   if(id==='contentmachine')renderCMTypeSelector();
@@ -832,6 +890,32 @@ async function generateContentMachine(){
   }catch(e){errEl.textContent='Erro: '+e.message;errEl.style.display='block';}
   finally{clearInterval(interval);btn.disabled=false;btn.textContent='⚡ Gerar copy';}
 }
+
+async function generateRoteiro(){
+  const tema=document.getElementById('roteiroTema').value.trim();
+  if(!tema){document.getElementById('roteiroError').textContent='Escreve um tema para o roteiro.';document.getElementById('roteiroError').style.display='block';return;}
+  document.getElementById('roteiroError').style.display='none';
+  const tipo=document.getElementById('roteiroDuracao').value;
+  const btn=document.getElementById('btnGenRoteiro');
+  btn.disabled=true;btn.textContent='⏳ A escrever...';
+  document.getElementById('roteiroLoading').style.display='flex';
+  document.getElementById('roteiroResultCard').style.display='none';
+  try{
+    const r=await fetch('/api/content-machine/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo,tema,profile:currentProfile})});
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    document.getElementById('roteiroLoading').style.display='none';
+    document.getElementById('roteiroResultCard').style.display='block';
+    const blocos=(d.blocos||[]).map((b,i)=>`<div class="roteiro-bloco" id="rrbloco_${i}"><div class="roteiro-bloco-header" onclick="toggleRRBloco(${i})"><div class="roteiro-bloco-meta"><span class="roteiro-bloco-label">${b.label||'Bloco '+(i+1)}</span>${b.tempo?`<span class="roteiro-bloco-tempo">${b.tempo}</span>`:''}</div><span style="font-size:.8rem;color:var(--mid);" id="rrbloco_arrow_${i}">▾</span></div><div class="roteiro-bloco-body" id="rrbloco_body_${i}"><div class="roteiro-bloco-texto">${b.texto||''}</div>${b.nota_direcao?`<div class="roteiro-bloco-direcao">${b.nota_direcao}</div>`:''}</div></div>`).join('');
+    const dicas=(d.dicas_gravacao||[]).map(x=>`<div class="roteiro-dica">${x}</div>`).join('');
+    document.getElementById('roteiroOutput').innerHTML=`<div class="roteiro-wrapper"><div class="roteiro-gancho-box"><div class="roteiro-gancho-label">🎯 Primeira frase — diz assim na câmera</div><div class="roteiro-gancho-texto">"${d.gancho||''}"</div>${d.duracao_estimada?`<div style="font-size:.72rem;color:var(--mid);margin-top:6px;">⏱ ${d.duracao_estimada}</div>`:''}</div><div class="roteiro-blocos">${blocos}</div>${dicas?`<div class="roteiro-dicas"><div class="roteiro-dicas-label">Dicas de gravação</div>${dicas}</div>`:''} ${d.legenda_sugerida?`<div class="roteiro-legenda"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:6px;">Legenda sugerida</div><textarea class="textarea" id="rrLegenda" rows="3" style="font-size:.8rem;">${d.legenda_sugerida}</textarea></div>`:''}<button class="roteiro-copy-btn" onclick="copyRoteiroStandalone()">📋 Copiar roteiro completo</button><div class="roteiro-copy-confirm" id="rrCopyConfirm">✅ Roteiro copiado!</div></div>`;
+    window._currentRoteiroStandalone=d;
+  }catch(e){document.getElementById('roteiroLoading').style.display='none';document.getElementById('roteiroError').textContent='Erro: '+e.message;document.getElementById('roteiroError').style.display='block';}
+  finally{btn.disabled=false;btn.textContent='✨ Gerar roteiro';}
+}
+function toggleRRBloco(i){const body=document.getElementById(`rrbloco_body_${i}`);const arrow=document.getElementById(`rrbloco_arrow_${i}`);const isOpen=body.style.display!=='none';body.style.display=isOpen?'none':'flex';arrow.textContent=isOpen?'▸':'▾';}
+function resetRoteiro(){document.getElementById('roteiroTema').value='';document.getElementById('roteiroResultCard').style.display='none';document.getElementById('roteiroError').style.display='none';document.getElementById('btnGenRoteiro').textContent='✨ Gerar roteiro';}
+function copyRoteiroStandalone(){const d=window._currentRoteiroStandalone;if(!d)return;const legenda=document.getElementById('rrLegenda')?.value||d.legenda_sugerida||'';const lines=[`ROTEIRO DE REELS`,`Tema: ${d.tema}`,d.duracao_estimada?`Duração estimada: ${d.duracao_estimada}`:'','',`🎯 PRIMEIRA FRASE: "${d.gancho}"`,...(d.blocos||[]).map(b=>[`\n[ ${b.label}${b.tempo?' · '+b.tempo:''} ]`,b.texto,b.nota_direcao?`→ ${b.nota_direcao}`:''].filter(Boolean).join('\n')),d.dicas_gravacao?.length?'\nDICAS DE GRAVAÇÃO:\n'+(d.dicas_gravacao.map(x=>'• '+x).join('\n')):'',legenda?`\nLEGENDA SUGERIDA:\n${legenda}`:''].filter(Boolean).join('\n');navigator.clipboard?.writeText(lines).then(()=>{const el=document.getElementById('rrCopyConfirm');if(el){el.style.display='block';setTimeout(()=>el.style.display='none',2500);}});}
 
 function renderCMRoteiro(data){
   const t=CM_TYPES_ALL[cmSelectedType]||{emoji:'🎬',label:cmSelectedType,color:'#7C3AED'};
