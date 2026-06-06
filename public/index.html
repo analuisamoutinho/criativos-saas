@@ -436,28 +436,38 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
   <section class="section" id="section-criar">
     <div class="section-header"><h2>✏️ Criar</h2><p>Escolhe o formato — a IA gera a copy, o roteiro ou a imagem.</p></div>
 
-    <!-- Ferramentas com geração de imagem -->
-    <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mid);margin-bottom:10px;font-weight:700;">Com geração de imagem</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;max-width:820px;margin-bottom:28px;">
-      <button class="cm-type-btn" onclick="showSection('carousel',null)">
-        <div class="cm-type-header"><span class="cm-type-emoji">🎠</span><span class="cm-type-tag" style="background:rgba(59,15,76,.1);color:var(--purple);">Imagem + Copy</span></div>
-        <div class="cm-type-name">Carrossel com imagens</div>
-        <div class="cm-type-desc">Slides com imagens geradas por IA (GPT Image / Gemini). Ideal para alcance máximo.</div>
-      </button>
-      <button class="cm-type-btn" onclick="showSection('feed',null)">
-        <div class="cm-type-header"><span class="cm-type-emoji">🖼️</span><span class="cm-type-tag" style="background:rgba(59,130,246,.1);color:#1D4ED8;">Imagem + Legenda</span></div>
-        <div class="cm-type-name">Post Feed com imagem</div>
-        <div class="cm-type-desc">Uma imagem única para o feed com legenda gerada por IA.</div>
-      </button>
+    <!-- PASSO 1: escolha o formato -->
+    <div id="criarStep1">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;max-width:760px;">
+        <button class="cm-type-btn" onclick="criarEscolherFormato('carrossel')" style="padding:24px 20px;">
+          <div class="cm-type-header"><span class="cm-type-emoji">🎠</span><span class="cm-type-tag" style="background:rgba(59,15,76,.1);color:var(--purple);">Múltiplos slides</span></div>
+          <div class="cm-type-name">Carrossel</div>
+          <div class="cm-type-desc">Escolhe o tipo de conteúdo e a IA gera a copy completa. Podes gerar imagens a seguir.</div>
+        </button>
+        <button class="cm-type-btn" onclick="showSection('feed',null)" style="padding:24px 20px;">
+          <div class="cm-type-header"><span class="cm-type-emoji">🖼️</span><span class="cm-type-tag" style="background:rgba(59,130,246,.1);color:#1D4ED8;">Imagem única</span></div>
+          <div class="cm-type-name">Post Feed</div>
+          <div class="cm-type-desc">Uma imagem única para o feed com legenda e hashtags geradas por IA.</div>
+        </button>
+        <button class="cm-type-btn" onclick="showSection('roteiro',null)" style="padding:24px 20px;">
+          <div class="cm-type-header"><span class="cm-type-emoji">🎬</span><span class="cm-type-tag" style="background:#EDE9FE;color:#7C3AED;">Vídeo</span></div>
+          <div class="cm-type-name">Roteiro de Reels</div>
+          <div class="cm-type-desc">Roteiro com gancho, blocos, direção de câmera e legenda. Pronto para gravar.</div>
+        </button>
+      </div>
     </div>
 
-    <!-- Copy, roteiro e formatos por metodologia -->
-    <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mid);margin-bottom:10px;font-weight:700;">Copy, roteiro e formatos de conteúdo</div>
-    <div id="criarTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;max-width:960px;margin-bottom:28px;"></div>
+    <!-- PASSO 2: escolha o tipo de conteúdo (só para carrossel) -->
+    <div id="criarStep2" style="display:none;">
+      <button onclick="criarVoltar(1)" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--mid);font-size:.82rem;cursor:pointer;margin-bottom:20px;">← Voltar</button>
+      <div style="font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--dark);margin-bottom:4px;">🎠 Carrossel — que tipo de conteúdo?</div>
+      <div style="font-size:.82rem;color:var(--mid);margin-bottom:18px;">A IA vai gerar os slides com copy completa para cada formato.</div>
+      <div id="criarTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px;max-width:960px;"></div>
+    </div>
 
-    <!-- Painel de input (após escolher tipo) -->
+    <!-- PASSO 3: tema -->
     <div id="criarInputPanel" style="display:none;max-width:640px;">
-      <button onclick="resetCriar()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--mid);font-size:.82rem;cursor:pointer;margin-bottom:16px;">← Voltar</button>
+      <button id="criarBtnVoltar" onclick="criarVoltar(2)" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--mid);font-size:.82rem;cursor:pointer;margin-bottom:20px;">← Voltar</button>
       <div class="card">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
           <span id="criarInputEmoji" style="font-size:1.3rem;"></span>
@@ -473,7 +483,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
       </div>
     </div>
 
-    <!-- Resultado inline -->
+    <!-- RESULTADO: slides -->
     <div id="criarResultPanel" style="display:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;" id="criarResultTitle"></div>
@@ -507,7 +517,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
       </div>
     </div>
 
-    <!-- Resultado roteiro inline -->
+    <!-- RESULTADO: roteiro inline -->
     <div id="criarRoteiroPanel" style="display:none;max-width:640px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;" id="criarRoteiroTitle">🎬 Roteiro gerado</div>
@@ -1007,57 +1017,59 @@ async function generateContentMachine(){
 }
 
 // ── Hub Criar ────────────────────────────────────────────────────────────
-let criarSelectedType = null;
+let criarSelectedType  = null;
 let criarCurrentSlides = [];
 let criarCurrentSlideIdx = 0;
 
+function criarShowOnly(stepId) {
+  ['criarStep1','criarStep2','criarInputPanel','criarResultPanel','criarRoteiroPanel']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  const el = document.getElementById(stepId);
+  if (el) el.style.display = stepId === 'criarResultPanel' ? 'block' : (stepId === 'criarStep2' ? 'block' : 'block');
+}
+
 function renderCriarHub() {
-  const grid = document.getElementById('criarTypeGrid');
-  if (!grid) return;
-  resetCriar(true);
-  const tiposAtivos = getCMTiposParaPerfil(currentProfile);
-  const isRR = isPerfilRR(currentProfile);
-  grid.innerHTML = tiposAtivos.map(id => {
-    const t = CM_TYPES_ALL[id];
-    if (!t) return '';
-    const isVid = TIPOS_VIDEO_RR.includes(id);
-    return `<button class="cm-type-btn" data-tipo="${id}" onclick="selecionarTipoCriar(this)">
-      <div class="cm-type-header"><span class="cm-type-emoji">${t.emoji}</span><span class="cm-type-tag" style="background:${t.color}18;color:${t.color}">${t.tag}</span></div>
-      <div class="cm-type-name">${t.label}${isVid ? ' <span style="font-size:.6rem;background:#EDE9FE;color:#7C3AED;border-radius:4px;padding:1px 5px;font-weight:700;">Roteiro</span>' : ''}</div>
-      <div class="cm-type-desc">${t.desc}</div>
-    </button>`;
-  }).join('');
+  criarShowOnly('criarStep1');
+  criarSelectedType = null;
+  criarCurrentSlides = [];
+}
+
+function criarEscolherFormato(formato) {
+  if (formato === 'carrossel') {
+    // Passo 2: mostrar tipos do CM para carrossel
+    const grid = document.getElementById('criarTypeGrid');
+    const tiposAtivos = getCMTiposParaPerfil(currentProfile).filter(id => !TIPOS_VIDEO_RR.includes(id));
+    grid.innerHTML = tiposAtivos.map(id => {
+      const t = CM_TYPES_ALL[id];
+      if (!t) return '';
+      return `<button class="cm-type-btn" data-tipo="${id}" onclick="selecionarTipoCriar(this)">
+        <div class="cm-type-header"><span class="cm-type-emoji">${t.emoji}</span><span class="cm-type-tag" style="background:${t.color}18;color:${t.color}">${t.tag}</span></div>
+        <div class="cm-type-name">${t.label}</div>
+        <div class="cm-type-desc">${t.desc}</div>
+      </button>`;
+    }).join('');
+    criarShowOnly('criarStep2');
+  }
+}
+
+function criarVoltar(paraStep) {
+  if (paraStep === 1) criarShowOnly('criarStep1');
+  if (paraStep === 2) criarShowOnly('criarStep2');
 }
 
 function selecionarTipoCriar(btn) {
   criarSelectedType = btn.dataset.tipo;
   const t = CM_TYPES_ALL[criarSelectedType] || { label: criarSelectedType, emoji: '📄', tag: '', color: '#6B7280' };
-  const isVid = isPerfilRR(currentProfile) && TIPOS_VIDEO_RR.includes(criarSelectedType);
-  document.getElementById('criarTypeGrid').style.display = 'none';
-  document.querySelector('#section-criar [style*="Com geração de imagem"]')?.closest('div')?.previousElementSibling && null;
-  document.querySelectorAll('#section-criar > div').forEach(d => { if (!d.id) d.style.display = 'none'; });
-  document.getElementById('criarInputPanel').style.display = 'block';
-  document.getElementById('criarResultPanel').style.display = 'none';
-  document.getElementById('criarRoteiroPanel').style.display = 'none';
   document.getElementById('criarInputEmoji').textContent = t.emoji;
-  document.getElementById('criarInputTitle').textContent = t.label + (isVid ? ' — Roteiro' : '');
-  document.getElementById('criarInputTag').textContent = t.tag + (isVid ? ' · 🎬 Gera roteiro com blocos e direção de câmera' : '');
+  document.getElementById('criarInputTitle').textContent = t.label;
+  document.getElementById('criarInputTag').textContent   = t.tag;
   document.getElementById('criarTema').value = '';
   document.getElementById('criarError').style.display = 'none';
+  criarShowOnly('criarInputPanel');
   document.getElementById('criarTema').focus();
 }
 
-function resetCriar(silent = false) {
-  criarSelectedType = null;
-  criarCurrentSlides = [];
-  criarCurrentSlideIdx = 0;
-  document.querySelectorAll('#section-criar > div').forEach(d => { if (!d.id) d.style.display = ''; });
-  const grid = document.getElementById('criarTypeGrid');
-  if (grid) grid.style.display = 'grid';
-  const ip = document.getElementById('criarInputPanel');   if (ip) ip.style.display = 'none';
-  const rp = document.getElementById('criarResultPanel');  if (rp) rp.style.display = 'none';
-  const rr = document.getElementById('criarRoteiroPanel'); if (rr) rr.style.display = 'none';
-}
+function resetCriar() { renderCriarHub(); }
 
 async function gerarConteudoCriar() {
   const tema = document.getElementById('criarTema').value.trim();
@@ -1069,34 +1081,26 @@ async function gerarConteudoCriar() {
     const r = await fetch('/api/content-machine/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: criarSelectedType, tema, profile: currentProfile }) });
     const d = await r.json();
     if (d.error) throw new Error(d.error);
-    document.getElementById('criarInputPanel').style.display = 'none';
-    if (d.isRoteiro) {
-      renderCriarRoteiro(d);
-    } else {
-      renderCriarSlides(d);
-    }
+    if (d.isRoteiro) { renderCriarRoteiro(d); } else { renderCriarSlides(d); }
   } catch(e) {
     document.getElementById('criarError').textContent = 'Erro: ' + e.message;
     document.getElementById('criarError').style.display = 'block';
-  } finally {
-    btn.disabled = false; btn.textContent = '✨ Gerar conteúdo';
-  }
+  } finally { btn.disabled = false; btn.textContent = '✨ Gerar conteúdo'; }
 }
 
 function renderCriarSlides(data) {
   const t = CM_TYPES_ALL[criarSelectedType] || { label: criarSelectedType, emoji: '📄', color: '#6B7280' };
-  const slides = data.slidesNormalizados || [];
-  criarCurrentSlides = slides;
+  criarCurrentSlides = data.slidesNormalizados || [];
   criarCurrentSlideIdx = 0;
   document.getElementById('criarResultTitle').textContent = t.emoji + ' ' + t.label + ' — ' + (data.tema || '');
-  document.getElementById('criarSlideNumbers').innerHTML = slides.map((s, i) =>
+  document.getElementById('criarSlideNumbers').innerHTML = criarCurrentSlides.map((s, i) =>
     `<button onclick="goToCriarSlide(${i})" id="criarSlideNum_${i}" style="width:28px;height:28px;border-radius:6px;font-size:11px;cursor:pointer;border:1.5px solid var(--light);background:var(--white);color:var(--mid);">${s.slideNumber || i + 1}</button>`
   ).join('');
-  document.getElementById('criarAllSlides').innerHTML = slides.map((s, i) => {
+  document.getElementById('criarAllSlides').innerHTML = criarCurrentSlides.map((s, i) => {
     const txt = s.textos?.[0]?.texto || s.heading || '';
     return `<div onclick="goToCriarSlide(${i})" id="criarAllSlide_${i}" style="background:var(--pale);border-radius:8px;padding:10px 12px;cursor:pointer;border-left:3px solid ${i === 0 ? t.color : 'var(--light)'};"><div style="font-size:10px;font-weight:700;color:var(--mid);">Slide ${s.slideNumber || i + 1} · ${s.funcao || ''}</div><div style="font-size:12px;color:var(--dark);line-height:1.5;">${txt}</div></div>`;
   }).join('');
-  document.getElementById('criarResultPanel').style.display = 'block';
+  criarShowOnly('criarResultPanel');
   goToCriarSlide(0);
 }
 
@@ -1111,18 +1115,17 @@ function goToCriarSlide(idx) {
   document.getElementById('criarSlideCard').style.borderColor = idx === 0 ? t.color : 'var(--light)';
   const textoEl = document.getElementById('criarSlideTexto');
   if (txs.length > 1) {
-    textoEl.innerHTML = txs.map((tx, ti) => `<div style="margin-bottom:${ti < txs.length - 1 ? '14px' : '0'}"><div style="font-size:9px;font-weight:700;color:var(--mid);">${tx.tipo || 'texto'}</div><div style="font-size:15px;line-height:1.7;color:var(--dark);">${tx.texto || ''}</div></div>`).join('<hr style="border:none;border-top:1px solid var(--light);margin:0 0 14px;">');
+    textoEl.innerHTML = txs.map((tx, ti) => `<div style="margin-bottom:${ti < txs.length-1?'14px':'0'}"><div style="font-size:9px;font-weight:700;color:var(--mid);">${tx.tipo||'texto'}</div><div style="font-size:15px;line-height:1.7;color:var(--dark);">${tx.texto||''}</div></div>`).join('<hr style="border:none;border-top:1px solid var(--light);margin:0 0 14px;">');
   } else {
-    textoEl.innerHTML = `<div style="font-size:15px;line-height:1.7;color:var(--dark);">${txs[0]?.texto || s.heading || ''}</div>`;
+    textoEl.innerHTML = `<div style="font-size:15px;line-height:1.7;color:var(--dark);">${txs[0]?.texto||s.heading||''}</div>`;
   }
-  document.querySelectorAll('[id^="criarSlideNum_"]').forEach((b, i) => {
-    const active = i === idx;
-    b.style.borderColor = active ? t.color : 'var(--light)';
-    b.style.background  = active ? t.color + '18' : 'var(--white)';
-    b.style.color       = active ? t.color : 'var(--mid)';
-    b.style.fontWeight  = active ? '700' : '400';
+  document.querySelectorAll('[id^="criarSlideNum_"]').forEach((b,i) => {
+    b.style.borderColor = i===idx ? t.color : 'var(--light)';
+    b.style.background  = i===idx ? t.color+'18' : 'var(--white)';
+    b.style.color       = i===idx ? t.color : 'var(--mid)';
+    b.style.fontWeight  = i===idx ? '700' : '400';
   });
-  document.querySelectorAll('[id^="criarAllSlide_"]').forEach((el, i) => { el.style.background = i === idx ? t.color + '10' : 'var(--pale)'; });
+  document.querySelectorAll('[id^="criarAllSlide_"]').forEach((el,i) => { el.style.background = i===idx ? t.color+'10' : 'var(--pale)'; });
   document.getElementById('btnCriarPrev').disabled = idx === 0;
   document.getElementById('btnCriarNext').disabled = idx === criarCurrentSlides.length - 1;
 }
@@ -1130,10 +1133,10 @@ function goToCriarSlide(idx) {
 function navCriarSlide(dir) { goToCriarSlide(criarCurrentSlideIdx + dir); }
 
 function copyCriarSlides() {
-  const text = criarCurrentSlides.map((s, i) => {
+  const text = criarCurrentSlides.map((s,i) => {
     const txs = s.textos || [];
-    if (txs.length > 1) return 'SLIDE ' + (s.slideNumber || i + 1) + ' — ' + s.funcao + '\n' + txs.map(tx => '[' + (tx.tipo || 'texto') + '] ' + tx.texto).join('\n\n');
-    return 'SLIDE ' + (s.slideNumber || i + 1) + ' — ' + s.funcao + '\n' + (txs[0]?.texto || s.heading || '');
+    if (txs.length > 1) return 'SLIDE '+(s.slideNumber||i+1)+' — '+s.funcao+'\n'+txs.map(tx=>'['+( tx.tipo||'texto')+'] '+tx.texto).join('\n\n');
+    return 'SLIDE '+(s.slideNumber||i+1)+' — '+s.funcao+'\n'+(txs[0]?.texto||s.heading||'');
   }).join('\n\n---\n\n');
   navigator.clipboard?.writeText(text).then(() => {
     const el = document.getElementById('criarCopyConfirm');
@@ -1145,21 +1148,21 @@ function copyCriarSlides() {
 function renderCriarRoteiro(data) {
   const t = CM_TYPES_ALL[criarSelectedType] || { emoji: '🎬', label: criarSelectedType, color: '#7C3AED' };
   document.getElementById('criarRoteiroTitle').textContent = t.emoji + ' ' + t.label + ' — ' + (data.tema || '');
-  const blocos = (data.blocos || []).map((b, i) =>
-    `<div class="roteiro-bloco" id="criarbloco_${i}"><div class="roteiro-bloco-header" onclick="toggleCriarBloco(${i})"><div class="roteiro-bloco-meta"><span class="roteiro-bloco-label">${b.label || 'Bloco ' + (i + 1)}</span>${b.tempo ? `<span class="roteiro-bloco-tempo">${b.tempo}</span>` : ''}</div><span style="font-size:.8rem;color:var(--mid);" id="criarbloco_arrow_${i}">▾</span></div><div class="roteiro-bloco-body" id="criarbloco_body_${i}"><div class="roteiro-bloco-texto">${b.texto || ''}</div>${b.nota_direcao ? `<div class="roteiro-bloco-direcao">${b.nota_direcao}</div>` : ''}</div></div>`
+  const blocos = (data.blocos || []).map((b,i) =>
+    `<div class="roteiro-bloco" id="criarbloco_${i}"><div class="roteiro-bloco-header" onclick="toggleCriarBloco(${i})"><div class="roteiro-bloco-meta"><span class="roteiro-bloco-label">${b.label||'Bloco '+(i+1)}</span>${b.tempo?`<span class="roteiro-bloco-tempo">${b.tempo}</span>`:''}</div><span style="font-size:.8rem;color:var(--mid);" id="criarbloco_arrow_${i}">▾</span></div><div class="roteiro-bloco-body" id="criarbloco_body_${i}"><div class="roteiro-bloco-texto">${b.texto||''}</div>${b.nota_direcao?`<div class="roteiro-bloco-direcao">${b.nota_direcao}</div>`:''}</div></div>`
   ).join('');
-  const dicas = (data.dicas_gravacao || []).map(d => `<div class="roteiro-dica">${d}</div>`).join('');
+  const dicas = (data.dicas_gravacao||[]).map(d=>`<div class="roteiro-dica">${d}</div>`).join('');
   window._currentRoteiroStandalone = data;
   document.getElementById('criarRoteiroOutput').innerHTML = `
     <div class="roteiro-wrapper">
-      <div class="roteiro-gancho-box"><div class="roteiro-gancho-label">🎯 Primeira frase — diz assim na câmera</div><div class="roteiro-gancho-texto">"${data.gancho || ''}"</div>${data.duracao_estimada ? `<div style="font-size:.72rem;color:var(--mid);margin-top:6px;">⏱ ${data.duracao_estimada}</div>` : ''}</div>
+      <div class="roteiro-gancho-box"><div class="roteiro-gancho-label">🎯 Primeira frase — diz assim na câmera</div><div class="roteiro-gancho-texto">"${data.gancho||''}"</div>${data.duracao_estimada?`<div style="font-size:.72rem;color:var(--mid);margin-top:6px;">⏱ ${data.duracao_estimada}</div>`:''}</div>
       <div class="roteiro-blocos">${blocos}</div>
-      ${dicas ? `<div class="roteiro-dicas"><div class="roteiro-dicas-label">Dicas de gravação</div>${dicas}</div>` : ''}
-      ${data.legenda_sugerida ? `<div class="roteiro-legenda"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:6px;">Legenda sugerida</div><textarea class="textarea" id="criarRoteiroLegenda" rows="3" style="font-size:.8rem;">${data.legenda_sugerida}</textarea></div>` : ''}
+      ${dicas?`<div class="roteiro-dicas"><div class="roteiro-dicas-label">Dicas de gravação</div>${dicas}</div>`:''}
+      ${data.legenda_sugerida?`<div class="roteiro-legenda"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:6px;">Legenda sugerida</div><textarea class="textarea" rows="3" style="font-size:.8rem;">${data.legenda_sugerida}</textarea></div>`:''}
       <button class="roteiro-copy-btn" onclick="copyRoteiroStandalone()">📋 Copiar roteiro completo</button>
       <div class="roteiro-copy-confirm" id="rrCopyConfirm2">✅ Roteiro copiado!</div>
     </div>`;
-  document.getElementById('criarRoteiroPanel').style.display = 'block';
+  criarShowOnly('criarRoteiroPanel');
 }
 
 function toggleCriarBloco(i) {
