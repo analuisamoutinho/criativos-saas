@@ -1200,6 +1200,117 @@ JSON: {"title":"...","slideCount":${isRR ? 8 : 10},"slides":[{"slideNumber":1,"h
 });
 
 // ── Content Machine ───────────────────────────────────────────────────────
+
+const TIPOS_VIDEO_RR = ['lofi', 'video_curto', 'video_medio'];
+
+function buildPromptRoteiro(tipo, tema, account, tipoInfo, manualNote, brand) {
+  const ctaFixo = account.handle === '@analuisa.moutinho'
+    ? 'salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você.'
+    : 'salva esse conteúdo e me conta nos comentários o que mais fez sentido pra você.';
+
+  const estruturas = {
+    lofi: `ESTRUTURA LO-FI (câmera ligada, fala direta — Metodologia RR):
+- GANCHO (0-3s): primeira frase dita na câmera. Toca na DOR ou DESEJO real. Sem introdução, sem "oi gente". Direto.
+- DESENVOLVIMENTO (3s-fim): história ou argumento que sustenta o gancho. Tom conversacional, íntimo. Como se estivesse falando com uma pessoa só.
+- CONCLUSÃO / TESE: fecha com uma afirmação clara. O que o espectador deve pensar/sentir ao terminar.
+- CTA final falado: "${ctaFixo}"
+
+REGRAS LO-FI:
+- Escrever como se fala, não como se escreve. Sem pontuação formal.
+- Frases curtas. Pausas marcadas com "..."
+- Sem roteiro engessado — é uma guia de pontos, não texto decorado.
+- Indicar onde pausar, onde olhar pra câmera, onde gesticular (entre colchetes).`,
+
+    video_curto: `ESTRUTURA VÍDEO CURTO — até 13 segundos (Metodologia RR):
+- É UMA ÚNICA SACADA. Só uma. Sem introdução, sem contexto, sem explicação.
+- A sacada precisa ser tão boa que o espectador assista de novo.
+- Formato: afirmação + reforço de 1 linha. Acabou.
+- Contar cada segundo — 13s é pouco, cada palavra precisa valer.
+
+REGRAS VÍDEO CURTO:
+- Máximo 2-3 frases no roteiro inteiro.
+- Sem CTA explícito — a sacada em si é o gancho para seguir.
+- Indicar ritmo: rápido, pausa dramática, etc.`,
+
+    video_medio: `ESTRUTURA VÍDEO MÉDIO — até 60 segundos (Metodologia RR):
+- GANCHO (0-5s): primeira frase dita. Uma afirmação provocativa ou pergunta que gera tensão.
+- DESENVOLVIMENTO (5-50s): 3-4 pontos curtos que constroem o argumento. Cada ponto em ~10s.
+- CONCLUSÃO (50-60s): tese clara + CTA falado: "${ctaFixo}"
+
+REGRAS VÍDEO MÉDIO:
+- Contar os segundos aproximados de cada bloco (ex: [0-5s], [5-20s]).
+- Tom natural, como conversa real. Sem "hoje vou falar sobre...".
+- Indicar onde pausar, mudar tom, olhar direto pra câmera.`,
+  };
+
+  const systemPrompt = `Você é roteirista de conteúdo para Instagram da ${account.name} — marca pessoal, Metodologia RR.
+
+FILOSOFIA RR:
+- Conteúdo não é venda, é transformação. Autenticidade supera produção.
+- Profundidade acima de brevidade. Gancho + história + conclusão com tese.
+- Nunca motivacional genérico. Nunca guru. Tom íntimo, direto, real.
+
+${brand.copyDNA || ''}
+${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
+
+TIPO: ${tipoInfo.emoji} ${tipoInfo.label}
+${estruturas[tipo] || ''}
+
+TERMOS PROIBIDOS: motivacional genérico, guru, coach, desbloqueie, seja sua melhor versão, transforme sua vida, fórmula secreta, método infalível, próximo nível.
+
+Retornar APENAS JSON válido, sem markdown.`;
+
+  const userPrompt = `Perfil: ${account.name} (${account.handle})
+Tema: "${tema}"
+Tipo: ${tipoInfo.label}
+
+Gere o roteiro completo em JSON:
+{
+  "tipo": "${tipo}",
+  "tipo_label": "${tipoInfo.label}",
+  "tema": "${tema}",
+  "isRoteiro": true,
+  "duracao_estimada": "ex: 45-55 segundos",
+  "gancho": "primeira frase exata a ser dita na câmera",
+  "blocos": [
+    {
+      "id": 1,
+      "label": "GANCHO",
+      "tempo": "0-5s",
+      "texto": "o que falar neste bloco — como se fala, não como se escreve",
+      "nota_direcao": "instrução de gravação: tom, gestos, olhar, ritmo"
+    },
+    {
+      "id": 2,
+      "label": "DESENVOLVIMENTO",
+      "tempo": "5-40s",
+      "texto": "...",
+      "nota_direcao": "..."
+    },
+    {
+      "id": 3,
+      "label": "CONCLUSÃO",
+      "tempo": "40-55s",
+      "texto": "...",
+      "nota_direcao": "..."
+    },
+    {
+      "id": 4,
+      "label": "CTA",
+      "tempo": "55-60s",
+      "texto": "${ctaFixo}",
+      "nota_direcao": "falar com intimidade, não como anúncio"
+    }
+  ],
+  "dicas_gravacao": [
+    "dica específica para gravar esse vídeo bem"
+  ],
+  "legenda_sugerida": "legenda do post com emojis, máximo 4 hashtags específicas ao nicho"
+}`;
+
+  return { systemPrompt, userPrompt };
+}
+
 app.post('/api/content-machine/generate', async (req, res) => {
   try {
     const { tipo, tema, profile } = req.body;
@@ -1207,36 +1318,60 @@ app.post('/api/content-machine/generate', async (req, res) => {
 
     const { isRR, tipos, metodologia } = getMetodologia(profile);
     const account = getAccount(profile);
+    const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
 
     if (!tipos[tipo]) {
       return res.status(400).json({
-        error: `Tipo "${tipo}" não está disponível para ${isRR ? 'marca pessoal (Metodologia RR)' : 'marca corporativa (BrandsDecoded)'}. Tipos disponíveis: ${Object.keys(tipos).join(', ')}`,
+        error: `Tipo "${tipo}" não disponível para ${isRR ? 'marca pessoal (RR)' : 'corporativa (BrandsDecoded)'}. Disponíveis: ${Object.keys(tipos).join(', ')}`,
       });
     }
 
-    const tipoInfo = tipos[tipo];
-    const systemPrompt = buildSystemPromptContentMachine(profile, tipo, metodologia, isRR);
+    const tipoInfo   = tipos[tipo];
+    const manualNote = getManualText(profile);
+    const isVideo    = isRR && TIPOS_VIDEO_RR.includes(tipo);
 
+    // ── VÍDEO: gera roteiro ───────────────────────────────────────────────
+    if (isVideo) {
+      const { systemPrompt, userPrompt } = buildPromptRoteiro(tipo, tema, account, tipoInfo, manualNote, brand);
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-4o', temperature: 1.0, max_tokens: 3000,
+          messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+        }),
+      });
+      const data = await response.json();
+      if (data.error) return res.status(500).json({ error: data.error.message });
+
+      const parsed = extractJSON(data.choices[0].message.content.trim());
+
+      const item = saveGeneratedContent({
+        id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente',
+        type: 'reels', contentMachineType: tipo,
+        contentMachineTypeLabel: tipoInfo.label,
+        profile, topic: tema, imageUrls: [],
+        metodologia: 'rr', isRoteiro: true,
+        roteiroData: parsed,
+      });
+
+      return res.json({ success: true, contentId: item.id, isRoteiro: true, ...parsed });
+    }
+
+    // ── TEXTO (carrossel, frase, dump, bastidores): gera slides ──────────
     const tiposRRLabels = { lofi:'Lo-Fi (câmera ligada)', carrossel:'Carrossel', video_curto:'Vídeo Curto (até 13s)', video_medio:'Vídeo Médio (até 1min)', frase:'Frase de Impacto', dump:'Dump / Bastidores', bastidores:'Bastidores' };
     const tiposBDLabels = { tendencia:'Análise de Tendência', case:'Case de Sucesso', educativo:'Educativo / Framework', comparacao:'Comparação / Antes & Depois', lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta' };
-    const tipoLabel = isRR ? (tiposRRLabels[tipo] || tipo) : (tiposBDLabels[tipo] || tipo);
+    const tipoLabel     = isRR ? (tiposRRLabels[tipo] || tipo) : (tiposBDLabels[tipo] || tipo);
+    const systemPrompt  = buildSystemPromptContentMachine(profile, tipo, metodologia, isRR);
+
+    const ctaFixo = account.handle === '@analuisa.moutinho'
+      ? 'salva pra reler quando esquecer disso.'
+      : 'Gostou? Comente CASE que nossa equipe te chama.';
 
     const instrucaoEstrutura = isRR
-      ? `INSTRUÇÃO ESPECÍFICA DO FORMATO:
-${tipoInfo.instrucao}
-
-ESTRUTURA VIRAL RR:
-1. Slide CAPA: gancho que toca na dor ou desejo real. Provocativo sem ser sensacionalista.
-2. Slides DESENVOLVIMENTO: profundidade real. Não raso. História ou análise que sustenta o gancho.
-3. Slide CONCLUSÃO: tese clara que fecha. O que faz alguém querer seguir.
-4. CTA FINAL: íntimo e leve.`
-      : `INSTRUÇÃO ESPECÍFICA DO TIPO:
-${tipoInfo.instrucao}
-
-ESTRUTURA BRANDSDECODED:
-1. Slide CAPA: hook de 14-18 palavras, afirmação provocativa que nomeia fenômeno real.
-2. Slides MEIO: dados, frameworks, exemplos concretos e verificáveis.
-3. Slide FINAL: CTA com assinatura da marca.`;
+      ? `INSTRUÇÃO ESPECÍFICA DO FORMATO:\n${tipoInfo.instrucao}\n\nESTRUTURA VIRAL RR:\n1. Slide CAPA: gancho que toca na dor ou desejo real.\n2. Slides DESENVOLVIMENTO: profundidade real.\n3. Slide CONCLUSÃO: tese clara que fecha.\n4. CTA FINAL: íntimo e leve.`
+      : `INSTRUÇÃO ESPECÍFICA DO TIPO:\n${tipoInfo.instrucao}\n\nESTRUTURA BRANDSDECODED:\n1. Slide CAPA: hook de 14-18 palavras.\n2. Slides MEIO: dados, frameworks, exemplos.\n3. Slide FINAL: CTA com assinatura da marca.`;
 
     const userPrompt = `Tipo de conteúdo: ${tipoLabel}
 Perfil: ${account.name} (${account.handle})
@@ -1251,10 +1386,11 @@ JSON:
   "tema": "${tema}",
   "profile": "${profile}",
   "metodologia": "${isRR ? 'rr' : 'brandsdecoded'}",
+  "isRoteiro": false,
   "slides": [
     {"slide":1,"funcao":"CAPA","textos":[{"posicao":1,"tipo":"hook","texto":"..."},{"posicao":2,"tipo":"sub-hook","texto":"..."}]},
     {"slide":2,"funcao":"DESENVOLVIMENTO","textos":[{"posicao":3,"tipo":"titulo","texto":"..."},{"posicao":4,"tipo":"paragrafo","texto":"..."}]},
-    {"slide":8,"funcao":"CTA","textos":[{"posicao":15,"tipo":"cta","texto":"${isRR ? 'salva pra reler quando esquecer disso.' : 'Gostou? Comente CASE que nossa equipe te chama.'}"}]}
+    {"slide":8,"funcao":"CTA","textos":[{"posicao":15,"tipo":"cta","texto":"${ctaFixo}"}]}
   ]
 }`;
 
@@ -1277,11 +1413,11 @@ JSON:
       id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel',
       contentMachineType: tipo, contentMachineTypeLabel: tipoLabel,
       profile, topic: tema, imageUrls: [],
-      metodologia: isRR ? 'rr' : 'brandsdecoded',
+      metodologia: isRR ? 'rr' : 'brandsdecoded', isRoteiro: false,
       carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption: '', hashtags: '' },
     });
 
-    res.json({ success: true, contentId: item.id, ...parsed, slidesNormalizados: slidesNorm });
+    res.json({ success: true, contentId: item.id, isRoteiro: false, ...parsed, slidesNormalizados: slidesNorm });
   } catch(err) {
     console.error('Content Machine error:', err);
     res.status(500).json({ error: err.message });
