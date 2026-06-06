@@ -1437,6 +1437,8 @@ const NICHE_CONFIG = {
 const trendsCache = {};
 const TRENDS_TTL  = 60 * 60 * 1000; // 1h
 
+
+
 function parseGoogleTrendsRSS(xml) {
   const items = [];
   const itemRx = /<item>([\s\S]*?)<\/item>/g;
@@ -1476,30 +1478,6 @@ async function getGoogleTrends() {
   }
 }
 
-async function getTwitterTrends() {
-  const token = process.env.TWITTER_BEARER_TOKEN;
-  if (!token) return [];
-  try {
-    // WOEID 23424768 = Brasil
-    const r = await fetchWithTimeout(
-      'https://api.twitter.com/1.1/trends/place.json?id=23424768',
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    const data = await r.json();
-    if (!Array.isArray(data) || !data[0]?.trends) return [];
-    return data[0].trends
-      .filter(t => t.tweet_volume || t.name)
-      .slice(0, 20)
-      .map(t => ({
-        termo: t.name.replace(/^#/, ''),
-        volume: t.tweet_volume ? `${(t.tweet_volume/1000).toFixed(0)}k tweets` : '',
-        fonte: 'Twitter/X',
-      }));
-  } catch(e) {
-    console.warn('[Trends] Twitter Trends falhou:', e.message);
-    return [];
-  }
-}
 
 app.get('/api/trends', async (req, res) => {
   try {
@@ -1514,18 +1492,13 @@ app.get('/api/trends', async (req, res) => {
     const nicho   = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
     const manualNote = getManualText(profile);
 
-    const [googleTrends, twitterTrends] = await Promise.all([
-      getGoogleTrends(),
-      getTwitterTrends(),
-    ]);
+    const googleTrends = await getGoogleTrends();
 
-    const allTrends = [...googleTrends, ...twitterTrends];
-
-    if (!allTrends.length) {
+    if (!googleTrends.length) {
       return res.json({ trends: [], updatedAt: new Date().toISOString(), warning: 'Nenhuma fonte de tendências disponível neste momento.' });
     }
 
-    const termosList = allTrends
+    const termosList = googleTrends
       .map((t, i) => `${i + 1}. [${t.fonte}] ${t.termo}${t.volume ? ` (${t.volume})` : ''}`)
       .join('\n');
 
@@ -1576,10 +1549,7 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
     const result = {
       trends: parsed.trends || [],
       updatedAt: new Date().toISOString(),
-      fontes: {
-        google: googleTrends.length > 0,
-        twitter: twitterTrends.length > 0,
-      },
+      fontes: { google: googleTrends.length > 0 },
     };
 
     trendsCache[profile] = { data: result, ts: now };

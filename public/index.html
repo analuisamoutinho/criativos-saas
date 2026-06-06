@@ -394,11 +394,9 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     <button class="nav-item" data-section="criar" onclick="showSection('criar',this)"><span class="nav-icon">✏️</span>Criar</button>
     <div class="nav-section-title">Publicação</div>
     <button class="nav-item" data-section="calendar" onclick="showSection('calendar',this)"><span class="nav-icon">📅</span>Calendário</button>
-    <div class="nav-section-title">Inteligência</div>
-    <button class="nav-item" data-section="trends" onclick="showSection('trends',this)"><span class="nav-icon">📡</span>Tendências</button>
     <div class="nav-section-title">Recursos</div>
+    <button class="nav-item" data-section="trends" onclick="showSection('trends',this)"><span class="nav-icon">📡</span>Tendências</button>
     <button class="nav-item" data-section="photos" onclick="showSection('photos',this)"><span class="nav-icon">📸</span>Banco de Fotos</button>
-    <button class="nav-item" data-section="contentmachine" onclick="showSection('contentmachine',this)"><span class="nav-icon">⚡</span>Content Machine</button>
     <button class="nav-item" data-section="manual" onclick="showSection('manual',this)"><span class="nav-icon">📖</span>Manual</button>
   </nav>
 </aside>
@@ -436,23 +434,86 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 
   <!-- CRIAR HUB -->
   <section class="section" id="section-criar">
-    <div class="section-header"><h2>✏️ Criar</h2><p>Escolhe o tipo de conteúdo que queres gerar.</p></div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;max-width:900px;">
-      <button class="cm-type-btn" onclick="showSection('carousel',null)" style="padding:28px 24px;">
-        <div class="cm-type-header"><span class="cm-type-emoji">🎠</span><span class="cm-type-tag" style="background:rgba(59,15,76,.1);color:var(--purple);">Carrossel</span></div>
-        <div class="cm-type-name">Carrossel</div>
-        <div class="cm-type-desc">Múltiplos slides com copy gerada por IA. Cola blocos de texto ou descreve um tema.</div>
+    <div class="section-header"><h2>✏️ Criar</h2><p>Escolhe o formato — a IA gera a copy, o roteiro ou a imagem.</p></div>
+
+    <!-- Ferramentas com geração de imagem -->
+    <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mid);margin-bottom:10px;font-weight:700;">Com geração de imagem</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;max-width:820px;margin-bottom:28px;">
+      <button class="cm-type-btn" onclick="showSection('carousel',null)">
+        <div class="cm-type-header"><span class="cm-type-emoji">🎠</span><span class="cm-type-tag" style="background:rgba(59,15,76,.1);color:var(--purple);">Imagem + Copy</span></div>
+        <div class="cm-type-name">Carrossel com imagens</div>
+        <div class="cm-type-desc">Slides com imagens geradas por IA (GPT Image / Gemini). Ideal para alcance máximo.</div>
       </button>
-      <button class="cm-type-btn" onclick="showSection('feed',null)" style="padding:28px 24px;">
-        <div class="cm-type-header"><span class="cm-type-emoji">🖼️</span><span class="cm-type-tag" style="background:rgba(59,130,246,.1);color:#1D4ED8;">Feed</span></div>
-        <div class="cm-type-name">Post Feed</div>
-        <div class="cm-type-desc">Uma imagem única para o feed do Instagram, com legenda e hashtags geradas por IA.</div>
+      <button class="cm-type-btn" onclick="showSection('feed',null)">
+        <div class="cm-type-header"><span class="cm-type-emoji">🖼️</span><span class="cm-type-tag" style="background:rgba(59,130,246,.1);color:#1D4ED8;">Imagem + Legenda</span></div>
+        <div class="cm-type-name">Post Feed com imagem</div>
+        <div class="cm-type-desc">Uma imagem única para o feed com legenda gerada por IA.</div>
       </button>
-      <button class="cm-type-btn" onclick="showSection('roteiro',null)" style="padding:28px 24px;">
-        <div class="cm-type-header"><span class="cm-type-emoji">🎬</span><span class="cm-type-tag" style="background:#EDE9FE;color:#7C3AED;">Roteiro</span></div>
-        <div class="cm-type-name">Roteiro de Reels</div>
-        <div class="cm-type-desc">Roteiro completo com gancho, blocos, direção de câmera e legenda para publicar.</div>
-      </button>
+    </div>
+
+    <!-- Copy, roteiro e formatos por metodologia -->
+    <div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--mid);margin-bottom:10px;font-weight:700;">Copy, roteiro e formatos de conteúdo</div>
+    <div id="criarTypeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;max-width:960px;margin-bottom:28px;"></div>
+
+    <!-- Painel de input (após escolher tipo) -->
+    <div id="criarInputPanel" style="display:none;max-width:640px;">
+      <button onclick="resetCriar()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--mid);font-size:.82rem;cursor:pointer;margin-bottom:16px;">← Voltar</button>
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span id="criarInputEmoji" style="font-size:1.3rem;"></span>
+          <span id="criarInputTitle" style="font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--dark);"></span>
+        </div>
+        <div id="criarInputTag" style="font-size:.72rem;color:var(--mid);margin-bottom:18px;"></div>
+        <div class="form-group">
+          <label class="form-label">Tema</label>
+          <textarea class="textarea" id="criarTema" rows="4" placeholder="Descreve o tema ou a pauta que queres trabalhar..."></textarea>
+        </div>
+        <div id="criarError" style="display:none;color:#EF4444;font-size:.82rem;margin-bottom:12px;"></div>
+        <button class="btn btn-primary" id="btnCriarGerar" onclick="gerarConteudoCriar()" style="width:100%">✨ Gerar conteúdo</button>
+      </div>
+    </div>
+
+    <!-- Resultado inline -->
+    <div id="criarResultPanel" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;" id="criarResultTitle"></div>
+        <button class="btn btn-secondary btn-sm" onclick="resetCriar()">+ Novo</button>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="card" style="padding:16px;">
+            <div id="criarSlideNumbers" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;"></div>
+            <div id="criarSlideCard" style="background:var(--pale);border-radius:var(--radius);overflow:hidden;border:1.5px solid var(--light);">
+              <div id="criarSlideCardHeader" style="padding:9px 14px;border-bottom:1px solid var(--light);display:flex;align-items:center;gap:8px;">
+                <span id="criarSlideNum" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);"></span>
+                <span id="criarSlideTitulo" style="font-size:11px;color:var(--mid);"></span>
+              </div>
+              <div id="criarSlideTexto" style="padding:18px;font-size:15px;line-height:1.7;color:var(--dark);white-space:pre-wrap;min-height:80px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn btn-secondary btn-sm" id="btnCriarPrev" onclick="navCriarSlide(-1)" style="flex:1">← Anterior</button>
+              <button class="btn btn-secondary btn-sm" id="btnCriarNext" onclick="navCriarSlide(1)" style="flex:1">Próximo →</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="copyCriarSlides()" style="width:100%;margin-top:10px;">📋 Copiar todos os slides</button>
+            <div id="criarCopyConfirm" style="text-align:center;font-size:.78rem;color:#065F46;margin-top:6px;display:none;">✅ Copiado!</div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="padding:16px;max-height:520px;overflow-y:auto;">
+            <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:10px;">Todos os slides</div>
+            <div id="criarAllSlides" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultado roteiro inline -->
+    <div id="criarRoteiroPanel" style="display:none;max-width:640px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;" id="criarRoteiroTitle">🎬 Roteiro gerado</div>
+        <button class="btn btn-secondary btn-sm" onclick="resetCriar()">+ Novo</button>
+      </div>
+      <div class="card"><div id="criarRoteiroOutput"></div></div>
     </div>
   </section>
 
@@ -612,7 +673,6 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
     </div>
     <div class="trends-meta" id="trendsMeta" style="display:none;">
       <span class="trends-fonte-pill" id="trendsGooglePill">⬤ Google Trends</span>
-      <span class="trends-fonte-pill" id="trendsTwitterPill">⬤ Twitter/X</span>
       <span class="trends-update" id="trendsUpdatedAt"></span>
       <button class="btn btn-secondary btn-sm" onclick="loadTrends(true)" style="margin-left:4px;">🔄 Atualizar</button>
     </div>
@@ -740,6 +800,7 @@ function showSection(id,navBtn){
   if(id==='calendar')setTimeout(loadSavedCalendar,100);
   if(id==='trends')loadTrends();
   if(id==='contentmachine')renderCMTypeSelector();
+  if(id==='criar')renderCriarHub();
   if(id==='dashboard')loadDashboard();
   if(id==='library')loadLibrary();
   if(id==='photos')loadPhotos();
@@ -945,6 +1006,170 @@ async function generateContentMachine(){
   finally{clearInterval(interval);btn.disabled=false;btn.textContent='⚡ Gerar copy';}
 }
 
+// ── Hub Criar ────────────────────────────────────────────────────────────
+let criarSelectedType = null;
+let criarCurrentSlides = [];
+let criarCurrentSlideIdx = 0;
+
+function renderCriarHub() {
+  const grid = document.getElementById('criarTypeGrid');
+  if (!grid) return;
+  resetCriar(true);
+  const tiposAtivos = getCMTiposParaPerfil(currentProfile);
+  const isRR = isPerfilRR(currentProfile);
+  grid.innerHTML = tiposAtivos.map(id => {
+    const t = CM_TYPES_ALL[id];
+    if (!t) return '';
+    const isVid = TIPOS_VIDEO_RR.includes(id);
+    return `<button class="cm-type-btn" data-tipo="${id}" onclick="selecionarTipoCriar(this)">
+      <div class="cm-type-header"><span class="cm-type-emoji">${t.emoji}</span><span class="cm-type-tag" style="background:${t.color}18;color:${t.color}">${t.tag}</span></div>
+      <div class="cm-type-name">${t.label}${isVid ? ' <span style="font-size:.6rem;background:#EDE9FE;color:#7C3AED;border-radius:4px;padding:1px 5px;font-weight:700;">Roteiro</span>' : ''}</div>
+      <div class="cm-type-desc">${t.desc}</div>
+    </button>`;
+  }).join('');
+}
+
+function selecionarTipoCriar(btn) {
+  criarSelectedType = btn.dataset.tipo;
+  const t = CM_TYPES_ALL[criarSelectedType] || { label: criarSelectedType, emoji: '📄', tag: '', color: '#6B7280' };
+  const isVid = isPerfilRR(currentProfile) && TIPOS_VIDEO_RR.includes(criarSelectedType);
+  document.getElementById('criarTypeGrid').style.display = 'none';
+  document.querySelector('#section-criar [style*="Com geração de imagem"]')?.closest('div')?.previousElementSibling && null;
+  document.querySelectorAll('#section-criar > div').forEach(d => { if (!d.id) d.style.display = 'none'; });
+  document.getElementById('criarInputPanel').style.display = 'block';
+  document.getElementById('criarResultPanel').style.display = 'none';
+  document.getElementById('criarRoteiroPanel').style.display = 'none';
+  document.getElementById('criarInputEmoji').textContent = t.emoji;
+  document.getElementById('criarInputTitle').textContent = t.label + (isVid ? ' — Roteiro' : '');
+  document.getElementById('criarInputTag').textContent = t.tag + (isVid ? ' · 🎬 Gera roteiro com blocos e direção de câmera' : '');
+  document.getElementById('criarTema').value = '';
+  document.getElementById('criarError').style.display = 'none';
+  document.getElementById('criarTema').focus();
+}
+
+function resetCriar(silent = false) {
+  criarSelectedType = null;
+  criarCurrentSlides = [];
+  criarCurrentSlideIdx = 0;
+  document.querySelectorAll('#section-criar > div').forEach(d => { if (!d.id) d.style.display = ''; });
+  const grid = document.getElementById('criarTypeGrid');
+  if (grid) grid.style.display = 'grid';
+  const ip = document.getElementById('criarInputPanel');   if (ip) ip.style.display = 'none';
+  const rp = document.getElementById('criarResultPanel');  if (rp) rp.style.display = 'none';
+  const rr = document.getElementById('criarRoteiroPanel'); if (rr) rr.style.display = 'none';
+}
+
+async function gerarConteudoCriar() {
+  const tema = document.getElementById('criarTema').value.trim();
+  if (!tema) { document.getElementById('criarError').textContent = 'Escreve um tema.'; document.getElementById('criarError').style.display = 'block'; return; }
+  document.getElementById('criarError').style.display = 'none';
+  const btn = document.getElementById('btnCriarGerar');
+  btn.disabled = true; btn.textContent = '⏳ A gerar...';
+  try {
+    const r = await fetch('/api/content-machine/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: criarSelectedType, tema, profile: currentProfile }) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    document.getElementById('criarInputPanel').style.display = 'none';
+    if (d.isRoteiro) {
+      renderCriarRoteiro(d);
+    } else {
+      renderCriarSlides(d);
+    }
+  } catch(e) {
+    document.getElementById('criarError').textContent = 'Erro: ' + e.message;
+    document.getElementById('criarError').style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = '✨ Gerar conteúdo';
+  }
+}
+
+function renderCriarSlides(data) {
+  const t = CM_TYPES_ALL[criarSelectedType] || { label: criarSelectedType, emoji: '📄', color: '#6B7280' };
+  const slides = data.slidesNormalizados || [];
+  criarCurrentSlides = slides;
+  criarCurrentSlideIdx = 0;
+  document.getElementById('criarResultTitle').textContent = t.emoji + ' ' + t.label + ' — ' + (data.tema || '');
+  document.getElementById('criarSlideNumbers').innerHTML = slides.map((s, i) =>
+    `<button onclick="goToCriarSlide(${i})" id="criarSlideNum_${i}" style="width:28px;height:28px;border-radius:6px;font-size:11px;cursor:pointer;border:1.5px solid var(--light);background:var(--white);color:var(--mid);">${s.slideNumber || i + 1}</button>`
+  ).join('');
+  document.getElementById('criarAllSlides').innerHTML = slides.map((s, i) => {
+    const txt = s.textos?.[0]?.texto || s.heading || '';
+    return `<div onclick="goToCriarSlide(${i})" id="criarAllSlide_${i}" style="background:var(--pale);border-radius:8px;padding:10px 12px;cursor:pointer;border-left:3px solid ${i === 0 ? t.color : 'var(--light)'};"><div style="font-size:10px;font-weight:700;color:var(--mid);">Slide ${s.slideNumber || i + 1} · ${s.funcao || ''}</div><div style="font-size:12px;color:var(--dark);line-height:1.5;">${txt}</div></div>`;
+  }).join('');
+  document.getElementById('criarResultPanel').style.display = 'block';
+  goToCriarSlide(0);
+}
+
+function goToCriarSlide(idx) {
+  if (idx < 0 || idx >= criarCurrentSlides.length) return;
+  criarCurrentSlideIdx = idx;
+  const s = criarCurrentSlides[idx];
+  const t = CM_TYPES_ALL[criarSelectedType] || { color: '#6B7280' };
+  const txs = s.textos || [];
+  document.getElementById('criarSlideNum').textContent = 'Slide ' + (s.slideNumber || idx + 1);
+  document.getElementById('criarSlideTitulo').textContent = s.funcao || '';
+  document.getElementById('criarSlideCard').style.borderColor = idx === 0 ? t.color : 'var(--light)';
+  const textoEl = document.getElementById('criarSlideTexto');
+  if (txs.length > 1) {
+    textoEl.innerHTML = txs.map((tx, ti) => `<div style="margin-bottom:${ti < txs.length - 1 ? '14px' : '0'}"><div style="font-size:9px;font-weight:700;color:var(--mid);">${tx.tipo || 'texto'}</div><div style="font-size:15px;line-height:1.7;color:var(--dark);">${tx.texto || ''}</div></div>`).join('<hr style="border:none;border-top:1px solid var(--light);margin:0 0 14px;">');
+  } else {
+    textoEl.innerHTML = `<div style="font-size:15px;line-height:1.7;color:var(--dark);">${txs[0]?.texto || s.heading || ''}</div>`;
+  }
+  document.querySelectorAll('[id^="criarSlideNum_"]').forEach((b, i) => {
+    const active = i === idx;
+    b.style.borderColor = active ? t.color : 'var(--light)';
+    b.style.background  = active ? t.color + '18' : 'var(--white)';
+    b.style.color       = active ? t.color : 'var(--mid)';
+    b.style.fontWeight  = active ? '700' : '400';
+  });
+  document.querySelectorAll('[id^="criarAllSlide_"]').forEach((el, i) => { el.style.background = i === idx ? t.color + '10' : 'var(--pale)'; });
+  document.getElementById('btnCriarPrev').disabled = idx === 0;
+  document.getElementById('btnCriarNext').disabled = idx === criarCurrentSlides.length - 1;
+}
+
+function navCriarSlide(dir) { goToCriarSlide(criarCurrentSlideIdx + dir); }
+
+function copyCriarSlides() {
+  const text = criarCurrentSlides.map((s, i) => {
+    const txs = s.textos || [];
+    if (txs.length > 1) return 'SLIDE ' + (s.slideNumber || i + 1) + ' — ' + s.funcao + '\n' + txs.map(tx => '[' + (tx.tipo || 'texto') + '] ' + tx.texto).join('\n\n');
+    return 'SLIDE ' + (s.slideNumber || i + 1) + ' — ' + s.funcao + '\n' + (txs[0]?.texto || s.heading || '');
+  }).join('\n\n---\n\n');
+  navigator.clipboard?.writeText(text).then(() => {
+    const el = document.getElementById('criarCopyConfirm');
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 2500);
+  });
+}
+
+function renderCriarRoteiro(data) {
+  const t = CM_TYPES_ALL[criarSelectedType] || { emoji: '🎬', label: criarSelectedType, color: '#7C3AED' };
+  document.getElementById('criarRoteiroTitle').textContent = t.emoji + ' ' + t.label + ' — ' + (data.tema || '');
+  const blocos = (data.blocos || []).map((b, i) =>
+    `<div class="roteiro-bloco" id="criarbloco_${i}"><div class="roteiro-bloco-header" onclick="toggleCriarBloco(${i})"><div class="roteiro-bloco-meta"><span class="roteiro-bloco-label">${b.label || 'Bloco ' + (i + 1)}</span>${b.tempo ? `<span class="roteiro-bloco-tempo">${b.tempo}</span>` : ''}</div><span style="font-size:.8rem;color:var(--mid);" id="criarbloco_arrow_${i}">▾</span></div><div class="roteiro-bloco-body" id="criarbloco_body_${i}"><div class="roteiro-bloco-texto">${b.texto || ''}</div>${b.nota_direcao ? `<div class="roteiro-bloco-direcao">${b.nota_direcao}</div>` : ''}</div></div>`
+  ).join('');
+  const dicas = (data.dicas_gravacao || []).map(d => `<div class="roteiro-dica">${d}</div>`).join('');
+  window._currentRoteiroStandalone = data;
+  document.getElementById('criarRoteiroOutput').innerHTML = `
+    <div class="roteiro-wrapper">
+      <div class="roteiro-gancho-box"><div class="roteiro-gancho-label">🎯 Primeira frase — diz assim na câmera</div><div class="roteiro-gancho-texto">"${data.gancho || ''}"</div>${data.duracao_estimada ? `<div style="font-size:.72rem;color:var(--mid);margin-top:6px;">⏱ ${data.duracao_estimada}</div>` : ''}</div>
+      <div class="roteiro-blocos">${blocos}</div>
+      ${dicas ? `<div class="roteiro-dicas"><div class="roteiro-dicas-label">Dicas de gravação</div>${dicas}</div>` : ''}
+      ${data.legenda_sugerida ? `<div class="roteiro-legenda"><div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:6px;">Legenda sugerida</div><textarea class="textarea" id="criarRoteiroLegenda" rows="3" style="font-size:.8rem;">${data.legenda_sugerida}</textarea></div>` : ''}
+      <button class="roteiro-copy-btn" onclick="copyRoteiroStandalone()">📋 Copiar roteiro completo</button>
+      <div class="roteiro-copy-confirm" id="rrCopyConfirm2">✅ Roteiro copiado!</div>
+    </div>`;
+  document.getElementById('criarRoteiroPanel').style.display = 'block';
+}
+
+function toggleCriarBloco(i) {
+  const body = document.getElementById(`criarbloco_body_${i}`);
+  const arrow = document.getElementById(`criarbloco_arrow_${i}`);
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'flex';
+  arrow.textContent = isOpen ? '▸' : '▾';
+}
+
 // ── Tendências ──────────────────────────────────────────────────────────
 let trendsLastProfile = null;
 
@@ -975,9 +1200,7 @@ async function loadTrends(forceRefresh = false) {
 
     // Fontes pill
     const gPill = document.getElementById('trendsGooglePill');
-    const tPill = document.getElementById('trendsTwitterPill');
     gPill.className = 'trends-fonte-pill ' + (d.fontes?.google ? 'ok' : 'off');
-    tPill.className = 'trends-fonte-pill ' + (d.fontes?.twitter ? 'ok' : 'off');
     const upd = document.getElementById('trendsUpdatedAt');
     if (d.updatedAt) {
       const dt = new Date(d.updatedAt);
@@ -1003,7 +1226,7 @@ function renderTrendCard(t) {
   const urgClass = { alta: 'urgencia-alta', media: 'urgencia-media', baixa: 'urgencia-baixa' }[t.urgencia] || '';
   const urgLabel = { alta: '🔥 Alta', media: '⚡ Média', baixa: '🌱 Baixa' }[t.urgencia] || t.urgencia;
   const tipoIcon = { carrossel: '🎠', post: '🖼️', reels: '🎬' }[t.tipo_ideal] || '📄';
-  const fonteClass = { 'Google Trends': 'google', 'Twitter/X': 'twitter', 'Ambos': 'ambos' }[t.fonte] || 'google';
+  const fonteClass = 'google';
 
   const div = document.createElement('div');
   div.className = `trend-card ${urgClass}`;
