@@ -1113,6 +1113,23 @@ Gere TODOS os dias de ${blockStart} a ${blockEnd} (total: ${daysInBlock} dias, $
   }
 });
 
+// Actualizar calendário salvo (edições de posts individuais)
+app.patch('/api/calendar/saved', async (req, res) => {
+  try {
+    const { profile, month, year, calendar } = req.body;
+    if (!profile || !month || !year || !calendar) return res.status(400).json({ error: 'Faltam campos.' });
+    writeJSON(CALENDAR_FILE, { profile, month, year, calendar, savedAt: new Date().toISOString() });
+    if (supabase) {
+      await supabase.from('calendars').upsert({
+        id: `${profile}_${year}_${month}`, profile,
+        month: parseInt(month), year: parseInt(year),
+        data: JSON.stringify(calendar), updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/calendar/saved', async (req, res) => {
   try {
     const { profile, month, year } = req.query;
