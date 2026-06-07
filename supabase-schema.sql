@@ -44,6 +44,9 @@ CREATE INDEX IF NOT EXISTS idx_generated_content_status     ON generated_content
 CREATE INDEX IF NOT EXISTS idx_generated_content_created_at ON generated_content (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_calendars_profile            ON calendars (profile);
 
+-- Se estiver atualizando instalação existente, adicionar a coluna:
+-- ALTER TABLE generated_content ADD COLUMN IF NOT EXISTS image_quality TEXT DEFAULT 'medium';
+
 -- Row Level Security desativado (acesso via service key no backend)
 ALTER TABLE generated_content DISABLE ROW LEVEL SECURITY;
 ALTER TABLE calendars          DISABLE ROW LEVEL SECURITY;
