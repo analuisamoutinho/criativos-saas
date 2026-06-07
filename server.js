@@ -1702,6 +1702,226 @@ app.post('/api/canva/prepare-texts', (req, res) => {
     res.json({ success:true, clipboardText:fullText, structured, canvaUrl:tmpl&&tmpl.canvaUrl||null, templateName:tmpl&&tmpl.name||'Template' });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
+
+// ═══════════════════════════════════════════════════════════════
+// GOOGLE PHOTOS INTEGRATION
+// ═══════════════════════════════════════════════════════════════
+
+const GPHOTO_TOKENS_FILE = path.join(DATA_DIR, 'gphotos_tokens.json');
+
+function loadGPhotoTokens() {
+  try {
+    if (!fs.existsSync(GPHOTO_TOKENS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(GPHOTO_TOKENS_FILE, 'utf8'));
+  } catch(e) { return {}; }
+}
+
+function saveGPhotoTokens(tokens) {
+  try { fs.writeFileSync(GPHOTO_TOKENS_FILE, JSON.stringify(tokens, null, 2)); } catch(e) {}
+}
+
+// Refresh access token using refresh token
+async function refreshGPhotoToken(userId) {
+  const tokens = loadGPhotoTokens();
+  const userTokens = tokens[userId];
+  if (!userTokens || !userTokens.refresh_token) return null;
+  try {
+    const r = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        refresh_token: userTokens.refresh_token,
+        grant_type: 'refresh_token'
+      }).toString()
+    });
+    const d = await r.json();
+    if (d.access_token) {
+      tokens[userId].access_token = d.access_token;
+      tokens[userId].expires_at = Date.now() + (d.expires_in * 1000);
+      saveGPhotoTokens(tokens);
+      return d.access_token;
+    }
+    return null;
+  } catch(e) { console.error('GPhoto refresh error:', e.message); return null; }
+}
+
+async function getGPhotoAccessToken(userId) {
+  const tokens = loadGPhotoTokens();
+  const t = tokens[userId];
+  if (!t) return null;
+  if (t.expires_at && Date.now() < t.expires_at - 60000) return t.access_token;
+  return await refreshGPhotoToken(userId);
+}
+
+// Step 1: iniciar OAuth - redireciona para Google
+app.get('/api/gphotos/auth', (req, res) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) return res.status(500).json({ error: 'GOOGLE_CLIENT_ID nao configurado nas variaveis de ambiente do Railway' });
+  const redirectUri = (process.env.PUBLIC_URL || 'https://criativos-saas-production.up.railway.app') + '/api/gphotos/callback';
+  const scopes = ['https://www.googleapis.com/auth/photoslibrary.readonly'].join(' ');
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: scopes,
+    access_type: 'offline',
+    prompt: 'consent',
+    state: req.query.userId || 'default'
+  });
+  res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
+});
+
+// Step 2: callback OAuth - recebe o code e troca por tokens
+app.get('/api/gphotos/callback', async (req, res) => {
+  const { code, state: userId } = req.query;
+  if (!code) return res.redirect('/?gphotos_error=no_code');
+  const redirectUri = (process.env.PUBLIC_URL || 'https://criativos-saas-production.up.railway.app') + '/api/gphotos/callback';
+  try {
+    const r = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      }).toString()
+    });
+    const d = await r.json();
+    if (!d.access_token) throw new Error(JSON.stringify(d));
+    const tokens = loadGPhotoTokens();
+    tokens[userId || 'default'] = {
+      access_token: d.access_token,
+      refresh_token: d.refresh_token,
+      expires_at: Date.now() + (d.expires_in * 1000),
+      connected_at: new Date().toISOString()
+    };
+    saveGPhotoTokens(tokens);
+    res.redirect('/?gphotos_connected=1');
+  } catch(e) {
+    console.error('GPhoto callback error:', e.message);
+    res.redirect('/?gphotos_error=' + encodeURIComponent(e.message));
+  }
+});
+
+// Status: verificar se esta conectado
+app.get('/api/gphotos/status', (req, res) => {
+  const userId = req.query.userId || 'default';
+  const tokens = loadGPhotoTokens();
+  const t = tokens[userId];
+  res.json({
+    connected: !!t,
+    connectedAt: t ? t.connected_at : null,
+    hasRefreshToken: !!(t && t.refresh_token)
+  });
+});
+
+// Desconectar
+app.delete('/api/gphotos/disconnect', (req, res) => {
+  const userId = req.query.userId || 'default';
+  const tokens = loadGPhotoTokens();
+  delete tokens[userId];
+  saveGPhotoTokens(tokens);
+  res.json({ success: true });
+});
+
+// Listar albuns
+app.get('/api/gphotos/albums', async (req, res) => {
+  const userId = req.query.userId || 'default';
+  const accessToken = await getGPhotoAccessToken(userId);
+  if (!accessToken) return res.status(401).json({ error: 'Nao autenticado. Conecta o Google Fotos primeiro.' });
+  try {
+    const r = await fetch('https://photoslibrary.googleapis.com/v1/albums?pageSize=50', {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const d = await r.json();
+    res.json({ albums: d.albums || [] });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// Buscar fotos por tema (usando IA para seleccionar as melhores)
+app.post('/api/gphotos/suggest', async (req, res) => {
+  const { tema, slideIndex, totalSlides, userId = 'default', albumId, limit = 5 } = req.body;
+  const accessToken = await getGPhotoAccessToken(userId);
+  if (!accessToken) return res.status(401).json({ error: 'Nao autenticado. Conecta o Google Fotos.' });
+  try {
+    // Buscar fotos recentes (ou de album especifico)
+    let photosUrl = 'https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100';
+    let fetchOptions = { headers: { 'Authorization': 'Bearer ' + accessToken } };
+    if (albumId) {
+      photosUrl = 'https://photoslibrary.googleapis.com/v1/mediaItems:search';
+      fetchOptions = {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ albumId, pageSize: 100 })
+      };
+    }
+    const r = await fetch(photosUrl, fetchOptions);
+    const d = await r.json();
+    const items = d.mediaItems || [];
+    if (!items.length) return res.json({ suggestions: [], message: 'Nenhuma foto encontrada' });
+    // Listar fotos para a IA avaliar
+    const photoList = items.slice(0, 50).map((p, i) => {
+      const desc = p.description || '';
+      const filename = p.filename || '';
+      const created = p.mediaMetadata && p.mediaMetadata.creationTime ? p.mediaMetadata.creationTime.slice(0,10) : '';
+      return (i+1) + '. ID:' + p.id + ' | Ficheiro:' + filename + ' | Descricao:' + desc + ' | Data:' + created;
+    }).join('\n');
+    // IA selecciona as mais relevantes
+    const aiPrompt = 'Tema do slide: "' + tema + '"\nSlide ' + (slideIndex+1) + ' de ' + totalSlides + '\n\nFotos disponiveis:\n' + photoList + '\n\nSelecciona os ' + limit + ' IDs de fotos mais adequadas para este tema. Considera: composicao visual, ambiente, emocao transmitida. Responde APENAS JSON: {"ids":["id1","id2"]}';
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 256, messages: [{ role: 'user', content: aiPrompt }] })
+    });
+    const aiData = await aiRes.json();
+    const aiTxt = aiData.content && aiData.content[0] ? aiData.content[0].text.trim() : '{"ids":[]}';
+    const m = aiTxt.match(/\{[\s\S]*\}/);
+    const parsed = m ? JSON.parse(m[0]) : { ids: [] };
+    // Retornar os items seleccionados com URLs de preview (=w1200 para qualidade)
+    const selected = (parsed.ids || []).slice(0, limit).map(id => {
+      const item = items.find(p => p.id === id);
+      if (!item) return null;
+      return {
+        id: item.id,
+        filename: item.filename,
+        description: item.description || '',
+        previewUrl: item.baseUrl + '=w1200',
+        // URL full para usar como fundo de slide (4:5 portrait)
+        slideUrl: item.baseUrl + '=w1024-h1365-c',
+        width: item.mediaMetadata && item.mediaMetadata.width,
+        height: item.mediaMetadata && item.mediaMetadata.height,
+        created: item.mediaMetadata && item.mediaMetadata.creationTime
+      };
+    }).filter(Boolean);
+    res.json({ suggestions: selected, total: items.length });
+  } catch(e) { console.error('GPhoto suggest:', e.message); res.status(500).json({ error: e.message }); }
+});
+
+// Obter URL de uma foto especifica para usar como fundo de slide
+app.get('/api/gphotos/photo/:id', async (req, res) => {
+  const userId = req.query.userId || 'default';
+  const accessToken = await getGPhotoAccessToken(userId);
+  if (!accessToken) return res.status(401).json({ error: 'Nao autenticado' });
+  try {
+    const r = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems/' + req.params.id, {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    const d = await r.json();
+    if (!d.baseUrl) return res.status(404).json({ error: 'Foto nao encontrada' });
+    res.json({
+      id: d.id,
+      previewUrl: d.baseUrl + '=w800',
+      slideUrl: d.baseUrl + '=w1024-h1365-c',
+      filename: d.filename,
+      description: d.description || ''
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
 });
