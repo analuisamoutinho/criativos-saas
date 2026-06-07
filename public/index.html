@@ -375,6 +375,17 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--light);border-radius:99px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--mid);}
+.gp-status-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:var(--radius);margin-bottom:16px;font-size:.82rem;}
+.gp-status-bar.connected{background:#D1FAE5;border:1px solid #A7F3D0;color:#065F46;}
+.gp-status-bar.disconnected{background:var(--pale);border:1px solid var(--light);color:var(--mid);}
+.gp-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:12px;}
+.gp-photo-item{border-radius:8px;overflow:hidden;cursor:pointer;position:relative;aspect-ratio:3/4;border:2px solid transparent;transition:all .2s;}
+.gp-photo-item:hover{border-color:var(--magenta);transform:scale(1.02);}
+.gp-photo-item.selected{border-color:var(--magenta);box-shadow:0 0 0 3px rgba(228,0,124,.25);}
+.gp-photo-item img{width:100%;height:100%;object-fit:cover;display:block;}
+.gp-photo-check{position:absolute;top:4px;right:4px;background:var(--magenta);color:#fff;border-radius:50%;width:20px;height:20px;display:none;align-items:center;justify-content:center;font-size:11px;}
+.gp-photo-item.selected .gp-photo-check{display:flex;}
+
 /* CANVA CSS */
 .canva-tabs{display:flex;gap:4px;background:var(--pale);border-radius:var(--radius);padding:3px;border:1px solid var(--light);margin-bottom:20px;width:fit-content;}
 .canva-tab{padding:8px 18px;border:none;border-radius:9px;background:transparent;font-family:var(--font-body);font-size:.82rem;color:var(--mid);cursor:pointer;transition:all .2s;font-weight:500;}
@@ -752,6 +763,29 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
         <div class="form-group"><label class="form-label">Perfil</label><select class="select" id="photoSearchProfile"><option value="pessoal">Ana Moutinho</option><option value="marca">Case Aceleradora</option><option value="virttus">Virttus</option></select></div>
         <button class="btn btn-outline" onclick="suggestPhotos()" style="width:100%">✨ Sugerir fotos relevantes</button>
         <div id="photoSuggestResults" style="margin-top:16px;"></div>
+      </div>
+    </div>
+    <div class="card" id="gphotosCard" style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">📸 Google Fotos</div>
+        <button class="btn btn-xs btn-secondary" onclick="checkGPhotoStatus()">&#x21BA; Verificar</button>
+      </div>
+      <div id="gpStatusBar" class="gp-status-bar disconnected">🖼️ Google Fotos não ligado</div>
+      <div id="gpConnectedPanel" style="display:none;">
+        <div class="form-group"><label class="form-label">Pesquisar fotos por tema</label><input type="text" class="input" id="gpSearchTopic" placeholder="Ex: café da manhã, paisagem, rotina..."/></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" onclick="loadGPhotoAlbums()" style="flex:1">📁 Álbuns</button>
+          <button class="btn btn-primary btn-sm" onclick="searchGPhotos()" style="flex:1">✨ Sugerir por tema</button>
+        </div>
+        <div id="gpAlbumsPanel" style="display:none;margin-top:10px;"><label class="form-label">Filtrar álbum (opcional)</label><select class="select" id="gpAlbumSelect" onchange="searchGPhotos()"><option value="">Todas as fotos</option></select></div>
+        <div id="gpPhotoGrid" class="gp-photo-grid" style="max-height:340px;overflow-y:auto;"></div>
+        <div id="gpPhotoCount" style="font-size:.72rem;color:var(--mid);margin-top:6px;"></div>
+        <button class="btn btn-primary btn-sm" id="btnUseGPhoto" onclick="useSelectedGPhotos()" style="display:none;width:100%;margin-top:10px;">✅ Usar fotos no carrossel</button>
+        <button class="btn btn-secondary btn-sm" onclick="disconnectGPhotos()" style="width:100%;margin-top:6px;font-size:.72rem;">🔌 Desligar Google Fotos</button>
+      </div>
+      <div id="gpDisconnectedPanel">
+        <p style="font-size:.82rem;color:var(--mid);margin-bottom:12px;">Liga o teu Google Fotos para a IA sugerir as tuas fotos reais para cada slide gerado.</p>
+        <button class="btn btn-primary" onclick="connectGPhotos()" style="width:100%">🔗 Ligar Google Fotos</button>
       </div>
     </div>
     <div class="card">
@@ -1511,6 +1545,18 @@ function openCanvaTemplate(){if(!canvaCurrentTemplateUrl)return toast("Nenhuma U
 async function openCanvaFull(url,tid,enc){await openCanvaUse(tid,enc);if(canvaCurrentClipboardText)await navigator.clipboard.writeText(canvaCurrentClipboardText).catch(function(){});if(url)window.open(url,"_blank");toast("Textos copiados! Cole no Canva.","success");}
 async function quickUseTemplate(templateId){if(!canvaSelectedContent&&contentCache.length)canvaSelectedContent=contentCache.find(function(i){return i.profile===currentProfile;})||contentCache[0];if(!canvaSelectedContent){toast("Seleciona um conteúdo na aba Usar em Conteúdo","info");return;}await openCanvaUse(templateId,encodeURIComponent("{}"));}
 var _origSSC=showSection;showSection=function(id,navBtn){_origSSC(id,navBtn);if(id==="canva")initCanvaSection();};
+
+/* ── GOOGLE PHOTOS ── */
+var gpConnected=false,gpSelectedPhotos=[];
+async function checkGPhotoStatus(){try{var r=await fetch("/api/gphotos/status?userId=default");var d=await r.json();gpConnected=d.connected;var bar=document.getElementById("gpStatusBar");var conn=document.getElementById("gpConnectedPanel");var disc=document.getElementById("gpDisconnectedPanel");if(d.connected){bar.className="gp-status-bar connected";bar.innerHTML="✅ Google Fotos ligado"+(d.connectedAt?" desde "+new Date(d.connectedAt).toLocaleDateString("pt-BR"):"");conn.style.display="block";disc.style.display="none";}else{bar.className="gp-status-bar disconnected";bar.innerHTML="🖼️ Google Fotos não ligado";conn.style.display="none";disc.style.display="block";}}catch(e){console.error("gphotos status:",e);}}
+function connectGPhotos(){window.location.href="/api/gphotos/auth?userId=default";}
+async function disconnectGPhotos(){if(!confirm("Desligar Google Fotos?"))return;var r=await fetch("/api/gphotos/disconnect?userId=default",{method:"DELETE"});var d=await r.json();if(d.success){gpConnected=false;checkGPhotoStatus();toast("Google Fotos desligado","info");}}
+async function loadGPhotoAlbums(){try{var r=await fetch("/api/gphotos/albums?userId=default");var d=await r.json();var sel=document.getElementById("gpAlbumSelect");var panel=document.getElementById("gpAlbumsPanel");if(d.albums&&d.albums.length){sel.innerHTML='<option value="">Todas as fotos</option>'+d.albums.map(function(a){return'<option value="'+a.id+'">'+a.title+" ("+a.mediaItemsCount+")</option>";}).join("");panel.style.display="block";}else{toast("Nenhum álbum encontrado","info");}}catch(e){toast("Erro: "+e.message,"error");}}
+async function searchGPhotos(){var topic=document.getElementById("gpSearchTopic").value.trim()||"lifestyle";var albumId=(document.getElementById("gpAlbumSelect")&&document.getElementById("gpAlbumSelect").value)||"";var grid=document.getElementById("gpPhotoGrid");var count=document.getElementById("gpPhotoCount");grid.innerHTML='<div style="color:var(--mid);font-size:.82rem;grid-column:1/-1;">⏳ A procurar fotos...</div>';try{var body={tema:topic,slideIndex:0,totalSlides:1,userId:"default",limit:12};if(albumId)body.albumId=albumId;var r=await fetch("/api/gphotos/suggest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});var d=await r.json();if(d.error){grid.innerHTML='<div style="color:#EF4444;font-size:.82rem;">'+d.error+"</div>";return;}var items=d.suggestions||[];if(!items.length){grid.innerHTML='<div style="color:var(--mid);font-size:.82rem;grid-column:1/-1;">Nenhuma foto encontrada.</div>';return;}count.textContent="Mostrando "+items.length+" de "+d.total+" fotos";gpSelectedPhotos=[];grid.innerHTML=items.map(function(p){return'<div class="gp-photo-item" id="gpitem_'+p.id+'" onclick="toggleGPhoto(this,\''+p.id+'\',\''+encodeURIComponent(p.slideUrl)+'\')"><img src="'+p.previewUrl+'" loading="lazy"/><div class="gp-photo-check">✓</div></div>';}).join("");document.getElementById("btnUseGPhoto").style.display="none";}catch(e){grid.innerHTML='<div style="color:#EF4444;font-size:.82rem;">'+e.message+"</div>";}}
+function toggleGPhoto(el,photoId,slideUrlEnc){el.classList.toggle("selected");var url=decodeURIComponent(slideUrlEnc);var idx=gpSelectedPhotos.findIndex(function(p){return p.id===photoId;});if(idx>=0)gpSelectedPhotos.splice(idx,1);else gpSelectedPhotos.push({id:photoId,slideUrl:url});var btn=document.getElementById("btnUseGPhoto");btn.style.display=gpSelectedPhotos.length?"block":"none";btn.textContent="✅ Usar "+gpSelectedPhotos.length+" foto(s) nos slides";}
+function useSelectedGPhotos(){if(!gpSelectedPhotos.length)return;if(currentCarouselData&&currentCarouselData.slides&&currentCarouselData.slides.length){toast("A aplicar as tuas fotos nos slides...","info");for(var i=0;i<Math.min(gpSelectedPhotos.length,currentCarouselData.slides.length);i++){var photoUrl=gpSelectedPhotos[i].slideUrl;var card=document.getElementById("slideCard_"+i);if(card){var img=card.querySelector(".slide-img");if(!img){img=document.createElement("img");img.className="slide-img";card.insertBefore(img,card.firstChild);}img.src=photoUrl;if(!currentCarouselImages)currentCarouselImages=[];currentCarouselImages[i]=photoUrl;}}toast("Fotos aplicadas nos slides! Abre o carrossel para ver.","success");showSection("carousel",null);}else{toast("Gera um carrossel primeiro.","info");}}
+if(window.location.search.includes("gphotos_connected=1")){setTimeout(function(){checkGPhotoStatus();toast("📸 Google Fotos ligado!","success");history.replaceState({},"","/");},500);}
+if(window.location.search.includes("gphotos_error")){setTimeout(function(){var e=new URLSearchParams(window.location.search).get("gphotos_error");toast("Erro Google Fotos: "+e,"error");history.replaceState({},"","/");},500);}
 
 /* ── INIT ── */
 initCalendarMonths();
