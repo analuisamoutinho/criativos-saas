@@ -7,7 +7,6 @@ const fetch   = (...args) => import('node-fetch').then(({ default: f }) => f(...
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
@@ -1516,17 +1515,38 @@ async function fetchWithTimeout(url, options = {}, timeout = 9000) {
 }
 
 async function getGoogleTrends() {
-  try {
-    const r = await fetchWithTimeout(
-      'https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR',
-      { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' } }
-    );
-    const xml = await r.text();
-    return parseGoogleTrendsRSS(xml).slice(0, 20);
-  } catch(e) {
-    console.warn('[Trends] Google Trends falhou:', e.message);
-    return [];
+  var AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/123.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
+  ];
+  var agent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+  var URLS = ["https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR", "https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR&hl=pt-BR"];
+  for (var ui = 0; ui < URLS.length; ui++) {
+    try {
+      var r = await fetchWithTimeout(URLS[ui], { headers: { "User-Agent": agent, "Accept": "application/rss+xml,*/*", "Accept-Language": "pt-BR,pt;q=0.9", "Cache-Control": "no-cache", "Referer": "https://trends.google.com/" } }, 12000);
+      if (!r.ok) { console.warn("[Trends] HTTP", r.status); continue; }
+      var xml = await r.text();
+      var items = parseGoogleTrendsRSS(xml);
+      if (items.length > 0) { console.log("[Trends] Got", items.length, "items"); return items.slice(0, 20); }
+    } catch(e) { console.warn("[Trends] URL failed:", e.message); }
   }
+  console.warn("[Trends] Google bloqueado - fallback IA");
+  try {
+    var month = new Date().toLocaleDateString("pt-BR", {month:"long", year:"numeric"});
+    var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 900, messages: [{ role: "user", content: "Liste 15 assuntos muito comentados no Brasil em " + month + ". Variedade: entretenimento, esportes, politica, economia, tecnologia, comportamento. Responda SOMENTE JSON array: [{\"termo\":\"nome\",\"volume\":\"tendencia\",\"fonte\":\"Estimativa IA\"}]" }] })
+    });
+    var aiData = await aiRes.json();
+    if (aiData.content && aiData.content[0]) {
+      var txt = aiData.content[0].text.trim();
+      var m2 = txt.match(/\[[\s\S]+\]/);
+      if (m2) { var parsed = JSON.parse(m2[0]); console.log("[Trends] IA fallback:", parsed.length, "items"); return parsed.slice(0, 15); }
+    }
+  } catch(e2) { console.warn("[Trends] Fallback falhou:", e2.message); }
+  return [];
 }
 
 
@@ -1613,6 +1633,75 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
 });
 
 // ── Health ────────────────────────────────────────────────────────────────
+
+const CANVA_TEMPLATES_FILE = '/tmp/canva_templates.json';
+function loadCT() {
+  try {
+    if (!fs.existsSync(CANVA_TEMPLATES_FILE)) fs.writeFileSync(CANVA_TEMPLATES_FILE, '[]');
+    return JSON.parse(fs.readFileSync(CANVA_TEMPLATES_FILE, 'utf8'));
+  } catch(e) { return []; }
+}
+function saveCT(t) {
+  try { fs.writeFileSync(CANVA_TEMPLATES_FILE, JSON.stringify(t, null, 2)); } catch(e) {}
+}
+app.get('/api/canva/templates', (req, res) => {
+  let t = loadCT();
+  if (req.query.profile) t = t.filter(x => !x.profile || x.profile === req.query.profile || x.profile === 'all');
+  res.json(t);
+});
+app.post('/api/canva/templates', (req, res) => {
+  const t = loadCT();
+  const n = { id: 'tmpl_' + Date.now(), createdAt: new Date().toISOString(), ...req.body };
+  t.unshift(n); saveCT(t);
+  res.json({ success: true, template: n });
+});
+app.patch('/api/canva/templates/:id', (req, res) => {
+  const t = loadCT();
+  const i = t.findIndex(x => x.id === req.params.id);
+  if (i === -1) return res.status(404).json({ error: 'nao encontrado' });
+  t[i] = { ...t[i], ...req.body, id: req.params.id }; saveCT(t);
+  res.json({ success: true, template: t[i] });
+});
+app.delete('/api/canva/templates/:id', (req, res) => {
+  saveCT(loadCT().filter(x => x.id !== req.params.id));
+  res.json({ success: true });
+});
+app.post('/api/canva/match', async (req, res) => {
+  try {
+    const { contentId, tipo, tema, slides, legenda, profile } = req.body;
+    const templates = loadCT().filter(t => !t.profile || t.profile === profile || t.profile === 'all');
+    if (!templates.length) return res.json({ matches: [], message: 'Nenhum template cadastrado.' });
+    const templateList = templates.map((t, i) => (i+1)+'. ID: '+t.id+'\n   Nome: '+t.name+'\n   Tipos: '+(Array.isArray(t.contentTypes)?t.contentTypes.join(', '):t.contentTypes||'geral')+'\n   Estetica: '+(t.aesthetic||'nao especificada')+'\n   Slides: '+(t.slideCount||'variavel')+'\n   Notas: '+(t.notes||'-')).join('\n\n');
+    const slidesResumo = Array.isArray(slides) ? slides.slice(0,3).map((s,i)=>'  Slide '+(i+1)+' ['+( s.funcao||'')+']:"'+(s.heading||'').slice(0,60)+'"').join('\n') : '';
+    const prompt = 'Perfil: '+profile+'\nTipo: '+(tipo||'carrossel')+'\nTema: '+tema+'\nSlides:\n'+slidesResumo+'\n\nTemplates:\n'+templateList+'\n\nSeleciona os 3 templates mais adequados. JSON: {"matches":[{"templateId":"tmpl_xxx","score":95,"reason":"1 frase","fitLabel":"Perfeito","fieldMapping":{"headline":"texto slide 1"}}]}';
+    const r = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','Content-Type':'application/json'}, body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,messages:[{role:'user',content:prompt}]}) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    const raw = d.content[0].text.trim();
+    const jm = raw.match(/\{[\s\S]*\}/);
+    const parsed = jm ? JSON.parse(jm[0]) : { matches: [] };
+    const enriched = (parsed.matches||[]).map(m => { const tmpl = templates.find(t=>t.id===m.templateId); return tmpl ? {...m, template:tmpl} : null; }).filter(Boolean);
+    res.json({ matches: enriched });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+app.post('/api/canva/prepare-texts', (req, res) => {
+  try {
+    const { slides=[], legenda='', hashtags='', templateId, fieldMapping={} } = req.body;
+    const templates = loadCT();
+    const tmpl = templates.find(t=>t.id===templateId);
+    const lines = [];
+    if (Object.keys(fieldMapping).length > 0) {
+      Object.entries(fieldMapping).forEach(([f,v])=>lines.push('[ '+f.toUpperCase()+' ]\n'+v));
+    } else {
+      slides.forEach((s,i)=>{ if(s.heading)lines.push('[ SLIDE '+(i+1)+' TITULO ]\n'+s.heading); if(s.body)lines.push('[ SLIDE '+(i+1)+' CORPO ]\n'+s.body); });
+    }
+    if (legenda) lines.push('[ LEGENDA ]\n'+legenda);
+    if (hashtags) lines.push('[ HASHTAGS ]\n'+hashtags);
+    const fullText = lines.join('\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n');
+    const structured = slides.map((s,i)=>({slideNumber:i+1,funcao:s.funcao||'',fields:[s.heading?{label:'Titulo',value:s.heading,key:'slide'+(i+1)+'_heading'}:null,s.body?{label:'Corpo',value:s.body,key:'slide'+(i+1)+'_body'}:null].filter(Boolean)}));
+    res.json({ success:true, clipboardText:fullText, structured, canvaUrl:tmpl&&tmpl.canvaUrl||null, templateName:tmpl&&tmpl.name||'Template' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
 });
