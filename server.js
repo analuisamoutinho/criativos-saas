@@ -19,11 +19,46 @@ const CALENDAR_FILE  = path.join(DATA_DIR, 'calendar_data.json');
 const MANUALS_DIR    = path.join(DATA_DIR, 'manuals');
 const IMAGES_DIR     = path.join(DATA_DIR, 'carousel_images');
 const PROFILES_FILE  = path.join(DATA_DIR, 'profiles_manual.json');
+const USER_SETTINGS_FILE  = path.join(DATA_DIR, 'user_settings.json');
 
 try { fs.mkdirSync('uploads/',        { recursive: true }); } catch(e) {}
 try { fs.mkdirSync(MANUALS_DIR,       { recursive: true }); } catch(e) {}
 try { fs.mkdirSync(IMAGES_DIR,        { recursive: true }); } catch(e) {}
 try { fs.mkdirSync('uploads/photos/', { recursive: true }); } catch(e) {}
+
+// ── Quality helpers ───────────────────────────────────────────────────────
+const VALID_QUALITIES = ['low', 'medium'];
+const DEFAULT_QUALITY = 'medium';
+function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
+
+// ── User Settings ─────────────────────────────────────────────────────────
+function loadUserSettings() {
+  try {
+    if (!fs.existsSync(USER_SETTINGS_FILE)) {
+      const def = { image_quality: DEFAULT_QUALITY };
+      fs.writeFileSync(USER_SETTINGS_FILE, JSON.stringify(def, null, 2));
+      return def;
+    }
+    return JSON.parse(fs.readFileSync(USER_SETTINGS_FILE, 'utf-8'));
+  } catch(e) { return { image_quality: DEFAULT_QUALITY }; }
+}
+function saveUserSettings(settings) {
+  try {
+    const merged = { ...loadUserSettings(), ...settings };
+    fs.writeFileSync(USER_SETTINGS_FILE, JSON.stringify(merged, null, 2));
+    return merged;
+  } catch(e) { console.error('saveUserSettings:', e.message); return settings; }
+}
+app.get('/api/user-settings', (req, res) => { res.json(loadUserSettings()); });
+app.patch('/api/user-settings', (req, res) => {
+  try {
+    const updates = {};
+    if (req.body.image_quality !== undefined) updates.image_quality = req.body.image_quality;
+    if (updates.image_quality && !VALID_QUALITIES.includes(updates.image_quality))
+      return res.status(400).json({ error: 'image_quality deve ser: ' + VALID_QUALITIES.join(' | ') });
+    res.json({ success: true, settings: saveUserSettings(updates) });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
 
 // ── Supabase ──────────────────────────────────────────────────────────────
 let supabase = null;
@@ -691,15 +726,17 @@ app.get('/api/image/file/:filename', (req, res) => {
 
 app.post('/api/image', async (req, res) => {
   try {
-    const { prompt, size = '1024x1024' } = req.body;
+    const { prompt, size = '1024x1024', quality } = req.body;
+    const settings     = loadUserSettings();
+    const finalQuality = resolveQuality(quality || settings.image_quality);
     const r = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size, quality: 'high' }),
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size, quality: finalQuality }),
     });
     const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
-    res.json({ url: data.data[0].url || null, b64: data.data[0].b64_json || null });
+    res.json({ url: data.data[0].url || null, b64: data.data[0].b64_json || null, quality: finalQuality });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -727,8 +764,11 @@ app.post('/api/image/carousel-slide', async (req, res) => {
       profile = 'marca',
       imagePromptHint = '',
       designStyleHint = '',
-      contentId = null
+      contentId = null,
+      quality,
     } = req.body;
+    const settings     = loadUserSettings();
+    const finalQuality = resolveQuality(quality || settings.image_quality);
 
     const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const isAna = profile === 'pessoal';
@@ -839,12 +879,12 @@ CRITICAL REQUIREMENTS:
       photoPrompt += '\n\nCRITICAL: Absolutely NO text, typography, letters, numbers, or graphic elements anywhere in the image.';
     }
 
-    console.log(`[Slide ${slideNumber}] mood=${mood} needsPhoto=${needsPhoto} promptLen=${photoPrompt.length}`);
+    console.log(`[Slide ${slideNumber}] mood=${mood} quality=${finalQuality} needsPhoto=${needsPhoto} promptLen=${photoPrompt.length}`);
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt: photoPrompt, n: 1, size: '1024x1536', quality: 'high' }),
+      body: JSON.stringify({ model: 'gpt-image-1', prompt: photoPrompt, n: 1, size: '1024x1536', quality: finalQuality }),
     });
 
     const imgData = await imgRes.json();
@@ -864,6 +904,7 @@ CRITICAL REQUIREMENTS:
 
     res.json({
       url: urlOut, b64: b64out, mood, artDirection,
+      quality: finalQuality,
       designMeta: {
         heading: h, body: b,
         accent: brand.accent, accentAlt: brand.accentAlt || '#FFFFFF',
@@ -1923,13 +1964,14 @@ app.get('/api/gphotos/photo/:id', async (req, res) => {
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', ts: new Date().toISOString(), metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
+  const settings = loadUserSettings();
+  res.json({ status: 'ok', ts: new Date().toISOString(), image_quality: settings.image_quality, metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
 });
 
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => {
-  console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | Metodologias: RR (pessoal) + BrandsDecoded (corporativa)`);
+  console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | image_quality default: ${DEFAULT_QUALITY} | Metodologias: RR + BrandsDecoded`);
   checkSupabaseTables();
 });
