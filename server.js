@@ -32,12 +32,46 @@ try {
   if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
     const { createClient } = require('@supabase/supabase-js');
     supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
-    console.log('✅ Supabase conectado');
+    console.log('✅ Supabase conectado — dados persistentes entre deploys');
   } else {
-    console.log('⚠️  Supabase não configurado — usando ficheiros locais');
+    console.log('');
+    console.log('╔══════════════════════════════════════════════════════════════╗');
+    console.log('║  ⚠️  AVISO: Supabase não configurado                         ║');
+    console.log('║  Os dados (biblioteca, calendário, posts) serão apagados     ║');
+    console.log('║  a cada novo deploy no Railway.                              ║');
+    console.log('║                                                              ║');
+    console.log('║  Para persistência, define no Railway:                       ║');
+    console.log('║    SUPABASE_URL       → Project URL do Supabase              ║');
+    console.log('║    SUPABASE_SERVICE_KEY → service_role key do Supabase       ║');
+    console.log('║                                                              ║');
+    console.log('║  Schema das tabelas: supabase-schema.sql                     ║');
+    console.log('╚══════════════════════════════════════════════════════════════╝');
+    console.log('');
   }
 } catch(e) {
   console.log('⚠️  Supabase não instalado — usando ficheiros locais');
+}
+
+// Verificar tabelas do Supabase no arranque
+async function checkSupabaseTables() {
+  if (!supabase) return;
+  try {
+    const { error: e1 } = await supabase.from('generated_content').select('id').limit(1);
+    const { error: e2 } = await supabase.from('calendars').select('id').limit(1);
+    if (e1 || e2) {
+      console.log('');
+      console.log('╔══════════════════════════════════════════════════════════════╗');
+      console.log('║  ❌  Tabelas do Supabase não encontradas                     ║');
+      console.log('║  Corre o ficheiro supabase-schema.sql no Supabase Dashboard  ║');
+      console.log('║  SQL Editor → colar o conteúdo → Run                        ║');
+      console.log('╚══════════════════════════════════════════════════════════════╝');
+      console.log('');
+    } else {
+      console.log('✅ Tabelas Supabase verificadas — biblioteca e calendário persistentes');
+    }
+  } catch(e) {
+    console.warn('Aviso ao verificar tabelas Supabase:', e.message);
+  }
 }
 
 // ── Helpers JSON ──────────────────────────────────────────────────────────
@@ -1586,4 +1620,7 @@ app.get('/api/health', (req, res) => {
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.listen(PORT, () => console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | Metodologias: RR (pessoal) + BrandsDecoded (corporativa)`));
+app.listen(PORT, () => {
+  console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | Metodologias: RR (pessoal) + BrandsDecoded (corporativa)`);
+  checkSupabaseTables();
+});
