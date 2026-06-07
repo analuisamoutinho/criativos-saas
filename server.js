@@ -8,7 +8,7 @@ const fetch   = (...args) => import('node-fetch').then(({ default: f }) => f(...
 const app  = express();
 const PORT = process.env.PORT || 3000;
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json({ limit: '50mb' }));x
 // quality-control-patch
 const upload = multer({ dest: 'uploads/' });
 
