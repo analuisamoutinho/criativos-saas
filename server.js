@@ -26,7 +26,8 @@ try { fs.mkdirSync(IMAGES_DIR,        { recursive: true }); } catch(e) {}
 try { fs.mkdirSync('uploads/photos/', { recursive: true }); } catch(e) {}
 
 // ── Quality helpers ───────────────────────────────────────────────────────
-const VALID_QUALITIES = ['low', 'medium'];
+// CORRIGIDO: adicionado 'high' e 'auto' que a gpt-image-1 aceita
+const VALID_QUALITIES = ['low', 'medium', 'high', 'auto'];
 const DEFAULT_QUALITY = 'medium';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
@@ -72,12 +73,6 @@ try {
     console.log('║  ⚠️  AVISO: Supabase não configurado                         ║');
     console.log('║  Os dados (biblioteca, calendário, posts) serão apagados     ║');
     console.log('║  a cada novo deploy no Railway.                              ║');
-    console.log('║                                                              ║');
-    console.log('║  Para persistência, define no Railway:                       ║');
-    console.log('║    SUPABASE_URL       → Project URL do Supabase              ║');
-    console.log('║    SUPABASE_SERVICE_KEY → service_role key do Supabase       ║');
-    console.log('║                                                              ║');
-    console.log('║  Schema das tabelas: supabase-schema.sql                     ║');
     console.log('╚══════════════════════════════════════════════════════════════╝');
     console.log('');
   }
@@ -85,26 +80,17 @@ try {
   console.log('⚠️  Supabase não instalado — usando ficheiros locais');
 }
 
-// Verificar tabelas do Supabase no arranque
 async function checkSupabaseTables() {
   if (!supabase) return;
   try {
     const { error: e1 } = await supabase.from('generated_content').select('id').limit(1);
     const { error: e2 } = await supabase.from('calendars').select('id').limit(1);
     if (e1 || e2) {
-      console.log('');
-      console.log('╔══════════════════════════════════════════════════════════════╗');
-      console.log('║  ❌  Tabelas do Supabase não encontradas                     ║');
-      console.log('║  Corre o ficheiro supabase-schema.sql no Supabase Dashboard  ║');
-      console.log('║  SQL Editor → colar o conteúdo → Run                        ║');
-      console.log('╚══════════════════════════════════════════════════════════════╝');
-      console.log('');
+      console.log('❌ Tabelas Supabase não encontradas — corre supabase-schema.sql');
     } else {
-      console.log('✅ Tabelas Supabase verificadas — biblioteca e calendário persistentes');
+      console.log('✅ Tabelas Supabase verificadas');
     }
-  } catch(e) {
-    console.warn('Aviso ao verificar tabelas Supabase:', e.message);
-  }
+  } catch(e) { console.warn('Aviso ao verificar tabelas Supabase:', e.message); }
 }
 
 // ── Helpers JSON ──────────────────────────────────────────────────────────
@@ -131,7 +117,7 @@ function writeJSON(file, data) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// METODOLOGIAS DE CONTEÚDO
+// METODOLOGIAS DE CONTEÚDOM
 // ═══════════════════════════════════════════════════════════════════════════
 
 const METODOLOGIA_RR = {
@@ -145,7 +131,7 @@ FILOSOFIA BASE (Metodologia RR):
 - Você não é um profissional de 10 segundos — não se comporte como um.
 `,
   estruturaViral: `
-ESTRUTURA DE CONTEÚDO VIRAL (3 pilares obrigatórios):
+ESTRUTURA DE CONTEÚDOM VIRAL (3 pilares obrigatórios):
 1. GANCHO (primeiros 3 segundos / primeiro slide): toca na DOR ou DESEJO real.
 2. HISTÓRIA (desenvolvimento): conecta com o gancho e manteia interesse.
 3. CONCLUSÃO / TESE: sem conclusão, o conteúdo é tirado de contexto.
@@ -165,34 +151,13 @@ FORMATOS DISPONÍVEIS PARA MARCA PESSOAL (Metodologia RR):
 };
 
 const TIPOS_RR = {
-  lofi: {
-    id: 'lofi', emoji: '🎥', label: 'Lo-Fi (câmera ligada)',
-    instrucao: 'Script para vídeo lo-fi direto ao ponto. Gancho nos primeiros 3 segundos, história que sustenta, conclusão com tese clara.',
-  },
-  carrossel: {
-    id: 'carrossel', emoji: '📋', label: 'Carrossel',
-    instrucao: 'Slide 1: gancho provocativo que nomeia dor ou desejo. Slides do meio: profundidade real. Slide final: conclusão + CTA leve e íntimo.',
-  },
-  video_curto: {
-    id: 'video_curto', emoji: '⚡', label: 'Vídeo Curto (até 13s)',
-    instrucao: 'Uma única sacada impactante. Sem introdução. Direto ao ponto e corte.',
-  },
-  video_medio: {
-    id: 'video_medio', emoji: '🎬', label: 'Vídeo Médio (até 1min)',
-    instrucao: 'Gancho (0-5s) → desenvolvimento que conecta (5-50s) → conclusão com tese (50-60s).',
-  },
-  frase: {
-    id: 'frase', emoji: '✍️', label: 'Frase de Impacto',
-    instrucao: 'Uma verdade concentrada em 2-3 linhas. Sem explicação — a frase precisa ressoar sozinha.',
-  },
-  dump: {
-    id: 'dump', emoji: '📸', label: 'Dump / Bastidores',
-    instrucao: 'Momentos reais com narrativa. Humaniza, cria relacionamento.',
-  },
-  bastidores: {
-    id: 'bastidores', emoji: '🎬', label: 'Bastidores',
-    instrucao: 'Mostra o processo real, não o resultado polido. O que acontece antes, durante, os erros, as decisões.',
-  },
+  lofi: { id: 'lofi', emoji: '🎥', label: 'Lo-Fi (câmera ligada)', instrucao: 'Script para vídeo lo-fi direto ao ponto.' },
+  carrossel: { id: 'carrossel', emoji: '📋', label: 'Carrossel', instrucao: 'Slide 1: gancho provocativo. Slides do meio: profundidade real. Slide final: conclusão + CTA leve.' },
+  video_curto: { id: 'video_curto', emoji: '⚡', label: 'Vídeo Curto (até 13s)', instrucao: 'Uma única sacada impactante. Sem introdução. Direto ao ponto.' },
+  video_medio: { id: 'video_medio', emoji: '🎬', label: 'Vídeo Médio (até 1min)', instrucao: 'Gancho (0-5s) → desenvolvimento (5-50s) → conclusão (50-60s).' },
+  frase: { id: 'frase', emoji: '✍️', label: 'Frase de Impacto', instrucao: 'Uma verdade concentrada em 2-3 linhas.' },
+  dump: { id: 'dump', emoji: '📸', label: 'Dump / Bastidores', instrucao: 'Momentos reais com narrativa.' },
+  bastidores: { id: 'bastidores', emoji: '🎬', label: 'Bastidores', instrucao: 'Mostra o processo real, não o resultado polido.' },
 };
 
 const METODOLOGIA_BRANDSDECODED = {
@@ -216,34 +181,13 @@ ESTRUTURA BRANDSDECODED:
 };
 
 const TIPOS_BRANDSDECODED = {
-  tendencia: {
-    id: 'tendencia', emoji: '📡', label: 'Análise de Tendência', categoria: 'Awareness',
-    instrucao: 'Capa nomeia o fenômeno como declaração. Desenvolvimento: por que acontece, implicações estratégicas, o que muda.',
-  },
-  case: {
-    id: 'case', emoji: '🏆', label: 'Case de Sucesso', categoria: 'Awareness',
-    instrucao: 'Capa como fenômeno cultural. Contexto de mercado. Ponto de virada decisivo. Resultados mensuráveis.',
-  },
-  educativo: {
-    id: 'educativo', emoji: '📚', label: 'Educativo / Framework', categoria: 'Autoridade',
-    instrucao: 'Capa promete método com nome próprio. Um passo por slide, com exemplo concreto em cada.',
-  },
-  comparacao: {
-    id: 'comparacao', emoji: '⚖️', label: 'Comparação / Antes & Depois', categoria: 'Alcance',
-    instrucao: 'Capa ativa contraste com dado ou afirmação. Lado A detalhado. Virada com análise. Lado B com resultado.',
-  },
-  lista: {
-    id: 'lista', emoji: '📋', label: 'Lista Valiosa', categoria: 'Alcance',
-    instrucao: 'Capa com número e promessa específica. Um item por slide com profundidade real.',
-  },
-  prova_social: {
-    id: 'prova_social', emoji: '🌟', label: 'Prova Social', categoria: 'Conversão',
-    instrucao: 'Capa foca no resultado concreto. Antes com contexto real. Processo decisivo. Números e métricas.',
-  },
-  oferta: {
-    id: 'oferta', emoji: '🎯', label: 'Oferta', categoria: 'Conversão',
-    instrucao: 'Capa ativa desejo, não produto. Problema real. Solução única. Para quem é. Prova de valor. CTA específico.',
-  },
+  tendencia: { id: 'tendencia', emoji: '📡', label: 'Análise de Tendência', categoria: 'Awareness', instrucao: 'Capa nomeia o fenômeno como declaração.' },
+  case: { id: 'case', emoji: '🏆', label: 'Case de Sucesso', categoria: 'Awareness', instrucao: 'Capa como fenômeno cultural. Resultados mensuráveis.' },
+  educativo: { id: 'educativo', emoji: '📚', label: 'Educativo / Framework', categoria: 'Autoridade', instrucao: 'Capa promete método com nome próprio.' },
+  comparacao: { id: 'comparacao', emoji: '⚖️', label: 'Comparação / Antes & Depois', categoria: 'Alcance', instrucao: 'Capa ativa contraste com dado ou afirmação.' },
+  lista: { id: 'lista', emoji: '📋', label: 'Lista Valiosa', categoria: 'Alcance', instrucao: 'Capa com número e promessa específica.' },
+  prova_social: { id: 'prova_social', emoji: '🌟', label: 'Prova Social', categoria: 'Conversão', instrucao: 'Capa foca no resultado concreto.' },
+  oferta: { id: 'oferta', emoji: '🎯', label: 'Oferta', categoria: 'Conversão', instrucao: 'Capa ativa desejo, não produto.' },
 };
 
 function getMetodologia(profile) {
@@ -262,7 +206,7 @@ function buildSystemPromptCarrossel(profile, metodologia, isRR) {
   const manualNote = getManualText(profile);
 
   if (isRR) {
-    return `Você é o gerador de conteúdo da ${account.name} — marca pessoal seguindo a Metodologia RR (Sistema de Conteúdo Viral).
+    return `Você é o gerador de conteúdo da ${account.name} — marca pessoal seguindo a Metodologia RR.
 
 ${METODOLOGIA_RR.filosofia}
 ${METODOLOGIA_RR.estruturaViral}
@@ -273,10 +217,8 @@ REGRAS OBRIGATÓRIAS:
 - Retornar APENAS JSON válido, sem markdown
 - NUNCA usar travessão (—) nem hífen no meio de frases
 - NUNCA usar: ${METODOLOGIA_RR.tonsProibidos.join(', ')}
-- Máximo 4 hashtags na legenda (nunca mais do que isso)
-- Hashtags específicas ao nicho, não genéricas
-- Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}
-- CTA: íntimo e leve — nunca comercial forçado`;
+- Máximo 4 hashtags na legenda
+- Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}`;
   }
 
   return `Você é o gerador de carrosseis da BrandsDecoded — padrão mais alto de copy corporativa para Instagram.
@@ -286,11 +228,10 @@ ${METODOLOGIA_BRANDSDECODED.estrutura}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
 REGRAS OBRIGATÓRIAS:
-- Slide 1: hook de 14-18 palavras, afirmação provocativa que nomeia fenômeno real
+- Slide 1: hook de 14-18 palavras
 - NUNCA usar travessão (—) nem hífen no meio de frases
 - NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
-- Máximo 4 hashtags na legenda
-- Hashtags específicas ao nicho
+- Máximo 4 hashtags
 - ASSINATURA FIXA no último slide: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
 - Retornar APENAS JSON válido, sem markdown`;
 }
@@ -299,9 +240,9 @@ function buildSystemPromptContentMachine(profile, tipo, metodologia, isRR) {
   const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
   const account = getAccount(profile);
   const manualNote = getManualText(profile);
+  const tipoInfo = isRR ? (TIPOS_RR[tipo] || TIPOS_RR.carrossel) : (TIPOS_BRANDSDECODED[tipo] || TIPOS_BRANDSDECODED.educativo);
 
   if (isRR) {
-    const tipoInfo = TIPOS_RR[tipo] || TIPOS_RR.carrossel;
     return `Você é o gerador de conteúdo da ${account.name} — marca pessoal, Metodologia RR.
 
 ${METODOLOGIA_RR.filosofia}
@@ -315,11 +256,9 @@ INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
 REGRAS:
 - NUNCA usar: ${METODOLOGIA_RR.tonsProibidos.join(', ')}
 - Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}
-- CTA FIXO (último texto): "${account.handle === '@analuisa.moutinho' ? 'salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você.' : 'salva esse conteúdo e me conta nos comentários o que mais fez sentido pra você.'}"
 - Retornar APENAS JSON válido, sem markdown`;
   }
 
-  const tipoInfo = TIPOS_BRANDSDECODED[tipo] || TIPOS_BRANDSDECODED.educativo;
   return `Você é o gerador oficial de conteúdo de alta performance da BrandsDecoded para ${account.name}.
 
 ${METODOLOGIA_BRANDSDECODED.filosofia}
@@ -367,7 +306,7 @@ const DEFAULT_PROFILES = {
     cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',
     referencias: ['Sofia Coppola', 'Lana Del Rey visual universe', 'Lo-fi diary aesthetic', 'Candid editorial'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Não é coach, não é guru. É uma mulher que observa o mundo de jeito diferente.',
+    observacoes: 'Não é coach, não é guru.',
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -420,14 +359,13 @@ function getProfileManualContext(profileId) {
     p.niche        ? `NICHO: ${p.niche}`                      : '',
     p.publicoAlvo  ? `PÚBLICO-ALVO: ${p.publicoAlvo}`        : '',
     p.tom          ? `TOM DE VOZ: ${p.tom}`                   : '',
-    p.pilares?.length    ? `PILARES DE CONTEÚDO: ${p.pilares.join(', ')}`       : '',
-    p.proibidos?.length  ? `TERMOS PROIBIDOS (nunca usar): ${p.proibidos.join(', ')}` : '',
+    p.pilares?.length    ? `PILARES DE CONTEÚDOM: ${p.pilares.join(', ')}` : '',
+    p.proibidos?.length  ? `TERMOS PROIBIDOS: ${p.proibidos.join(', ')}` : '',
     p.cta          ? `CTA PADRÃO DO PERFIL: ${p.cta}`         : '',
     p.observacoes  ? `CONTEXTO ADICIONAL: ${p.observacoes}`   : '',
   ].filter(Boolean).join('\n');
 }
 
-// ── Endpoint: listar tipos por metodologia ────────────────────────────────
 app.get('/api/tipos-conteudo', (req, res) => {
   const { profile } = req.query;
   const { isRR, tipos } = getMetodologia(profile || 'marca');
@@ -512,6 +450,22 @@ function updateContentStatus(id, status, extra = {}) {
   }
 }
 
+// NOVO: atualiza imageUrls de um conteúdo já existente
+function updateContentImages(id, imageUrls) {
+  const all = readJSON(GENERATED_FILE);
+  const idx = all.findIndex(i => i.id === id);
+  if (idx !== -1) {
+    all[idx].imageUrls = imageUrls;
+    writeJSON(GENERATED_FILE, all);
+  }
+  if (supabase) {
+    supabase.from('generated_content')
+      .update({ image_urls: imageUrls })
+      .eq('id', id)
+      .then(({ error }) => { if (error) console.error('Supabase updateImages:', error.message); });
+  }
+}
+
 async function loadGeneratedContent(profile) {
   if (supabase) {
     const { data, error } = await supabase.from('generated_content')
@@ -575,9 +529,7 @@ NUNCA: motivacional raso, tom de guru, coach, LinkedIn.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
 1. HOOK: afirmação provocativa que nomeia algo que a pessoa sente mas não sabe nomear.
 2. ESTRUTURA: gancho (3 segundos) → história real → conclusão com tese clara.
-3. TOM: íntimo e observador. Direto. PROIBIDO: "desbloqueie", "seja sua melhor versão", "sucesso".
-4. PROFUNDIDADE > BREVIDADE: conteúdo que conecta de verdade vale mais que 10 superficiais.
-5. AUTENTICIDADE: pessoas conectam com pessoas, não com personagens.`,
+3. TOM: íntimo e observador. Direto. PROIBIDO: "desbloqueie", "seja sua melhor versão", "sucesso".`,
   },
   virttus: {
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
@@ -587,6 +539,7 @@ NUNCA: motivacional raso, tom de guru, coach, LinkedIn.`,
 TYPOGRAPHY: Geometric tech sans-serif, precise and clean, weight 700-900.
 VISUALS: Abstract data visualizations, digital interfaces, circuit patterns.
 NEVER: clipart, generic tech stock, cartoonish elements.`,
+  
   },
 };
 
@@ -598,8 +551,7 @@ app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
   fs.renameSync(req.file.path, dest);
   const profiles = loadProfiles();
   if (profiles[profile]) {
-    profiles[profile].pdfUploadedAt = new Date().toISOString();
-    saveProfiles(profiles);
+    profiles[profile].pdfUploadedAt = new Date().toISOString();(profiles);
   }
   res.json({ success: true, message: `Manual do perfil "${profile}" guardado.` });
 });
@@ -782,29 +734,27 @@ app.post('/api/image/carousel-slide', async (req, res) => {
 
     if (needsPhoto) {
       const visualDNA = isAna
-        ? `VISUAL DNA — Ana Moutinho "Ana mais real" (Lo-Fi, autêntico, real):
+        ? `VISUAL DNA — Ana Moutinho "Ana mais real":
 Aesthetic: lo-fi diary, intimate, real. Not polished, not corporate.
 Feel: like a photo from her iPhone, warm grain, honest moment.
-References: Sofia Coppola films, Lana Del Rey visuals, candid editorial.
-Avoid: studio lighting, stock photo feel, fake smiles, perfect setup.`
+References: Sofia Coppola films, candid editorial.
+Avoid: studio lighting, stock photo feel, fake smiles.`
         : profile === 'virttus'
         ? `VISUAL DNA — Virttus tech B2B precision, forward-looking, sharp.
-References: Bloomberg Businessweek, Wired magazine. Clean architecture, digital abstraction.
-Avoid: generic tech stock, blue gradients, cliché office scenes.`
-        : `VISUAL DNA — Case Aceleradora premium B2B editorial (BrandsDecoded).
-References: Monocle, FT Weekend, Harvard Business Review covers.
+References: Bloomberg Businessweek, Wired magazine.
+Avoid: generic tech stock, cliché office scenes.`
+        : `VISUAL DNA — Case Aceleradora premium B2B editorial.
+References: Monocle, FT Weekend, Harvard Business Review.
 Aesthetic: quiet luxury, strategic intelligence, executive authority.
-Avoid: startup hustle, motivational clichés, busy distracting backgrounds.`;
+Avoid: startup hustle, motivational clichés.`;
 
       const slideCtx = funcao === 'CAPA' || slideNumber === 1
-        ? 'COVER SLIDE — maximum cinematic impact, strong single focal point, hero image quality.'
+        ? 'COVER SLIDE — maximum cinematic impact, hero image quality.'
         : funcao === 'CTA' || slideNumber === totalSlides
-        ? 'CLOSING SLIDE — warmer, intimate feel, invites connection.'
+        ? 'CLOSING SLIDE — warmer, intimate feel.'
         : `Slide ${slideNumber}/${totalSlides} — clean, uncluttered supporting visual.`;
 
-      const styleLayer = designStyleHint
-        ? `\nSELECTED VISUAL STYLE (highest priority): ${designStyleHint}`
-        : '';
+      const styleLayer = designStyleHint ? `\nSELECTED VISUAL STYLE: ${designStyleHint}` : '';
 
       const artPrompt = `You are a world-class art director for premium Instagram editorial content.
 
@@ -814,19 +764,12 @@ TOPIC: "${topic}"
 SLIDE HEADING: "${h}"
 ${slideCtx}
 
-Direct the BACKGROUND PHOTOGRAPH ONLY. This image will have typography overlaid by our design system.
-CRITICAL: No text, no typography, no logos, no graphic elements in the image.
+Direct the BACKGROUND PHOTOGRAPH ONLY. No text, no typography, no logos.
 
 Describe precisely (max 150 words):
-- SUBJECT: who/what, their action or emotional state
-- ENVIRONMENT: specific location, architecture or nature
-- LIGHTING: quality, direction, color temperature, time of day
-- LENS & FRAMING: focal length feel, crop, angle, depth of field
-- COLOR PALETTE: dominant tones, accent colors, warmth/coolness
-- EMOTIONAL TONE: mood and psychological impact
-- PHOTOGRAPHIC STYLE: specific magazine or photographer reference
+- SUBJECT, ENVIRONMENT, LIGHTING, LENS & FRAMING, COLOR PALETTE, EMOTIONAL TONE, PHOTOGRAPHIC STYLE
 
-Output ONLY the photographic direction. No preamble, no labels.`;
+Output ONLY the photographic direction. No preamble.`;
 
       try {
         const sr = await fetch('https://api.anthropic.com/v1/messages', {
@@ -837,13 +780,12 @@ Output ONLY the photographic direction. No preamble, no labels.`;
         const sd = await sr.json();
         if (sd.content?.[0]?.text) {
           artDirection = sd.content[0].text.trim();
-          console.log(`[ArtDir] Slide ${slideNumber}: ${artDirection.slice(0, 80)}...`);
         }
       } catch(e) {
         console.warn('Art direction fallback:', e.message);
         artDirection = isAna
-          ? 'Young woman at her desk by a large window, early morning soft diffused light, coffee cup nearby, candid moment of quiet reflection, warm golden hour tones, shallow depth of field, 35mm film aesthetic, slightly grainy texture, intimate and real, lo-fi diary feel'
-          : 'Executive standing by floor-to-ceiling glass window overlooking city skyline at dusk, dramatic raking side light, desaturated editorial tones, architectural precision and clean lines, Monocle magazine aesthetic, sharp focus on subject';
+          ? 'Young woman at her desk by a large window, early morning soft diffused light, candid moment of quiet reflection, warm golden hour tones, shallow depth of field, 35mm film aesthetic, slightly grainy texture'
+          : 'Executive standing by floor-to-ceiling glass window overlooking city skyline at dusk, dramatic raking side light, desaturated editorial tones, Monocle magazine aesthetic';
       }
     }
 
@@ -854,31 +796,29 @@ Output ONLY the photographic direction. No preamble, no labels.`;
 
 CRITICAL REQUIREMENTS:
 - Absolutely NO text, words, letters, numbers, or typography anywhere in the image
-- NO logos, watermarks, or graphic overlays of any kind
-- NO UI elements, frames, borders, or design elements
-- This is pure photography intended as a background layer — clean and uncluttered
+- NO logos, watermarks, or graphic overlays
 - Ultra high quality, ${mood.includes('LOFI') ? 'authentic film grain, lo-fi aesthetic' : 'luxury magazine editorial quality'}
 - Portrait orientation composition, 2:3 aspect ratio`;
     } else {
       const bgMap = {
-        TYPE_LIGHT:     `Minimalist flat surface. Warm off-white tone like ${brand.bgLight}. Very subtle paper or linen texture, barely perceptible. Completely clean, no objects, no shadows, no text.`,
-        TYPE_CREME:     `Warm cream minimalist background. Soft beige tone. Very subtle organic texture. Pure clean surface, no elements whatsoever.`,
-        TYPE_DARK:      `Deep dark background. Rich near-black tone like ${brand.bgDark}. Very subtle film grain texture. Pure surface, completely clean.`,
-        TYPE_DARK_WARM: `Dark warm background. Deep espresso tone. Subtle film grain. Pure photographic dark surface, no objects.`,
-        BRAND_PUNCH:    `Abstract dark background. Deep near-black tone. Very subtle diagonal light reflection or bokeh. No text, no logos, purely atmospheric.`,
-        VIRADA:         `Dark dramatic abstract background. Deep shadow photography. Moody atmospheric light leak at edge. Completely clean, no text, no elements.`,
-        TABLE_LIGHT:    `Clean light background. Flat warm white surface. Subtle paper texture. No elements, pure minimal surface.`,
-        CTA_LIGHT:      `Warm light background. Soft cream tones. Gentle organic texture. Pure clean inviting surface.`,
-        CTA_INTIMO:     `Warm intimate light background. Soft beige and cream. Gentle grain. Cozy and quiet surface.`,
-        FRASE_IMPACTO:  `Dramatic dark background. Deep shadows. Cinematic darkness with one subtle edge of light. No text, no elements.`,
-        SPLIT_LIGHT:    `Clean minimal light background. Soft warm white. Barely visible texture. Pure surface.`,
-        COLAGEM_REAL:   `Warm cream background. Soft natural light. Subtle organic texture. Clean and quiet.`,
+        TYPE_LIGHT:     `Minimalist flat surface. Warm off-white tone like ${brand.bgLight}. Very subtle paper texture. Completely clean.`,
+        TYPE_CREME:     `Warm cream minimalist background. Soft beige tone. Very subtle organic texture. Pure clean surface.`,
+        TYPE_DARK:      `Deep dark background. Rich near-black tone like ${brand.bgDark}. Very subtle film grain. Pure surface.`,
+        TYPE_DARK_WARM: `Dark warm background. Deep espresso tone. Subtle film grain. Pure photographic dark surface.`,
+        BRAND_PUNCH:    `Abstract dark background. Deep near-black tone. Very subtle diagonal light reflection. No text, no logos.`,
+        VIRADA:         `Dark dramatic abstract background. Deep shadow photography. Moody atmospheric light leak at edge.`,
+        TABLE_LIGHT:    `Clean light background. Flat warm white surface. Subtle paper texture.`,
+        CTA_LIGHT:      `Warm light background. Soft cream tones. Gentle organic texture.`,
+        CTA_INTIMO:     `Warm intimate light background. Soft beige and cream. Gentle grain.`,
+        FRASE_IMPACTO:  `Dramatic dark background. Deep shadows. Cinematic darkness with one subtle edge of light.`,
+        SPLIT_LIGHT:    `Clean minimal light background. Soft warm white. Barely visible texture.`,
+        COLAGEM_REAL:   `Warm cream background. Soft natural light. Subtle organic texture.`,
       };
-      photoPrompt = (bgMap[mood] || `Clean ${brand.bgLight} minimal background surface. Subtle texture. No text, no elements.`);
+      photoPrompt = (bgMap[mood] || `Clean ${brand.bgLight} minimal background surface. Subtle texture.`);
       photoPrompt += '\n\nCRITICAL: Absolutely NO text, typography, letters, numbers, or graphic elements anywhere in the image.';
     }
 
-    console.log(`[Slide ${slideNumber}] mood=${mood} quality=${finalQuality} needsPhoto=${needsPhoto} promptLen=${photoPrompt.length}`);
+    console.log(`[Slide ${slideNumber}] mood=${mood} quality=${finalQuality} needsPhoto=${needsPhoto}`);
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -887,7 +827,12 @@ CRITICAL REQUIREMENTS:
     });
 
     const imgData = await imgRes.json();
-    if (imgData.error) return res.status(500).json({ error: imgData.error.message });
+
+    // CORRIGIDO: log detalhado do erro da OpenAI
+    if (imgData.error) {
+      console.error('[carousel-slide] OpenAI error:', JSON.stringify(imgData.error));
+      return res.status(500).json({ error: imgData.error.message || JSON.stringify(imgData.error) });
+    }
 
     const b64out = imgData.data[0].b64_json || null;
     let   urlOut = imgData.data[0].url      || null;
@@ -952,6 +897,41 @@ app.patch('/api/content/:id', (req, res) => {
     }
   }
   res.json({ success: true, item: all[idx] });
+});
+
+// NOVO: endpoint dedicado para salvar imageUrls após geração
+// Garante que as URLs persistem mesmo quando o conteúdo já foi criado
+app.patch('/api/content/:id/images', (req, res) => {
+  try {
+    const { imageUrls } = req.body;
+    if (!Array.isArray(imageUrls)) return res.status(400).json({ error: 'imageUrls deve ser array' });
+    updateContentImages(req.params.id, imageUrls);
+    res.json({ success: true, savedCount: imageUrls.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// NOVO: busca dados de um conteúdo específico para regenerar imagens pela biblioteca
+app.get('/api/content/:id', async (req, res) => {
+  try {
+    // Tenta Supabase primeiro
+    if (supabase) {
+      const { data, error } = await supabase.from('generated_content').select('*').eq('id', req.params.id).single();
+      if (!error && data) {
+        return res.json({
+          id: data.id, profile: data.profile, type: data.type, status: data.status,
+          topic: data.topic, caption: data.caption, hashtags: data.hashtags,
+          carouselData: data.carousel_data ? JSON.parse(data.carousel_data) : null,
+          contentMachineType: data.content_machine_type,
+          createdAt: data.created_at, imageUrls: data.image_urls || [],
+        });
+      }
+    }
+    // Fallback para arquivo local
+    const all  = readJSON(GENERATED_FILE);
+    const item = all.find(i => i.id === req.params.id);
+    if (!item) return res.status(404).json({ error: 'Não encontrado' });
+    res.json(item);
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── Instagram ─────────────────────────────────────────────────────────────
@@ -1088,9 +1068,7 @@ app.post('/api/calendar/generate', async (req, res) => {
       const daysInBlock = blockEnd - blockStart + 1;
 
       const brandContext = isRR
-        ? `PERFIL: ${account.name} (${account.handle}) — MARCA PESSOAL, Metodologia RR.
-FILOSOFIA: conteúdo como transformação, autenticidade, profundidade > brevidade.
-FORMATOS RR: lofi (câmera ligada), carrossel, video_curto, video_medio, frase, dump, bastidores.`
+        ? `PERFIL: ${account.name} (${account.handle}) — MARCA PESSOAL, Metodologia RR.`
         : `PERFIL: ${account.name} (${account.handle}) — MARCA CORPORATIVA, BrandsDecoded.
 TIPOS: ${tiposLabels}`;
 
@@ -1109,12 +1087,10 @@ ${manualNote ? `DIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
 TIPOS DISPONÍVEIS: ${tiposDisponiveis}
 
-REGRAS DO TOPIC (CRÍTICO):
-Topics devem ser específicos com ângulo único — não genéricos como "dicas de marketing".
-
+REGRAS DO TOPIC: Topics devem ser específicos com ângulo único.
 HORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.
 
-RESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN, SEM TEXTO ANTES OU DEPOIS.
+RESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.
 
 Formato EXATO:
 {
@@ -1141,7 +1117,6 @@ Gere TODOS os dias de ${blockStart} a ${blockEnd} (total: ${daysInBlock} dias, $
       try {
         const parsed = extractJSON(rawText);
         blockDays    = normalizeDays(parsed);
-        if (blockDays.length > 0) console.log(`[Calendar] Bloco ${blockStart}–${blockEnd}: ${blockDays.length} dias`);
       } catch (parseErr) {
         console.error(`[Calendar] Erro ao parsear bloco ${blockStart}–${blockEnd}:`, parseErr.message);
         for (let d = blockStart; d <= blockEnd; d++) blockDays.push({ day: d, posts: [] });
@@ -1186,7 +1161,6 @@ Gere TODOS os dias de ${blockStart} a ${blockEnd} (total: ${daysInBlock} dias, $
   }
 });
 
-// Actualizar calendário salvo (edições de posts individuais)
 app.patch('/api/calendar/saved', async (req, res) => {
   try {
     const { profile, month, year, calendar } = req.body;
@@ -1234,7 +1208,7 @@ app.post('/api/carousel/generate-and-save', async (req, res) => {
     let prompt;
     if (mode === 'blocks') {
       prompt = `Perfil: ${account.name} (${account.handle})
-Converte estes blocos em slides (1 bloco = 1 slide):
+Converte estes blocos em slides:
 ${blocks}
 JSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"legenda com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
     } else {
@@ -1258,11 +1232,7 @@ JSON: {"title":"...","slideCount":${isRR ? 8 : 10},"slides":[{"slideNumber":1,"h
 
     function sanitizeCopy(text) {
       if (!text) return text;
-      return text
-        .replace(/\s*—\s*/g, ' ')
-        .replace(/\s*–\s*/g, ' ')
-        .replace(/^\s*[–—]\s*/gm, '')
-        .trim();
+      return text.replace(/\s*—\s*/g, ' ').replace(/\s*–\s*/g, ' ').replace(/^\s*[–—]\s*/gm, '').trim();
     }
     if (carouselData.slides) {
       carouselData.slides = carouselData.slides.map(s => ({
@@ -1299,54 +1269,19 @@ function buildPromptRoteiro(tipo, tema, account, tipoInfo, manualNote, brand) {
     : 'salva esse conteúdo e me conta nos comentários o que mais fez sentido pra você.';
 
   const estruturas = {
-    lofi: `ESTRUTURA LO-FI (câmera ligada, fala direta — Metodologia RR):
-- GANCHO (0-3s): primeira frase dita na câmera. Toca na DOR ou DESEJO real. Sem introdução, sem "oi gente". Direto.
-- DESENVOLVIMENTO (3s-fim): história ou argumento que sustenta o gancho. Tom conversacional, íntimo. Como se estivesse falando com uma pessoa só.
-- CONCLUSÃO / TESE: fecha com uma afirmação clara. O que o espectador deve pensar/sentir ao terminar.
-- CTA final falado: "${ctaFixo}"
-
-REGRAS LO-FI:
-- Escrever como se fala, não como se escreve. Sem pontuação formal.
-- Frases curtas. Pausas marcadas com "..."
-- Sem roteiro engessado — é uma guia de pontos, não texto decorado.
-- Indicar onde pausar, onde olhar pra câmera, onde gesticular (entre colchetes).`,
-
-    video_curto: `ESTRUTURA VÍDEO CURTO — até 13 segundos (Metodologia RR):
-- É UMA ÚNICA SACADA. Só uma. Sem introdução, sem contexto, sem explicação.
-- A sacada precisa ser tão boa que o espectador assista de novo.
-- Formato: afirmação + reforço de 1 linha. Acabou.
-- Contar cada segundo — 13s é pouco, cada palavra precisa valer.
-
-REGRAS VÍDEO CURTO:
-- Máximo 2-3 frases no roteiro inteiro.
-- Sem CTA explícito — a sacada em si é o gancho para seguir.
-- Indicar ritmo: rápido, pausa dramática, etc.`,
-
-    video_medio: `ESTRUTURA VÍDEO MÉDIO — até 60 segundos (Metodologia RR):
-- GANCHO (0-5s): primeira frase dita. Uma afirmação provocativa ou pergunta que gera tensão.
-- DESENVOLVIMENTO (5-50s): 3-4 pontos curtos que constroem o argumento. Cada ponto em ~10s.
-- CONCLUSÃO (50-60s): tese clara + CTA falado: "${ctaFixo}"
-
-REGRAS VÍDEO MÉDIO:
-- Contar os segundos aproximados de cada bloco (ex: [0-5s], [5-20s]).
-- Tom natural, como conversa real. Sem "hoje vou falar sobre...".
-- Indicar onde pausar, mudar tom, olhar direto pra câmera.`,
+    lofi: `ESTRUTURA LO-FI: GANCHO (0-3s) → DESENVOLVIMENTO → CONCLUSÃO/TESE → CTA: "${ctaFixo}"`,
+    video_curto: `ESTRUTURA VÍDEO CURTO (até 13s): UMA ÚNICA SACADA. Máximo 2-3 frases.`,
+    video_medio: `ESTRUTURA VÍDEO MÉDIO (até 60s): GANCHO (0-5s) → DESENVOLVIMENTO (5-50s) → CONCLUSÃO + CTA (50-60s)`,
   };
 
   const systemPrompt = `Você é roteirista de conteúdo para Instagram da ${account.name} — marca pessoal, Metodologia RR.
 
-FILOSOFIA RR:
-- Conteúdo não é venda, é transformação. Autenticidade supera produção.
-- Profundidade acima de brevidade. Gancho + história + conclusão com tese.
-- Nunca motivacional genérico. Nunca guru. Tom íntimo, direto, real.
-
+NUNCA usar: motivacional genérico, guru, coach, desbloqueie, seja sua melhor versão.
 ${brand.copyDNA || ''}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
 TIPO: ${tipoInfo.emoji} ${tipoInfo.label}
 ${estruturas[tipo] || ''}
-
-TERMOS PROIBIDOS: motivacional genérico, guru, coach, desbloqueie, seja sua melhor versão, transforme sua vida, fórmula secreta, método infalível, próximo nível.
 
 Retornar APENAS JSON válido, sem markdown.`;
 
@@ -1354,7 +1289,7 @@ Retornar APENAS JSON válido, sem markdown.`;
 Tema: "${tema}"
 Tipo: ${tipoInfo.label}
 
-Gere o roteiro completo em JSON:
+JSON:
 {
   "tipo": "${tipo}",
   "tipo_label": "${tipoInfo.label}",
@@ -1363,39 +1298,13 @@ Gere o roteiro completo em JSON:
   "duracao_estimada": "ex: 45-55 segundos",
   "gancho": "primeira frase exata a ser dita na câmera",
   "blocos": [
-    {
-      "id": 1,
-      "label": "GANCHO",
-      "tempo": "0-5s",
-      "texto": "o que falar neste bloco — como se fala, não como se escreve",
-      "nota_direcao": "instrução de gravação: tom, gestos, olhar, ritmo"
-    },
-    {
-      "id": 2,
-      "label": "DESENVOLVIMENTO",
-      "tempo": "5-40s",
-      "texto": "...",
-      "nota_direcao": "..."
-    },
-    {
-      "id": 3,
-      "label": "CONCLUSÃO",
-      "tempo": "40-55s",
-      "texto": "...",
-      "nota_direcao": "..."
-    },
-    {
-      "id": 4,
-      "label": "CTA",
-      "tempo": "55-60s",
-      "texto": "${ctaFixo}",
-      "nota_direcao": "falar com intimidade, não como anúncio"
-    }
+    {"id": 1, "label": "GANCHO", "tempo": "0-5s", "texto": "...", "nota_direcao": "..."},
+    {"id": 2, "label": "DESENVOLVIMENTO", "tempo": "5-40s", "texto": "...", "nota_direcao": "..."},
+    {"id": 3, "label": "CONCLUSÃO", "tempo": "40-55s", "texto": "...", "nota_direcao": "..."},
+    {"id": 4, "label": "CTA", "tempo": "55-60s", "texto": "${ctaFixo}", "nota_direcao": "falar com intimidade"}
   ],
-  "dicas_gravacao": [
-    "dica específica para gravar esse vídeo bem"
-  ],
-  "legenda_sugerida": "legenda do post com emojis, máximo 4 hashtags específicas ao nicho"
+  "dicas_gravacao": ["dica específica"],
+  "legenda_sugerida": "legenda com emojis, máximo 4 hashtags"
 }`;
 
   return { systemPrompt, userPrompt };
@@ -1412,7 +1321,7 @@ app.post('/api/content-machine/generate', async (req, res) => {
 
     if (!tipos[tipo]) {
       return res.status(400).json({
-        error: `Tipo "${tipo}" não disponível para ${isRR ? 'marca pessoal (RR)' : 'corporativa (BrandsDecoded)'}. Disponíveis: ${Object.keys(tipos).join(', ')}`,
+        error: `Tipo "${tipo}" não disponível. Disponíveis: ${Object.keys(tipos).join(', ')}`,
       });
     }
 
@@ -1420,7 +1329,6 @@ app.post('/api/content-machine/generate', async (req, res) => {
     const manualNote = getManualText(profile);
     const isVideo    = isRR && TIPOS_VIDEO_RR.includes(tipo);
 
-    // ── VÍDEO: gera roteiro ───────────────────────────────────────────────
     if (isVideo) {
       const { systemPrompt, userPrompt } = buildPromptRoteiro(tipo, tema, account, tipoInfo, manualNote, brand);
 
@@ -1449,9 +1357,8 @@ app.post('/api/content-machine/generate', async (req, res) => {
       return res.json({ success: true, contentId: item.id, isRoteiro: true, ...parsed });
     }
 
-    // ── TEXTO (carrossel, frase, dump, bastidores): gera slides ──────────
-    const tiposRRLabels = { lofi:'Lo-Fi (câmera ligada)', carrossel:'Carrossel', video_curto:'Vídeo Curto (até 13s)', video_medio:'Vídeo Médio (até 1min)', frase:'Frase de Impacto', dump:'Dump / Bastidores', bastidores:'Bastidores' };
-    const tiposBDLabels = { tendencia:'Análise de Tendência', case:'Case de Sucesso', educativo:'Educativo / Framework', comparacao:'Comparação / Antes & Depois', lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta' };
+    const tiposRRLabels = { lofi:'Lo-Fi', carrossel:'Carrossel', video_curto:'Vídeo Curto', video_medio:'Vídeo Médio', frase:'Frase de Impacto', dump:'Dump / Bastidores', bastidores:'Bastidores' };
+    const tiposBDLabels = { tendencia:'Análise de Tendência', case:'Case de Sucesso', educativo:'Educativo / Framework', comparacao:'Comparação', lista:'Lista Valiosa', prova_social:'Prova Social', oferta:'Oferta' };
     const tipoLabel     = isRR ? (tiposRRLabels[tipo] || tipo) : (tiposBDLabels[tipo] || tipo);
     const systemPrompt  = buildSystemPromptContentMachine(profile, tipo, metodologia, isRR);
 
@@ -1460,10 +1367,10 @@ app.post('/api/content-machine/generate', async (req, res) => {
       : 'Gostou? Comente CASE que nossa equipe te chama.';
 
     const instrucaoEstrutura = isRR
-      ? `INSTRUÇÃO ESPECÍFICA DO FORMATO:\n${tipoInfo.instrucao}\n\nESTRUTURA VIRAL RR:\n1. Slide CAPA: gancho que toca na dor ou desejo real.\n2. Slides DESENVOLVIMENTO: profundidade real.\n3. Slide CONCLUSÃO: tese clara que fecha.\n4. CTA FINAL: íntimo e leve.`
-      : `INSTRUÇÃO ESPECÍFICA DO TIPO:\n${tipoInfo.instrucao}\n\nESTRUTURA BRANDSDECODED:\n1. Slide CAPA: hook de 14-18 palavras.\n2. Slides MEIO: dados, frameworks, exemplos.\n3. Slide FINAL: CTA com assinatura da marca.`;
+      ? `INSTRUÇÃO: ${tipoInfo.instrucao}\nESTRUTURA RR: Slide 1 (gancho dor/desejo) → profundidade → conclusão → CTA íntimo.`
+      : `INSTRUÇÃO: ${tipoInfo.instrucao}\nESTRUTURA BD: Slide 1 (hook 14-18 palavras) → frameworks/dados → CTA assinatura.`;
 
-    const userPrompt = `Tipo de conteúdo: ${tipoLabel}
+    const userPrompt = `Tipo: ${tipoLabel}
 Perfil: ${account.name} (${account.handle})
 Tema: "${tema}"
 
@@ -1515,19 +1422,17 @@ JSON:
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TENDÊNCIAS — Google Trends + Twitter/X Trends
+// TENDÊNCIAS
 // ═══════════════════════════════════════════════════════════════════════════
 
 const NICHE_CONFIG = {
-  marca:   'negócios, empresas, marketing digital, growth hacking, empreendedorismo, vendas B2B, liderança empresarial, startups, gestão',
-  pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida, autoconhecimento, redes sociais',
-  virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança, cloud, automação empresarial',
+  marca:   'negócios, empresas, marketing digital, growth hacking, empreendedorismo, vendas B2B, liderança empresarial',
+  pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida',
+  virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança',
 };
 
 const trendsCache = {};
-const TRENDS_TTL  = 60 * 60 * 1000; // 1h
-
-
+const TRENDS_TTL  = 60 * 60 * 1000;
 
 function parseGoogleTrendsRSS(xml) {
   const items = [];
@@ -1549,46 +1454,42 @@ async function fetchWithTimeout(url, options = {}, timeout = 9000) {
   try {
     const r = await fetch(url, { ...options, signal: controller.signal });
     return r;
-  } finally {
-    clearTimeout(timer);
-  }
+  } finally { clearTimeout(timer); }
 }
 
 async function getGoogleTrends() {
-  var AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  const AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/122.0.0.0 Safari/537.36"
   ];
-  var agent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
-  var URLS = ["https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR", "https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR&hl=pt-BR"];
-  for (var ui = 0; ui < URLS.length; ui++) {
+  const agent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+  const URLS = ["https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR"];
+  for (const url of URLS) {
     try {
-      var r = await fetchWithTimeout(URLS[ui], { headers: { "User-Agent": agent, "Accept": "application/rss+xml,*/*", "Accept-Language": "pt-BR,pt;q=0.9", "Cache-Control": "no-cache", "Referer": "https://trends.google.com/" } }, 12000);
-      if (!r.ok) { console.warn("[Trends] HTTP", r.status); continue; }
-      var xml = await r.text();
-      var items = parseGoogleTrendsRSS(xml);
-      if (items.length > 0) { console.log("[Trends] Got", items.length, "items"); return items.slice(0, 20); }
+      const r = await fetchWithTimeout(url, { headers: { "User-Agent": agent, "Accept": "application/rss+xml,*/*", "Accept-Language": "pt-BR,pt;q=0.9", "Cache-Control": "no-cache" } }, 12000);
+      if (!r.ok) continue;
+      const xml = await r.text();
+      const items = parseGoogleTrendsRSS(xml);
+      if (items.length > 0) return items.slice(0, 20);
     } catch(e) { console.warn("[Trends] URL failed:", e.message); }
   }
-  console.warn("[Trends] Google bloqueado - fallback IA");
+  // Fallback IA
   try {
-    var month = new Date().toLocaleDateString("pt-BR", {month:"long", year:"numeric"});
-    var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+    const month = new Date().toLocaleDateString("pt-BR", {month:"long", year:"numeric"});
+    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: { "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 900, messages: [{ role: "user", content: "Liste 15 assuntos muito comentados no Brasil em " + month + ". Variedade: entretenimento, esportes, politica, economia, tecnologia, comportamento. Responda SOMENTE JSON array: [{\"termo\":\"nome\",\"volume\":\"tendencia\",\"fonte\":\"Estimativa IA\"}]" }] })
+      body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 900, messages: [{ role: "user", content: "Liste 15 assuntos muito comentados no Brasil em " + month + ". Variedade: entretenimento, esportes, politica, economia, tecnologia, comportamento. SOMENTE JSON array: [{\"termo\":\"nome\",\"volume\":\"tendencia\",\"fonte\":\"Estimativa IA\"}]" }] })
     });
-    var aiData = await aiRes.json();
-    if (aiData.content && aiData.content[0]) {
-      var txt = aiData.content[0].text.trim();
-      var m2 = txt.match(/\[[\s\S]+\]/);
-      if (m2) { var parsed = JSON.parse(m2[0]); console.log("[Trends] IA fallback:", parsed.length, "items"); return parsed.slice(0, 15); }
+    const aiData = await aiRes.json();
+    if (aiData.content?.[0]) {
+      const txt = aiData.content[0].text.trim();
+      const m2 = txt.match(/\[[\s\S]+\]/);
+      if (m2) return JSON.parse(m2[0]).slice(0, 15);
     }
   } catch(e2) { console.warn("[Trends] Fallback falhou:", e2.message); }
   return [];
 }
-
 
 app.get('/api/trends', async (req, res) => {
   try {
@@ -1599,8 +1500,8 @@ app.get('/api/trends', async (req, res) => {
       return res.json({ ...trendsCache[profile].data, cached: true });
     }
 
-    const account = getAccount(profile);
-    const nicho   = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
+    const account    = getAccount(profile);
+    const nicho      = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
     const manualNote = getManualText(profile);
 
     const googleTrends = await getGoogleTrends();
@@ -1609,34 +1510,24 @@ app.get('/api/trends', async (req, res) => {
       return res.json({ trends: [], updatedAt: new Date().toISOString(), warning: 'Nenhuma fonte de tendências disponível neste momento.' });
     }
 
-    const termosList = googleTrends
-      .map((t, i) => `${i + 1}. [${t.fonte}] ${t.termo}${t.volume ? ` (${t.volume})` : ''}`)
-      .join('\n');
+    const termosList = googleTrends.map((t, i) => `${i + 1}. [${t.fonte}] ${t.termo}${t.volume ? ` (${t.volume})` : ''}`).join('\n');
 
     const prompt = `Você é estrategista de conteúdo para ${account.name}.
 Nicho: ${nicho}.
-${manualNote ? `Contexto do perfil:\n${manualNote}\n` : ''}
-Abaixo estão os termos que estão em alta agora no Google Trends e Twitter/X Brasil:
+${manualNote ? `Contexto:\n${manualNote}\n` : ''}
+Termos em alta agora no Brasil:
 
 ${termosList}
 
-TAREFA:
-1. Identifique os 6 termos mais relevantes para o nicho "${nicho}".
-2. Para cada um, crie um card de oportunidade de pauta pronto para usar.
-
-Critério de seleção: o termo deve ter conexão real com o nicho — direta ou por analogia estratégica. Ignore termos sem nenhuma relação.
-
-Retorne APENAS JSON válido (sem markdown, sem texto extra):
+Identifique os 6 termos mais relevantes para o nicho. JSON:
 {
   "trends": [
     {
-      "termo": "o termo em alta",
-      "fonte": "Google Trends | Twitter/X | Ambos",
-      "volume": "ex: 50k tweets ou 200,000+ buscas",
-      "relevancia": "por que esse termo é oportuno para o perfil (1 frase direta)",
-      "angulo": "como transformar isso em pauta de Instagram para ${account.name} (2 frases, concreto)",
+      "termo": "...", "fonte": "Google Trends", "volume": "...",
+      "relevancia": "por que é oportuno (1 frase)",
+      "angulo": "como transformar em pauta (2 frases)",
       "tipo_ideal": "carrossel | post | reels",
-      "gancho": "headline já pronta para usar no post — no estilo da voz do perfil",
+      "gancho": "headline pronta para usar",
       "urgencia": "alta | media | baixa"
     }
   ]
@@ -1645,11 +1536,7 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2800,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2800, messages: [{ role: 'user', content: prompt }] }),
     });
 
     const aiData = await aiRes.json();
@@ -1672,8 +1559,7 @@ Retorne APENAS JSON válido (sem markdown, sem texto extra):
   }
 });
 
-// ── Health ────────────────────────────────────────────────────────────────
-
+// ── Canva Templates ───────────────────────────────────────────────────────
 const CANVA_TEMPLATES_FILE = '/tmp/canva_templates.json';
 function loadCT() {
   try {
@@ -1711,9 +1597,9 @@ app.post('/api/canva/match', async (req, res) => {
     const { contentId, tipo, tema, slides, legenda, profile } = req.body;
     const templates = loadCT().filter(t => !t.profile || t.profile === profile || t.profile === 'all');
     if (!templates.length) return res.json({ matches: [], message: 'Nenhum template cadastrado.' });
-    const templateList = templates.map((t, i) => (i+1)+'. ID: '+t.id+'\n   Nome: '+t.name+'\n   Tipos: '+(Array.isArray(t.contentTypes)?t.contentTypes.join(', '):t.contentTypes||'geral')+'\n   Estetica: '+(t.aesthetic||'nao especificada')+'\n   Slides: '+(t.slideCount||'variavel')+'\n   Notas: '+(t.notes||'-')).join('\n\n');
-    const slidesResumo = Array.isArray(slides) ? slides.slice(0,3).map((s,i)=>'  Slide '+(i+1)+' ['+( s.funcao||'')+']:"'+(s.heading||'').slice(0,60)+'"').join('\n') : '';
-    const prompt = 'Perfil: '+profile+'\nTipo: '+(tipo||'carrossel')+'\nTema: '+tema+'\nSlides:\n'+slidesResumo+'\n\nTemplates:\n'+templateList+'\n\nSeleciona os 3 templates mais adequados. JSON: {"matches":[{"templateId":"tmpl_xxx","score":95,"reason":"1 frase","fitLabel":"Perfeito","fieldMapping":{"headline":"texto slide 1"}}]}';
+    const templateList = templates.map((t, i) => `${i+1}. ID: ${t.id}\n   Nome: ${t.name}\n   Tipos: ${Array.isArray(t.contentTypes)?t.contentTypes.join(', '):t.contentTypes||'geral'}\n   Estetica: ${t.aesthetic||'-'}\n   Slides: ${t.slideCount||'?'}`).join('\n\n');
+    const slidesResumo = Array.isArray(slides) ? slides.slice(0,3).map((s,i)=>`  Slide ${i+1} [${s.funcao||''}]: "${(s.heading||'').slice(0,60)}"`).join('\n') : '';
+    const prompt = `Perfil: ${profile}\nTipo: ${tipo||'carrossel'}\nTema: ${tema}\nSlides:\n${slidesResumo}\n\nTemplates:\n${templateList}\n\nSeleciona os 3 mais adequados. JSON: {"matches":[{"templateId":"tmpl_xxx","score":95,"reason":"1 frase","fitLabel":"Perfeito","fieldMapping":{"headline":"texto slide 1"}}]}`;
     const r = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','Content-Type':'application/json'}, body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,messages:[{role:'user',content:prompt}]}) });
     const d = await r.json();
     if (d.error) throw new Error(d.error.message);
@@ -1731,22 +1617,19 @@ app.post('/api/canva/prepare-texts', (req, res) => {
     const tmpl = templates.find(t=>t.id===templateId);
     const lines = [];
     if (Object.keys(fieldMapping).length > 0) {
-      Object.entries(fieldMapping).forEach(([f,v])=>lines.push('[ '+f.toUpperCase()+' ]\n'+v));
+      Object.entries(fieldMapping).forEach(([f,v])=>lines.push(`[ ${f.toUpperCase()} ]\n${v}`));
     } else {
-      slides.forEach((s,i)=>{ if(s.heading)lines.push('[ SLIDE '+(i+1)+' TITULO ]\n'+s.heading); if(s.body)lines.push('[ SLIDE '+(i+1)+' CORPO ]\n'+s.body); });
+      slides.forEach((s,i)=>{ if(s.heading)lines.push(`[ SLIDE ${i+1} TITULO ]\n${s.heading}`); if(s.body)lines.push(`[ SLIDE ${i+1} CORPO ]\n${s.body}`); });
     }
-    if (legenda) lines.push('[ LEGENDA ]\n'+legenda);
-    if (hashtags) lines.push('[ HASHTAGS ]\n'+hashtags);
-    const fullText = lines.join('\n\n\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n');
-    const structured = slides.map((s,i)=>({slideNumber:i+1,funcao:s.funcao||'',fields:[s.heading?{label:'Titulo',value:s.heading,key:'slide'+(i+1)+'_heading'}:null,s.body?{label:'Corpo',value:s.body,key:'slide'+(i+1)+'_body'}:null].filter(Boolean)}));
+    if (legenda) lines.push(`[ LEGENDA ]\n${legenda}`);
+    if (hashtags) lines.push(`[ HASHTAGS ]\n${hashtags}`);
+    const fullText = lines.join('\n\n──────────\n\n');
+    const structured = slides.map((s,i)=>({slideNumber:i+1,funcao:s.funcao||'',fields:[s.heading?{label:'Titulo',value:s.heading,key:`slide${i+1}_heading`}:null,s.body?{label:'Corpo',value:s.body,key:`slide${i+1}_body`}:null].filter(Boolean)}));
     res.json({ success:true, clipboardText:fullText, structured, canvaUrl:tmpl&&tmpl.canvaUrl||null, templateName:tmpl&&tmpl.name||'Template' });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
-// ═══════════════════════════════════════════════════════════════
-// GOOGLE PHOTOS INTEGRATION
-// ═══════════════════════════════════════════════════════════════
-
+// ── Google Photos ─────────────────────────────────────────────────────────
 const GPHOTO_TOKENS_FILE = path.join(DATA_DIR, 'gphotos_tokens.json');
 
 function loadGPhotoTokens() {
@@ -1755,26 +1638,18 @@ function loadGPhotoTokens() {
     return JSON.parse(fs.readFileSync(GPHOTO_TOKENS_FILE, 'utf8'));
   } catch(e) { return {}; }
 }
-
 function saveGPhotoTokens(tokens) {
   try { fs.writeFileSync(GPHOTO_TOKENS_FILE, JSON.stringify(tokens, null, 2)); } catch(e) {}
 }
-
-// Refresh access token using refresh token
 async function refreshGPhotoToken(userId) {
   const tokens = loadGPhotoTokens();
   const userTokens = tokens[userId];
-  if (!userTokens || !userTokens.refresh_token) return null;
+  if (!userTokens?.refresh_token) return null;
   try {
     const r = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        refresh_token: userTokens.refresh_token,
-        grant_type: 'refresh_token'
-      }).toString()
+      body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET, refresh_token: userTokens.refresh_token, grant_type: 'refresh_token' }).toString()
     });
     const d = await r.json();
     if (d.access_token) {
@@ -1784,9 +1659,8 @@ async function refreshGPhotoToken(userId) {
       return d.access_token;
     }
     return null;
-  } catch(e) { console.error('GPhoto refresh error:', e.message); return null; }
+  } catch(e) { return null; }
 }
-
 async function getGPhotoAccessToken(userId) {
   const tokens = loadGPhotoTokens();
   const t = tokens[userId];
@@ -1795,71 +1669,33 @@ async function getGPhotoAccessToken(userId) {
   return await refreshGPhotoToken(userId);
 }
 
-// Step 1: iniciar OAuth - redireciona para Google
 app.get('/api/gphotos/auth', (req, res) => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) return res.status(500).json({ error: 'GOOGLE_CLIENT_ID nao configurado nas variaveis de ambiente do Railway' });
+  if (!clientId) return res.status(500).json({ error: 'GOOGLE_CLIENT_ID não configurado' });
   const redirectUri = (process.env.PUBLIC_URL || 'https://criativos-saas-production.up.railway.app') + '/api/gphotos/callback';
-  const scopes = ['https://www.googleapis.com/auth/photoslibrary.readonly'].join(' ');
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    scope: scopes,
-    access_type: 'offline',
-    prompt: 'consent',
-    state: req.query.userId || 'default'
-  });
+  const params = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri, response_type: 'code', scope: 'https://www.googleapis.com/auth/photoslibrary.readonly', access_type: 'offline', prompt: 'consent', state: req.query.userId || 'default' });
   res.redirect('https://accounts.google.com/o/oauth2/v2/auth?' + params.toString());
 });
-
-// Step 2: callback OAuth - recebe o code e troca por tokens
 app.get('/api/gphotos/callback', async (req, res) => {
   const { code, state: userId } = req.query;
   if (!code) return res.redirect('/?gphotos_error=no_code');
   const redirectUri = (process.env.PUBLIC_URL || 'https://criativos-saas-production.up.railway.app') + '/api/gphotos/callback';
   try {
-    const r = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        code,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code'
-      }).toString()
-    });
+    const r = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: process.env.GOOGLE_CLIENT_ID, client_secret: process.env.GOOGLE_CLIENT_SECRET, code, redirect_uri: redirectUri, grant_type: 'authorization_code' }).toString() });
     const d = await r.json();
     if (!d.access_token) throw new Error(JSON.stringify(d));
     const tokens = loadGPhotoTokens();
-    tokens[userId || 'default'] = {
-      access_token: d.access_token,
-      refresh_token: d.refresh_token,
-      expires_at: Date.now() + (d.expires_in * 1000),
-      connected_at: new Date().toISOString()
-    };
+    tokens[userId || 'default'] = { access_token: d.access_token, refresh_token: d.refresh_token, expires_at: Date.now() + (d.expires_in * 1000), connected_at: new Date().toISOString() };
     saveGPhotoTokens(tokens);
     res.redirect('/?gphotos_connected=1');
-  } catch(e) {
-    console.error('GPhoto callback error:', e.message);
-    res.redirect('/?gphotos_error=' + encodeURIComponent(e.message));
-  }
+  } catch(e) { res.redirect('/?gphotos_error=' + encodeURIComponent(e.message)); }
 });
-
-// Status: verificar se esta conectado
 app.get('/api/gphotos/status', (req, res) => {
   const userId = req.query.userId || 'default';
   const tokens = loadGPhotoTokens();
   const t = tokens[userId];
-  res.json({
-    connected: !!t,
-    connectedAt: t ? t.connected_at : null,
-    hasRefreshToken: !!(t && t.refresh_token)
-  });
+  res.json({ connected: !!t, connectedAt: t?.connected_at || null, hasRefreshToken: !!(t?.refresh_token) });
 });
-
-// Desconectar
 app.delete('/api/gphotos/disconnect', (req, res) => {
   const userId = req.query.userId || 'default';
   const tokens = loadGPhotoTokens();
@@ -1867,110 +1703,68 @@ app.delete('/api/gphotos/disconnect', (req, res) => {
   saveGPhotoTokens(tokens);
   res.json({ success: true });
 });
-
-// Listar albuns
 app.get('/api/gphotos/albums', async (req, res) => {
   const userId = req.query.userId || 'default';
   const accessToken = await getGPhotoAccessToken(userId);
-  if (!accessToken) return res.status(401).json({ error: 'Nao autenticado. Conecta o Google Fotos primeiro.' });
+  if (!accessToken) return res.status(401).json({ error: 'Não autenticado.' });
   try {
-    const r = await fetch('https://photoslibrary.googleapis.com/v1/albums?pageSize=50', {
-      headers: { 'Authorization': 'Bearer ' + accessToken }
-    });
+    const r = await fetch('https://photoslibrary.googleapis.com/v1/albums?pageSize=50', { headers: { 'Authorization': 'Bearer ' + accessToken } });
     const d = await r.json();
     res.json({ albums: d.albums || [] });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
-// Buscar fotos por tema (usando IA para seleccionar as melhores)
 app.post('/api/gphotos/suggest', async (req, res) => {
   const { tema, slideIndex, totalSlides, userId = 'default', albumId, limit = 5 } = req.body;
   const accessToken = await getGPhotoAccessToken(userId);
-  if (!accessToken) return res.status(401).json({ error: 'Nao autenticado. Conecta o Google Fotos.' });
+  if (!accessToken) return res.status(401).json({ error: 'Não autenticado.' });
   try {
-    // Buscar fotos recentes (ou de album especifico)
     let photosUrl = 'https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100';
     let fetchOptions = { headers: { 'Authorization': 'Bearer ' + accessToken } };
     if (albumId) {
       photosUrl = 'https://photoslibrary.googleapis.com/v1/mediaItems:search';
-      fetchOptions = {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ albumId, pageSize: 100 })
-      };
+      fetchOptions = { method: 'POST', headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ albumId, pageSize: 100 }) };
     }
     const r = await fetch(photosUrl, fetchOptions);
     const d = await r.json();
     const items = d.mediaItems || [];
     if (!items.length) return res.json({ suggestions: [], message: 'Nenhuma foto encontrada' });
-    // Listar fotos para a IA avaliar
-    const photoList = items.slice(0, 50).map((p, i) => {
-      const desc = p.description || '';
-      const filename = p.filename || '';
-      const created = p.mediaMetadata && p.mediaMetadata.creationTime ? p.mediaMetadata.creationTime.slice(0,10) : '';
-      return (i+1) + '. ID:' + p.id + ' | Ficheiro:' + filename + ' | Descricao:' + desc + ' | Data:' + created;
-    }).join('\n');
-    // IA selecciona as mais relevantes
-    const aiPrompt = 'Tema do slide: "' + tema + '"\nSlide ' + (slideIndex+1) + ' de ' + totalSlides + '\n\nFotos disponiveis:\n' + photoList + '\n\nSelecciona os ' + limit + ' IDs de fotos mais adequadas para este tema. Considera: composicao visual, ambiente, emocao transmitida. Responde APENAS JSON: {"ids":["id1","id2"]}';
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 256, messages: [{ role: 'user', content: aiPrompt }] })
-    });
+    const photoList = items.slice(0, 50).map((p, i) => `${i+1}. ID:${p.id} | ${p.filename||''} | ${p.description||''}`).join('\n');
+    const aiPrompt = `Tema: "${tema}"\nSlide ${slideIndex+1} de ${totalSlides}\n\nFotos:\n${photoList}\n\nSeleciona ${limit} IDs mais adequados. JSON: {"ids":["id1","id2"]}`;
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 256, messages: [{ role: 'user', content: aiPrompt }] }) });
     const aiData = await aiRes.json();
-    const aiTxt = aiData.content && aiData.content[0] ? aiData.content[0].text.trim() : '{"ids":[]}';
+    const aiTxt = aiData.content?.[0]?.text?.trim() || '{"ids":[]}';
     const m = aiTxt.match(/\{[\s\S]*\}/);
     const parsed = m ? JSON.parse(m[0]) : { ids: [] };
-    // Retornar os items seleccionados com URLs de preview (=w1200 para qualidade)
     const selected = (parsed.ids || []).slice(0, limit).map(id => {
       const item = items.find(p => p.id === id);
       if (!item) return null;
-      return {
-        id: item.id,
-        filename: item.filename,
-        description: item.description || '',
-        previewUrl: item.baseUrl + '=w1200',
-        // URL full para usar como fundo de slide (4:5 portrait)
-        slideUrl: item.baseUrl + '=w1024-h1365-c',
-        width: item.mediaMetadata && item.mediaMetadata.width,
-        height: item.mediaMetadata && item.mediaMetadata.height,
-        created: item.mediaMetadata && item.mediaMetadata.creationTime
-      };
+      return { id: item.id, filename: item.filename, description: item.description || '', previewUrl: item.baseUrl + '=w1200', slideUrl: item.baseUrl + '=w1024-h1365-c' };
     }).filter(Boolean);
     res.json({ suggestions: selected, total: items.length });
-  } catch(e) { console.error('GPhoto suggest:', e.message); res.status(500).json({ error: e.message }); }
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
-
-// Obter URL de uma foto especifica para usar como fundo de slide
 app.get('/api/gphotos/photo/:id', async (req, res) => {
   const userId = req.query.userId || 'default';
   const accessToken = await getGPhotoAccessToken(userId);
-  if (!accessToken) return res.status(401).json({ error: 'Nao autenticado' });
+  if (!accessToken) return res.status(401).json({ error: 'Não autenticado' });
   try {
-    const r = await fetch('https://photoslibrary.googleapis.com/v1/mediaItems/' + req.params.id, {
-      headers: { 'Authorization': 'Bearer ' + accessToken }
-    });
+    const r = await fetch(`https://photoslibrary.googleapis.com/v1/mediaItems/${req.params.id}`, { headers: { 'Authorization': 'Bearer ' + accessToken } });
     const d = await r.json();
-    if (!d.baseUrl) return res.status(404).json({ error: 'Foto nao encontrada' });
-    res.json({
-      id: d.id,
-      previewUrl: d.baseUrl + '=w800',
-      slideUrl: d.baseUrl + '=w1024-h1365-c',
-      filename: d.filename,
-      description: d.description || ''
-    });
+    if (!d.baseUrl) return res.status(404).json({ error: 'Foto não encontrada' });
+    res.json({ id: d.id, previewUrl: d.baseUrl + '=w800', slideUrl: d.baseUrl + '=w1024-h1365-c', filename: d.filename, description: d.description || '' });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// ── Health ────────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
   const settings = loadUserSettings();
-  res.json({ status: 'ok', ts: new Date().toISOString(), image_quality: settings.image_quality, metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
+  res.json({ status: 'ok', ts: new Date().toISOString(), image_quality: settings.image_quality, valid_qualities: VALID_QUALITIES, metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] });
 });
 
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => {
-  console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | image_quality default: ${DEFAULT_QUALITY} | Metodologias: RR + BrandsDecoded`);
+  console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | quality default: ${DEFAULT_QUALITY} | valid: ${VALID_QUALITIES.join(', ')}`);
   checkSupabaseTables();
 });
