@@ -657,15 +657,31 @@ ${systemExtra || ''}`;
 // GERAÇÃO DE IMAGENS
 // ═══════════════════════════════════════════════════════════════════════════
 
-app.post('/api/image/save-b64', (req, res) => {
+app.post('/api/image/save-b64', async (req, res) => {
   try {
     const { b64, contentId, slideIndex } = req.body;
     if (!b64) return res.status(400).json({ error: 'No b64 data' });
     const filename = `${contentId || 'img'}_slide${slideIndex || 0}_${Date.now()}.png`;
+    const buffer = Buffer.from(b64, 'base64');
+    if (supabase) {
+      try {
+        const { error } = await supabase.storage
+          .from('carousel-images')
+          .upload(filename, buffer, { contentType: 'image/png', upsert: true });
+        if (!error) {
+          const { data: urlData } = supabase.storage
+            .from('carousel-images')
+            .getPublicUrl(filename);
+          if (urlData?.publicUrl) {
+            return res.json({ success: true, url: urlData.publicUrl, filename, storage: 'supabase' });
+          }
+        }
+      } catch(e) { console.warn('[save-b64] Supabase Storage:', e.message); }
+    }
     const filepath = path.join(IMAGES_DIR, filename);
-    fs.writeFileSync(filepath, Buffer.from(b64, 'base64'));
+    fs.writeFileSync(filepath, buffer);
     const publicUrl = `${process.env.PUBLIC_URL || ''}/api/image/file/${filename}`;
-    res.json({ success: true, url: publicUrl, filename });
+    res.json({ success: true, url: publicUrl, filename, storage: 'tmp' });
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
