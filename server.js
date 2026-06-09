@@ -214,7 +214,7 @@ ${brand.copyDNA || ''}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
 REGRAS OBRIGATÓRIAS:
-- Retornar APENAS JSON válido, sem markdown
+- Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array
 - NUNCA usar travessão (—) nem hífen no meio de frases
 - NUNCA usar: ${METODOLOGIA_RR.tonsProibidos.join(', ')}
 - Máximo 4 hashtags na legenda
@@ -233,7 +233,7 @@ REGRAS OBRIGATÓRIAS:
 - NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
 - Máximo 4 hashtags
 - ASSINATURA FIXA no último slide: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
-- Retornar APENAS JSON válido, sem markdown`;
+- Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
 }
 
 function buildSystemPromptContentMachine(profile, tipo, metodologia, isRR) {
@@ -256,7 +256,7 @@ INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
 REGRAS:
 - NUNCA usar: ${METODOLOGIA_RR.tonsProibidos.join(', ')}
 - Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}
-- Retornar APENAS JSON válido, sem markdown`;
+- Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
   }
 
   return `Você é o gerador oficial de conteúdo de alta performance da BrandsDecoded para ${account.name}.
@@ -274,7 +274,7 @@ REGRAS:
 - NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
 - Máximo 4 hashtags
 - ASSINATURA FIXA: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
-- Retornar APENAS JSON válido, sem markdown`;
+- Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1259,6 +1259,37 @@ JSON: {"title":"...","slideCount":${isRR ? 8 : 10},"slides":[{"slideNumber":1,"h
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+function normalizeSlidesFromGPT(parsed, fallbackTema) {
+  let rawSlides = parsed.slides || parsed.blocos || parsed.cards || parsed.content || [];
+  if (!Array.isArray(rawSlides) || rawSlides.length === 0) {
+    for (const key of Object.keys(parsed)) {
+      if (Array.isArray(parsed[key]) && parsed[key].length > 2) { rawSlides = parsed[key]; break; }
+    }
+  }
+  return rawSlides.map((s, idx) => {
+    const num = s.slide || s.slideNumber || s.numero || (idx + 1);
+    let textos = [];
+    if (Array.isArray(s.textos) && s.textos.length > 0) {
+      textos = s.textos;
+    } else if (Array.isArray(s.texts) && s.texts.length > 0) {
+      textos = s.texts.map(t => ({ tipo: t.type||t.tipo||'texto', texto: typeof t==='string'?t:(t.text||t.texto||'') }));
+    } else {
+      const heading = s.heading||s.titulo||s.title||s.hook||s.gancho||s.texto||'';
+      const body    = s.body||s.corpo||s.content||s.conteudo||s.subtitulo||'';
+      if (heading) textos.push({ posicao:1, tipo:'hook',      texto:heading });
+      if (body)    textos.push({ posicao:2, tipo:'paragrafo', texto:body    });
+    }
+    if (textos.length === 0) textos.push({ posicao:1, tipo:'texto', texto:'Slide '+num });
+    return {
+      slideNumber: Number(num),
+      funcao: s.funcao||s.label||s.role||(idx===0?'CAPA':idx===rawSlides.length-1?'CTA':'DESENVOLVIMENTO'),
+      heading: textos[0]?.texto||'',
+      body:    textos[1]?.texto||'',
+      textos,
+    };
+  });
+}
+
 // ── Content Machine ───────────────────────────────────────────────────────
 
 const TIPOS_VIDEO_RR = ['lofi', 'video_curto', 'video_medio'];
@@ -1283,7 +1314,7 @@ ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 TIPO: ${tipoInfo.emoji} ${tipoInfo.label}
 ${estruturas[tipo] || ''}
 
-Retornar APENAS JSON válido, sem markdown.`;
+Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array.`;
 
   const userPrompt = `Perfil: ${account.name} (${account.handle})
 Tema: "${tema}"
@@ -1401,10 +1432,11 @@ JSON:
 
     const parsed = extractJSON(data.choices[0].message.content.trim());
 
-    const slidesNorm = (parsed.slides || []).map(s => {
-      const txs = s.textos || [];
-      return { slideNumber: s.slide, funcao: s.funcao || '', heading: txs[0]?.texto || '', body: txs[1]?.texto || '', textos: txs };
-    });
+    const slidesNorm = normalizeSlidesFromGPT(parsed, tema);
+    if (slidesNorm.length === 0) {
+      console.error('[CM] Slides vazios. Resposta GPT:', data.choices[0].message.content.slice(0, 500));
+      return res.status(500).json({ error: 'A IA nao retornou slides validos. Tente novamente com um tema mais especifico.' });
+    }
 
     const item = saveGeneratedContent({
       id: `cnt_${Date.now()}`, createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel',
