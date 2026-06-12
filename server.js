@@ -905,6 +905,349 @@ app.get('/api/gphotos/photo/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CALENDÁRIO
+// ═══════════════════════════════════════════════════════════════════════════
+
+function extractJSON(text) {
+  let cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+  const match = cleaned.match(/\{[\s\S]*\}/);
+  if (match) return JSON.parse(match[0]);
+  return JSON.parse(cleaned);
+}
+
+function normalizeDays(parsed) {
+  let days = parsed.days || parsed.calendar || parsed.data || (Array.isArray(parsed) ? parsed : null);
+  if (!days) {
+    const keys = Object.keys(parsed);
+    for (const k of keys) {
+      if (Array.isArray(parsed[k]) && parsed[k].length > 0 && parsed[k][0].day !== undefined) {
+        days = parsed[k]; break;
+      }
+    }
+  }
+  return days || [];
+}
+
+// Gera calendário MENSAL
+app.post('/api/calendar/generate', async (req, res) => {
+  try {
+    const { month, year, profile, postsPerDay = 1 } = req.body;
+    const { isRR, tipos } = getMetodologia(profile);
+    const manualNote  = getManualText(profile);
+    const account     = getAccount(profile);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const tiposDisponiveis = Object.values(tipos).map(t => t.id).join(' | ');
+    const tiposLabels = Object.values(tipos).map(t => t.id + ' (' + t.label + ')').join(', ');
+    const BLOCK = 10;
+    const allDays = [];
+    for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
+      const blockEnd = Math.min(blockStart + BLOCK - 1, daysInMonth);
+      const daysInBlock = blockEnd - blockStart + 1;
+      const brandContext = isRR
+        ? 'PERFIL: ' + account.name + ' (' + account.handle + ') — MARCA PESSOAL, Metodologia RR.'
+        : 'PERFIL: ' + account.name + ' (' + account.handle + ') — MARCA CORPORATIVA, BrandsDecoded.\nTIPOS: ' + tiposLabels;
+      const examplePosts = postsPerDay === 1
+        ? (isRR ? '[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding de clientes"}]')
+        : (isRR ? '[{"time":"09:00","type":"carrossel","topic":"A mentira que o Instagram vende sobre consistência"},{"time":"18:00","type":"frase","topic":"Você não precisa de motivação, precisa de estrutura"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding"},{"time":"18:00","type":"tendencia","topic":"O novo comportamento do consumidor pós-IA em 2026"}]');
+      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos com ângulo único.\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
+      const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 4000, messages: [{ role: 'user', content: blockPrompt }] }),
+      });
+      const blockData = await blockRes.json();
+      if (blockData.error) throw new Error('Claude API: ' + blockData.error.message);
+      const rawText = blockData.content[0].text.trim();
+      let blockDays = [];
+      try { const parsed = extractJSON(rawText); blockDays = normalizeDays(parsed); }
+      catch(parseErr) { for (let d = blockStart; d <= blockEnd; d++) blockDays.push({ day: d, posts: [] }); }
+      allDays.push(...blockDays);
+    }
+    const generated = readJSON(GENERATED_FILE).filter(g => g.profile === profile);
+    const calendarDays = allDays.map(dayEntry => {
+      const dayNum = Number(dayEntry.day);
+      const posts  = Array.isArray(dayEntry.posts) ? dayEntry.posts : [];
+      return {
+        day: dayNum,
+        posts: posts.map(post => {
+          const topic = (post.topic || post.tema || '').trim();
+          const type  = post.type || post.tipo || (isRR ? 'carrossel' : 'educativo');
+          const time  = post.time || post.horario || '09:00';
+          const match = generated.find(g => g.calendarDay === dayNum && g.calendarMonth === month && g.calendarYear === year);
+          return { time, type, topic, date: year + '-' + String(month).padStart(2,'0') + '-' + String(dayNum).padStart(2,'0'), contentId: match?.id || null, status: match?.status || 'pendente', scheduledAt: match?.scheduledAt || null };
+        }),
+      };
+    });
+    const totalPosts = calendarDays.reduce((acc, d) => acc + d.posts.length, 0);
+    if (totalPosts === 0) throw new Error('A IA retornou calendário sem posts. Tenta novamente.');
+    writeJSON(CALENDAR_FILE, { profile, month, year, calendar: calendarDays, savedAt: new Date().toISOString() });
+    if (supabase) {
+      await supabase.from('calendars').upsert({ id: profile + '_' + year + '_' + month, profile, month: parseInt(month), year: parseInt(year), data: JSON.stringify(calendarDays), updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    }
+    res.json({ calendar: calendarDays });
+  } catch(err) { console.error('[Calendar] Erro:', err); res.status(500).json({ error: err.message }); }
+});
+
+// Gera calendário SEMANAL
+app.post('/api/calendar/generate-week', async (req, res) => {
+  try {
+    const { weekStart, profile, postsPerDay = 1 } = req.body;
+    // weekStart = "2026-06-09" (segunda-feira da semana)
+    const startDate = new Date(weekStart + 'T12:00:00Z');
+    const { isRR, tipos } = getMetodologia(profile);
+    const manualNote = getManualText(profile);
+    const account    = getAccount(profile);
+    const tiposDisponiveis = Object.values(tipos).map(t => t.id).join(' | ');
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startDate); d.setUTCDate(startDate.getUTCDate() + i);
+      weekDays.push({ date: d.toISOString().slice(0,10), dayOfWeek: ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i] });
+    }
+    const daysText = weekDays.map(d => d.dayOfWeek + ' ' + d.date).join(', ');
+    const examplePost = isRR ? '{"time":"09:00","type":"lofi","topic":"Tema específico aqui"}' : '{"time":"09:00","type":"educativo","topic":"Tema específico aqui"}';
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 3000, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message);
+    const parsed = extractJSON(d.content[0].text.trim());
+    const days = parsed.days || [];
+    if (!days.length) throw new Error('IA retornou sem dias. Tente novamente.');
+    res.json({ week: days, weekStart });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+app.patch('/api/calendar/saved', async (req, res) => {
+  try {
+    const { profile, month, year, calendar } = req.body;
+    if (!profile || !month || !year || !calendar) return res.status(400).json({ error: 'Faltam campos.' });
+    writeJSON(CALENDAR_FILE, { profile, month, year, calendar, savedAt: new Date().toISOString() });
+    if (supabase) {
+      await supabase.from('calendars').upsert({ id: profile + '_' + year + '_' + month, profile, month: parseInt(month), year: parseInt(year), data: JSON.stringify(calendar), updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/calendar/saved', async (req, res) => {
+  try {
+    const { profile, month, year } = req.query;
+    if (supabase) {
+      const { data, error } = await supabase.from('calendars').select('data, updated_at').eq('id', profile + '_' + year + '_' + month).single();
+      if (!error && data?.data) {
+        const calendar = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+        return res.json({ found: true, calendar, savedAt: data.updated_at });
+      }
+    }
+    const saved = readJSON(CALENDAR_FILE);
+    if (saved?.profile === profile && String(saved.month) === String(month) && String(saved.year) === String(year) && saved.calendar?.length) {
+      return res.json({ found: true, calendar: saved.calendar, savedAt: saved.savedAt });
+    }
+    res.json({ found: false });
+  } catch(e) { res.json({ found: false }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAROUSEL GENERATE AND SAVE
+// ═══════════════════════════════════════════════════════════════════════════
+
+app.post('/api/carousel/generate-and-save', async (req, res) => {
+  try {
+    const { topic, blocks, profile, calendarDay, calendarMonth, calendarYear, caption, hashtags, contentMachineType } = req.body;
+    const { isRR, metodologia } = getMetodologia(profile);
+    const account = getAccount(profile);
+    const mode    = blocks ? 'blocks' : 'topic';
+    const systemPrompt = buildSystemPromptCarrossel(profile, metodologia, isRR);
+    let prompt;
+    if (mode === 'blocks') {
+      prompt = 'Perfil: ' + account.name + ' (' + account.handle + ')\nConverte estes blocos em slides:\n' + blocks + '\nJSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"legenda com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}';
+    } else {
+      const slideCount = isRR ? '7-8' : '10';
+      prompt = 'Perfil: ' + account.name + ' (' + account.handle + ')\nTema: "' + topic + '"\nTotal: ' + slideCount + ' slides.\n' + (isRR ? 'ESTRUTURA RR: Slide 1 (gancho que nomeia dor/desejo real) → slides de profundidade → conclusão com tese → CTA íntimo.' : 'ESTRUTURA BRANDSDECODED: Slide 1 (hook 14-18 palavras) → desenvolvimento estratégico → CTA com assinatura.') + '\nJSON: {"title":"...","slideCount":' + (isRR?8:10) + ',"slides":[{"slideNumber":1,"heading":"gancho","body":"","imagePrompt":"scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}';
+    }
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8192, system: systemPrompt, messages: [{ role: 'user', content: prompt }] }),
+    });
+    const d = await r.json();
+    if (d.error) return res.status(500).json({ error: d.error.message });
+    const carouselData = extractJSON(d.content[0].text.trim());
+    function sanitizeCopy(text) { if (!text) return text; return text.replace(/\s*—\s*/g, ' ').replace(/\s*–\s*/g, ' ').replace(/^\s*[–—]\s*/gm, '').trim(); }
+    if (carouselData.slides) { carouselData.slides = carouselData.slides.map(s => ({ ...s, heading: sanitizeCopy(s.heading), body: sanitizeCopy(s.body) })); }
+    if (carouselData.hashtags) { const tags = carouselData.hashtags.match(/#\w+/g) || []; carouselData.hashtags = tags.slice(0, 4).join(' '); }
+    const item = saveGeneratedContent({ id: 'cnt_' + Date.now(), createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel', mode, profile, topic: topic || ('Carrossel ' + carouselData.slideCount + ' slides'), caption: caption || carouselData.caption, hashtags: hashtags || carouselData.hashtags, contentMachineType: contentMachineType || null, carouselData, calendarDay: calendarDay || null, calendarMonth: calendarMonth || null, calendarYear: calendarYear || null, imageUrls: [], metodologia: isRR ? 'rr' : 'brandsdecoded' });
+    res.json({ success: true, contentId: item.id, ...carouselData });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONTENT MACHINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function normalizeSlidesFromGPT(parsed, fallbackTema) {
+  let rawSlides = parsed.slides || parsed.blocos || parsed.cards || parsed.content || [];
+  if (!Array.isArray(rawSlides) || rawSlides.length === 0) {
+    for (const key of Object.keys(parsed)) { if (Array.isArray(parsed[key]) && parsed[key].length > 2) { rawSlides = parsed[key]; break; } }
+  }
+  return rawSlides.map((s, idx) => {
+    const num = s.slide || s.slideNumber || s.numero || (idx + 1);
+    let textos = [];
+    if (Array.isArray(s.textos) && s.textos.length > 0) { textos = s.textos; }
+    else if (Array.isArray(s.texts) && s.texts.length > 0) { textos = s.texts.map(t => ({ tipo: t.type||t.tipo||'texto', texto: typeof t==='string'?t:(t.text||t.texto||'') })); }
+    else { const heading = s.heading||s.titulo||s.title||s.hook||s.gancho||s.texto||''; const body = s.body||s.corpo||s.content||s.conteudo||s.subtitulo||''; if (heading) textos.push({ posicao:1, tipo:'hook', texto:heading }); if (body) textos.push({ posicao:2, tipo:'paragrafo', texto:body }); }
+    if (textos.length === 0) textos.push({ posicao:1, tipo:'texto', texto:'Slide '+num });
+    return { slideNumber: Number(num), funcao: s.funcao||s.label||s.role||(idx===0?'CAPA':idx===rawSlides.length-1?'CTA':'DESENVOLVIMENTO'), heading: textos[0]?.texto||'', body: textos[1]?.texto||'', textos };
+  });
+}
+
+const TIPOS_VIDEO_RR_SERVER = ['lofi', 'video_curto', 'video_medio'];
+
+function buildPromptRoteiro(tipo, tema, account, tipoInfo, manualNote, brand) {
+  const ctaFixo = account.handle === '@analuisa.moutinho' ? 'salva pra reler quando esquecer disso. e me diz nos comentários se isso fez sentido pra você.' : 'salva esse conteúdo e me conta nos comentários o que mais fez sentido pra você.';
+  const estruturas = { lofi: 'ESTRUTURA LO-FI: GANCHO (0-3s) → DESENVOLVIMENTO → CONCLUSÃO/TESE → CTA: "' + ctaFixo + '"', video_curto: 'ESTRUTURA VÍDEO CURTO (até 13s): UMA ÚNICA SACADA. Máximo 2-3 frases.', video_medio: 'ESTRUTURA VÍDEO MÉDIO (até 60s): GANCHO (0-5s) → DESENVOLVIMENTO (5-50s) → CONCLUSÃO + CTA (50-60s)' };
+  const systemPrompt = 'Você é roteirista de conteúdo para Instagram da ' + account.name + ' — marca pessoal, Metodologia RR.\n\nNUNCA usar: motivacional genérico, guru, coach, desbloqueie, seja sua melhor versão.\n' + (brand.copyDNA || '') + '\n' + (manualNote ? '\nDIRETRIZES DO PERFIL:\n' + manualNote + '\n' : '') + '\nTIPO: ' + tipoInfo.emoji + ' ' + tipoInfo.label + '\n' + (estruturas[tipo] || '') + '\n\nRetornar APENAS JSON valido, sem markdown.';
+  const userPrompt = 'Perfil: ' + account.name + ' (' + account.handle + ')\nTema: "' + tema + '"\nTipo: ' + tipoInfo.label + '\n\nJSON:\n{"tipo":"' + tipo + '","tipo_label":"' + tipoInfo.label + '","tema":"' + tema + '","isRoteiro":true,"duracao_estimada":"ex: 45-55 segundos","gancho":"primeira frase exata a ser dita na câmera","blocos":[{"id":1,"label":"GANCHO","tempo":"0-5s","texto":"...","nota_direcao":"..."},{"id":2,"label":"DESENVOLVIMENTO","tempo":"5-40s","texto":"...","nota_direcao":"..."},{"id":3,"label":"CONCLUSÃO","tempo":"40-55s","texto":"...","nota_direcao":"..."},{"id":4,"label":"CTA","tempo":"55-60s","texto":"' + ctaFixo + '","nota_direcao":"falar com intimidade"}],"dicas_gravacao":["dica específica"],"legenda_sugerida":"legenda com emojis, máximo 4 hashtags"}';
+  return { systemPrompt, userPrompt };
+}
+
+app.post('/api/content-machine/generate', async (req, res) => {
+  try {
+    const { tipo, tema, profile } = req.body;
+    if (!tipo || !tema) return res.status(400).json({ error: 'Faltam campos: tipo e tema.' });
+    const { isRR, tipos, metodologia } = getMetodologia(profile);
+    const account = getAccount(profile);
+    const brand   = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
+    if (!tipos[tipo]) return res.status(400).json({ error: 'Tipo "' + tipo + '" não disponível. Disponíveis: ' + Object.keys(tipos).join(', ') });
+    const tipoInfo   = tipos[tipo];
+    const manualNote = getManualText(profile);
+    const isVideo    = isRR && TIPOS_VIDEO_RR_SERVER.includes(tipo);
+    if (isVideo) {
+      const { systemPrompt, userPrompt } = buildPromptRoteiro(tipo, tema, account, tipoInfo, manualNote, brand);
+      const response = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-4o', temperature: 1.0, max_tokens: 3000, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }) });
+      const data = await response.json();
+      if (data.error) return res.status(500).json({ error: data.error.message });
+      const parsed = extractJSON(data.choices[0].message.content.trim());
+      const item = saveGeneratedContent({ id: 'cnt_' + Date.now(), createdAt: new Date().toISOString(), status: 'pendente', type: 'reels', contentMachineType: tipo, contentMachineTypeLabel: tipoInfo.label, profile, topic: tema, imageUrls: [], metodologia: 'rr', isRoteiro: true, roteiroData: parsed });
+      return res.json({ success: true, contentId: item.id, isRoteiro: true, ...parsed });
+    }
+    const systemPrompt = buildSystemPromptContentMachine(profile, tipo, metodologia, isRR);
+    const ctaFixo = account.handle === '@analuisa.moutinho' ? 'salva pra reler quando esquecer disso.' : 'Gostou? Comente CASE que nossa equipe te chama.';
+    const tipoInfo2 = isRR ? tipoInfo : tipoInfo;
+    const instrucaoEstrutura = isRR ? 'INSTRUÇÃO: ' + tipoInfo.instrucao + '\nESTRUTURA RR: Slide 1 (gancho dor/desejo) → profundidade → conclusão → CTA íntimo.' : 'INSTRUÇÃO: ' + tipoInfo.instrucao + '\nESTRUTURA BD: Slide 1 (hook 14-18 palavras) → frameworks/dados → CTA assinatura.';
+    const userPrompt = 'Tipo: ' + tipoInfo.label + '\nPerfil: ' + account.name + ' (' + account.handle + ')\nTema: "' + tema + '"\n\n' + instrucaoEstrutura + '\n\nJSON:\n{"tipo":"' + tipo + '","tipo_label":"' + tipoInfo.label + '","tema":"' + tema + '","profile":"' + profile + '","metodologia":"' + (isRR?'rr':'brandsdecoded') + '","isRoteiro":false,"slides":[{"slide":1,"funcao":"CAPA","textos":[{"posicao":1,"tipo":"hook","texto":"..."},{"posicao":2,"tipo":"sub-hook","texto":"..."}]},{"slide":2,"funcao":"DESENVOLVIMENTO","textos":[{"posicao":3,"tipo":"titulo","texto":"..."},{"posicao":4,"tipo":"paragrafo","texto":"..."}]},{"slide":8,"funcao":"CTA","textos":[{"posicao":15,"tipo":"cta","texto":"' + ctaFixo + '"}]}]}';
+    const response = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-4o', temperature: 1.0, max_tokens: 4500, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }) });
+    const data = await response.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    const parsed = extractJSON(data.choices[0].message.content.trim());
+    const slidesNorm = normalizeSlidesFromGPT(parsed, tema);
+    if (slidesNorm.length === 0) return res.status(500).json({ error: 'A IA não retornou slides válidos. Tente novamente com um tema mais específico.' });
+    const item = saveGeneratedContent({ id: 'cnt_' + Date.now(), createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel', contentMachineType: tipo, contentMachineTypeLabel: tipoInfo.label, profile, topic: tema, imageUrls: [], metodologia: isRR ? 'rr' : 'brandsdecoded', isRoteiro: false, carouselData: { title: tema, slideCount: slidesNorm.length, slides: slidesNorm, caption: '', hashtags: '' } });
+    res.json({ success: true, contentId: item.id, isRoteiro: false, ...parsed, slidesNormalizados: slidesNorm });
+  } catch(err) { console.error('Content Machine error:', err); res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TENDÊNCIAS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const NICHE_CONFIG = { marca: 'negócios, empresas, marketing digital, growth hacking, empreendedorismo, vendas B2B, liderança empresarial', pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida', virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança' };
+const trendsCache = {};
+const TRENDS_TTL  = 60 * 60 * 1000;
+
+function parseGoogleTrendsRSS(xml) {
+  const items = []; const itemRx = /<item>([\s\S]*?)<\/item>/g; let m;
+  while ((m = itemRx.exec(xml)) !== null) {
+    const block = m[1]; const title = (/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/.exec(block) || /<title>([\s\S]*?)<\/title>/.exec(block) || [])[1] || ''; const traffic = (/<ht:approx_traffic>([\s\S]*?)<\/ht:approx_traffic>/.exec(block) || [])[1] || '';
+    const t = title.replace(/&amp;/g,'&').replace(/&#39;/g,"'").trim(); if (t) items.push({ termo: t, volume: traffic.trim(), fonte: 'Google Trends' });
+  }
+  return items;
+}
+
+async function getGoogleTrends() {
+  try {
+    const r = await fetch('https://trends.google.com/trends/trendingsearches/daily/rss?geo=BR', { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36', 'Accept': 'application/rss+xml,*/*', 'Accept-Language': 'pt-BR,pt;q=0.9' }, signal: AbortSignal.timeout(12000) });
+    if (r.ok) { const xml = await r.text(); const items = parseGoogleTrendsRSS(xml); if (items.length > 0) return items.slice(0, 20); }
+  } catch(e) { console.warn('[Trends] RSS failed:', e.message); }
+  try {
+    const month = new Date().toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 900, messages: [{ role: 'user', content: 'Liste 15 assuntos muito comentados no Brasil em ' + month + '. Variedade: entretenimento, esportes, politica, economia, tecnologia, comportamento. SOMENTE JSON array: [{"termo":"nome","volume":"tendencia","fonte":"Estimativa IA"}]' }] }) });
+    const aiData = await aiRes.json();
+    if (aiData.content?.[0]) { const txt = aiData.content[0].text.trim(); const m2 = txt.match(/\[[\s\S]+\]/); if (m2) return JSON.parse(m2[0]).slice(0, 15); }
+  } catch(e2) { console.warn('[Trends] Fallback failed:', e2.message); }
+  return [];
+}
+
+app.get('/api/trends', async (req, res) => {
+  try {
+    const { profile = 'marca', refresh } = req.query;
+    const now = Date.now();
+    if (refresh !== 'true' && trendsCache[profile] && (now - trendsCache[profile].ts) < TRENDS_TTL) return res.json({ ...trendsCache[profile].data, cached: true });
+    const account    = getAccount(profile);
+    const nicho      = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
+    const manualNote = getManualText(profile);
+    const googleTrends = await getGoogleTrends();
+    if (!googleTrends.length) return res.json({ trends: [], updatedAt: new Date().toISOString(), warning: 'Nenhuma fonte de tendências disponível neste momento.' });
+    const termosList = googleTrends.map((t, i) => (i + 1) + '. [' + t.fonte + '] ' + t.termo + (t.volume ? ' (' + t.volume + ')' : '')).join('\n');
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + '.\nNicho: ' + nicho + '.\n' + (manualNote ? 'Contexto:\n' + manualNote + '\n' : '') + 'Termos em alta agora no Brasil:\n\n' + termosList + '\n\nIdentifique os 6 termos mais relevantes para o nicho. JSON:\n{"trends":[{"termo":"...","fonte":"Google Trends","volume":"...","relevancia":"por que é oportuno (1 frase)","angulo":"como transformar em pauta (2 frases)","tipo_ideal":"carrossel | post | reels","gancho":"headline pronta para usar","urgencia":"alta | media | baixa"}]}';
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 2800, messages: [{ role: 'user', content: prompt }] }) });
+    const aiData = await aiRes.json();
+    if (aiData.error) throw new Error(aiData.error.message);
+    const parsed = extractJSON(aiData.content[0].text.trim());
+    const result = { trends: parsed.trends || [], updatedAt: new Date().toISOString(), fontes: { google: googleTrends.length > 0 } };
+    trendsCache[profile] = { data: result, ts: now };
+    res.json(result);
+  } catch(err) { console.error('[Trends]', err); res.status(500).json({ error: err.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CANVA TEMPLATES
+// ═══════════════════════════════════════════════════════════════════════════
+
+const CANVA_TEMPLATES_FILE = '/tmp/canva_templates.json';
+function loadCT() { try { if (!fs.existsSync(CANVA_TEMPLATES_FILE)) fs.writeFileSync(CANVA_TEMPLATES_FILE, '[]'); return JSON.parse(fs.readFileSync(CANVA_TEMPLATES_FILE, 'utf8')); } catch(e) { return []; } }
+function saveCT(t) { try { fs.writeFileSync(CANVA_TEMPLATES_FILE, JSON.stringify(t, null, 2)); } catch(e) {} }
+app.get('/api/canva/templates', (req, res) => { let t = loadCT(); if (req.query.profile) t = t.filter(x => !x.profile || x.profile === req.query.profile || x.profile === 'all'); res.json(t); });
+app.post('/api/canva/templates', (req, res) => { const t = loadCT(); const n = { id: 'tmpl_' + Date.now(), createdAt: new Date().toISOString(), ...req.body }; t.unshift(n); saveCT(t); res.json({ success: true, template: n }); });
+app.patch('/api/canva/templates/:id', (req, res) => { const t = loadCT(); const i = t.findIndex(x => x.id === req.params.id); if (i === -1) return res.status(404).json({ error: 'nao encontrado' }); t[i] = { ...t[i], ...req.body, id: req.params.id }; saveCT(t); res.json({ success: true, template: t[i] }); });
+app.delete('/api/canva/templates/:id', (req, res) => { saveCT(loadCT().filter(x => x.id !== req.params.id)); res.json({ success: true }); });
+app.post('/api/canva/match', async (req, res) => {
+  try {
+    const { contentId, tipo, tema, slides, legenda, profile } = req.body;
+    const templates = loadCT().filter(t => !t.profile || t.profile === profile || t.profile === 'all');
+    if (!templates.length) return res.json({ matches: [], message: 'Nenhum template cadastrado.' });
+    const templateList = templates.map((t, i) => (i+1) + '. ID: ' + t.id + '\n   Nome: ' + t.name + '\n   Tipos: ' + (Array.isArray(t.contentTypes)?t.contentTypes.join(', '):t.contentTypes||'geral') + '\n   Estetica: ' + (t.aesthetic||'-') + '\n   Slides: ' + (t.slideCount||'?')).join('\n\n');
+    const slidesResumo = Array.isArray(slides) ? slides.slice(0,3).map((s,i)=>'  Slide '+(i+1)+' ['+( s.funcao||'')+'] : "'+( s.heading||'').slice(0,60)+'"').join('\n') : '';
+    const prompt = 'Perfil: ' + profile + '\nTipo: ' + (tipo||'carrossel') + '\nTema: ' + tema + '\nSlides:\n' + slidesResumo + '\n\nTemplates:\n' + templateList + '\n\nSeleciona os 3 mais adequados. JSON: {"matches":[{"templateId":"tmpl_xxx","score":95,"reason":"1 frase","fitLabel":"Perfeito","fieldMapping":{"headline":"texto slide 1"}}]}';
+    const r = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: {'x-api-key':process.env.ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','Content-Type':'application/json'}, body: JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1200,messages:[{role:'user',content:prompt}]}) });
+    const d = await r.json(); if (d.error) throw new Error(d.error.message);
+    const raw = d.content[0].text.trim(); const jm = raw.match(/\{[\s\S]*\}/); const parsed = jm ? JSON.parse(jm[0]) : { matches: [] };
+    const enriched = (parsed.matches||[]).map(m => { const tmpl = templates.find(t=>t.id===m.templateId); return tmpl ? {...m, template:tmpl} : null; }).filter(Boolean);
+    res.json({ matches: enriched });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+app.post('/api/canva/prepare-texts', (req, res) => {
+  try {
+    const { slides=[], legenda='', hashtags='', templateId, fieldMapping={} } = req.body;
+    const templates = loadCT(); const tmpl = templates.find(t=>t.id===templateId);
+    const lines = [];
+    if (Object.keys(fieldMapping).length > 0) { Object.entries(fieldMapping).forEach(([f,v])=>lines.push('[ ' + f.toUpperCase() + ' ]\n' + v)); }
+    else { slides.forEach((s,i)=>{ if(s.heading)lines.push('[ SLIDE ' + (i+1) + ' TITULO ]\n' + s.heading); if(s.body)lines.push('[ SLIDE ' + (i+1) + ' CORPO ]\n' + s.body); }); }
+    if (legenda) lines.push('[ LEGENDA ]\n' + legenda); if (hashtags) lines.push('[ HASHTAGS ]\n' + hashtags);
+    const fullText = lines.join('\n\n──────────\n\n');
+    const structured = slides.map((s,i)=>({slideNumber:i+1,funcao:s.funcao||'',fields:[s.heading?{label:'Titulo',value:s.heading,key:'slide'+(i+1)+'_heading'}:null,s.body?{label:'Corpo',value:s.body,key:'slide'+(i+1)+'_body'}:null].filter(Boolean)}));
+    res.json({ success:true, clipboardText:fullText, structured, canvaUrl:tmpl&&tmpl.canvaUrl||null, templateName:tmpl&&tmpl.name||'Template' });
+  } catch(err) { res.status(500).json({ error: err.message }); }
+});
+
+// ── Health ────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => { const settings = loadUserSettings(); res.json({ status: 'ok', ts: new Date().toISOString(), image_quality: settings.image_quality, valid_qualities: VALID_QUALITIES, metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] }); });
+
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
