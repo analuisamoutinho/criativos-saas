@@ -50,3 +50,41 @@ CREATE INDEX IF NOT EXISTS idx_calendars_profile            ON calendars (profil
 -- Row Level Security desativado (acesso via service key no backend)
 ALTER TABLE generated_content DISABLE ROW LEVEL SECURITY;
 ALTER TABLE calendars          DISABLE ROW LEVEL SECURITY;
+
+
+-- Tabela de metadados das fotos do banco
+-- (substitui o arquivo /tmp/photos_meta.json que é efêmero no Railway)
+CREATE TABLE IF NOT EXISTS photos_meta (
+  id           TEXT PRIMARY KEY,
+  profile      TEXT NOT NULL,
+  filename     TEXT,
+  original_name TEXT,
+  tags         TEXT[]  DEFAULT '{}',
+  description  TEXT    DEFAULT '',
+  public_url   TEXT,
+  data_url     TEXT,   -- base64 da imagem (fallback quando não há Supabase Storage)
+  uploaded_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabela de tokens OAuth de terceiros
+-- (substitui /tmp/gphotos_tokens.json que é efêmero no Railway)
+CREATE TABLE IF NOT EXISTS oauth_tokens (
+  user_id      TEXT NOT NULL,
+  service      TEXT NOT NULL,   -- ex: 'gphotos'
+  access_token  TEXT,
+  refresh_token TEXT,
+  expires_at   TIMESTAMPTZ,
+  connected_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (user_id, service)
+);
+
+CREATE INDEX IF NOT EXISTS idx_photos_meta_profile ON photos_meta (profile);
+CREATE INDEX IF NOT EXISTS idx_oauth_tokens_service ON oauth_tokens (service);
+
+ALTER TABLE photos_meta  DISABLE ROW LEVEL SECURITY;
+ALTER TABLE oauth_tokens DISABLE ROW LEVEL SECURITY;
+
+-- Bucket de Storage para fotos (cria via Dashboard > Storage > New bucket: "photos", public: true)
+-- Ou via SQL se tiver permissão:
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('photos', 'photos', true) ON CONFLICT DO NOTHING;
