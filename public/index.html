@@ -714,7 +714,6 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
         <button class="mode-btn active" id="calModeMensal" onclick="setCalMode('mensal')">📅 Mensal</button>
         <button class="mode-btn" id="calModeSemanal" onclick="setCalMode('semanal')">📆 Semanal</button>
       </div>
-      <!-- Controles MENSAL -->
       <div id="calControlsMensal">
         <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
           <div class="form-group" style="margin:0;flex:1;min-width:120px;"><label class="form-label">Mês</label><select class="select" id="calMonth"></select></div>
@@ -724,7 +723,6 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           <button class="btn btn-secondary" onclick="downloadCalendarPDF()" id="btnCalPDF" disabled title="Gera um calendário primeiro">⬇️ Baixar PDF</button>
         </div>
       </div>
-      <!-- Controles SEMANAL -->
       <div id="calControlsSemanal" style="display:none;">
         <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;">
           <div class="form-group" style="margin:0;flex:1;min-width:160px;"><label class="form-label">Semana a partir de</label><input type="date" class="input" id="calWeekStart"/></div>
@@ -732,7 +730,8 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           <button class="btn btn-primary" onclick="generateWeekCalendar()" id="btnGenWeekCalendar">✨ Gerar semana</button>
         </div>
       </div>
-    </div></div>
+    </div>
+    <div id="calendarLoading" style="display:none" class="loading"><div class="spinner"></div>A gerar calendário editorial com IA...</div>
     <div id="calendarPreviewBar" style="display:none;margin-bottom:16px;">
       <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
         <div><div style="font-weight:700;font-size:.9rem;color:#92400E;">📋 Sugestão gerada — revê e aprova</div><div style="font-size:.78rem;color:#B45309;margin-top:2px;">Clica em qualquer post para editar antes de aprovar.</div></div>
@@ -1173,119 +1172,11 @@ async function deletePhoto(id){if(!confirm('Apagar esta foto?'))return;const r=a
 async function suggestPhotos(){const topic=document.getElementById('photoSearchTopic').value.trim(),profile=document.getElementById('photoSearchProfile').value;if(!topic)return toast('Escreve um tema','error');const resultEl=document.getElementById('photoSuggestResults');resultEl.innerHTML='<div style="color:var(--mid);font-size:.82rem;">✨ A procurar...</div>';try{const r=await fetch('/api/photos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic,profile,limit:5})});const d=await r.json();if(!d.suggestions?.length){resultEl.innerHTML='<div style="color:var(--mid);font-size:.82rem;">Nenhuma foto encontrada.</div>';return;}resultEl.innerHTML=`<div style="font-size:.75rem;color:var(--mid);margin-bottom:8px;">${d.suggestions.length} foto(s):</div><div style="display:flex;gap:10px;flex-wrap:wrap;">${d.suggestions.map(p=>`<div style="text-align:center;"><img src="${p.dataUrl}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--magenta);"/><div style="font-size:.65rem;color:var(--mid);margin-top:3px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description||''}</div></div>`).join('')}</div>`;}catch(e){resultEl.innerHTML=`<div style="color:#EF4444;">Erro: ${e.message}</div>`;}}
 
 /* ── CALENDÁRIO ── */
-function initCalendarMonths(){const sel=document.getElementById('calMonth');['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);})
-/* ── Calendário Semanal ── */
-let calCurrentMode = 'mensal';
-
-function setCalMode(mode) {
-  calCurrentMode = mode;
-  document.getElementById('calModeMensal').classList.toggle('active', mode === 'mensal');
-  document.getElementById('calModeSemanal').classList.toggle('active', mode === 'semanal');
-  document.getElementById('calControlsMensal').style.display = mode === 'mensal' ? 'block' : 'none';
-  document.getElementById('calControlsSemanal').style.display = mode === 'semanal' ? 'block' : 'none';
-  // Pré-seleciona segunda-feira da semana atual
-  if (mode === 'semanal') {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = (day === 0 ? -6 : 1 - day);
-    const monday = new Date(today); monday.setDate(today.getDate() + diff);
-    document.getElementById('calWeekStart').value = monday.toISOString().slice(0,10);
-  }
-}
-
-async function generateWeekCalendar() {
-  const weekStart = document.getElementById('calWeekStart').value;
-  const postsPerDay = parseInt(document.getElementById('calWeekPostsPerDay').value);
-  if (!weekStart) return toast('Escolhe a data de início da semana','error');
-  const btn = document.getElementById('btnGenWeekCalendar');
-  btn.disabled = true; btn.textContent = '⏳ A gerar...';
-  document.getElementById('calendarLoading').style.display = 'flex';
-  document.getElementById('calendarContainer').style.display = 'none';
-  document.getElementById('calendarPreviewBar').style.display = 'none';
-  calendarApproved = false;
-  try {
-    const r = await fetch('/api/calendar/generate-week', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ weekStart, profile: currentProfile, postsPerDay })
-    });
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    // Converte formato semanal para o formato do renderCalendar
-    // Usa o mês/ano da primeira data da semana
-    const firstDate = new Date(weekStart + 'T12:00:00Z');
-    const month = firstDate.getUTCMonth() + 1;
-    const year  = firstDate.getUTCFullYear();
-    // Monta objeto compatível com renderCalendar
-    const calendarDays = (d.week || []).map(w => ({
-      day: parseInt(w.date.slice(8,10)),
-      posts: (w.posts || []).map(p => ({
-        time: p.time || '09:00',
-        type: p.type || 'carrossel',
-        topic: p.topic || '',
-        date: w.date,
-        status: 'pendente',
-        contentId: null,
-        dayOfWeek: w.dayOfWeek
-      }))
-    }));
-    currentCalendarData = { calendar: calendarDays };
-    renderWeekCalendar(d.week, weekStart);
-    document.getElementById('calendarPreviewBar').style.display = 'block';
-    toast('Semana gerada! Revê e aprova.', 'info');
-  } catch(e) {
-    toast('Erro: ' + e.message, 'error');
-  } finally {
-    document.getElementById('calendarLoading').style.display = 'none';
-    btn.disabled = false; btn.textContent = '✨ Gerar semana';
-  }
-}
-
-function renderWeekCalendar(weekDays, weekStart) {
-  const container = document.getElementById('calendarGrid');
-  const firstDate = new Date(weekStart + 'T12:00:00Z');
-  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  document.getElementById('calendarTitle').textContent = 'Semana de ' + firstDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' });
-  container.innerHTML = '';
-  // Cabeçalhos
-  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d => container.insertAdjacentHTML('beforeend', '<div class="cal-header">' + d + '</div>'));
-  // Cria mapa por dia da semana (0=seg...6=dom)
-  const dayMap = {};
-  (weekDays || []).forEach((w, i) => { dayMap[i] = w; });
-  for (let i = 0; i < 7; i++) {
-    const w = dayMap[i];
-    const d = w ? parseInt(w.date.slice(8,10)) : null;
-    const posts = w ? (w.posts || []) : [];
-    const today = new Date();
-    const isToday = w && today.toISOString().slice(0,10) === w.date;
-    const postsHtml = posts.map((p, pi) => {
-      const label = (p.topic || p.tema || '').slice(0, 22) || (p.type || 'post');
-      const status = p.status || 'pendente';
-      return '<div class="cal-post ' + status + '" onclick="openCalendarPostByDate('' + (w?.date||'') + '',' + pi + ')" title="' + (p.topic||'') + '">' +
-        '<span class="cal-post-icon">' + typeIcon(p.type) + '</span>' +
-        '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.time?p.time+' ':'') + '<strong>' + label + '</strong></span></div>';
-    }).join('');
-    container.insertAdjacentHTML('beforeend',
-      '<div class="cal-day' + (isToday?' today':'') + '">' +
-      '<div class="cal-day-num">' + (d||'') + '</div>' +
-      '<div class="cal-posts">' + postsHtml + '</div></div>'
-    );
-  }
-  document.getElementById('calendarContainer').style.display = 'block';
-}
-
-function openCalendarPostByDate(date, postIndex) {
-  if (!currentCalendarData) return;
-  const day = parseInt(date.slice(8,10));
-  const month = parseInt(date.slice(5,7));
-  const year  = parseInt(date.slice(0,4));
-  const dayEntry = currentCalendarData.calendar.find(e => Number(e.day) === day);
-  if (!dayEntry) return;
-  currentCalendarPost = { ...dayEntry.posts[postIndex], day, month, year };
-  // Reutiliza o modal existente
-  openCalendarPost(day, postIndex);
-}
-;}
+var calCurrentMode="mensal";function setCalMode(mode){calCurrentMode=mode;document.getElementById("calModeMensal").classList.toggle("active",mode==="mensal");document.getElementById("calModeSemanal").classList.toggle("active",mode==="semanal");document.getElementById("calControlsMensal").style.display=mode==="mensal"?"block":"none";document.getElementById("calControlsSemanal").style.display=mode==="semanal"?"block":"none";if(mode==="semanal"){var today=new Date();var day=today.getDay();var diff=day===0?-6:1-day;var monday=new Date(today);monday.setDate(today.getDate()+diff);document.getElementById("calWeekStart").value=monday.toISOString().slice(0,10);}}
+async function generateWeekCalendar(){var weekStart=document.getElementById("calWeekStart").value;var postsPerDay=parseInt(document.getElementById("calWeekPostsPerDay").value);if(!weekStart)return toast("Escolhe a data de inicio da semana","error");var btn=document.getElementById("btnGenWeekCalendar");btn.disabled=true;btn.textContent="A gerar...";document.getElementById("calendarLoading").style.display="flex";document.getElementById("calendarContainer").style.display="none";document.getElementById("calendarPreviewBar").style.display="none";calendarApproved=false;try{var r=await fetch("/api/calendar/generate-week",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weekStart:weekStart,profile:currentProfile,postsPerDay:postsPerDay})});var d=await r.json();if(d.error)throw new Error(d.error);var calendarDays=(d.week||[]).map(function(w){return{day:parseInt(w.date.slice(8,10)),date:w.date,dayOfWeek:w.dayOfWeek,posts:(w.posts||[]).map(function(p){return{time:p.time||"09:00",type:p.type||"carrossel",topic:p.topic||"",date:w.date,status:"pendente",contentId:null};})};});currentCalendarData={calendar:calendarDays,isWeek:true,weekStart:weekStart};renderWeekCalendar(d.week,weekStart);document.getElementById("calendarPreviewBar").style.display="block";toast("Semana gerada!","info");}catch(e){toast("Erro: "+e.message,"error");}finally{document.getElementById("calendarLoading").style.display="none";btn.disabled=false;btn.textContent="Gerar semana";}}
+function renderWeekCalendar(weekDays,weekStart){var container=document.getElementById("calendarGrid");var firstDate=new Date(weekStart+"T12:00:00Z");document.getElementById("calendarTitle").textContent="Semana de "+firstDate.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric",timeZone:"UTC"});container.innerHTML="";["Seg","Ter","Qua","Qui","Sex","Sab","Dom"].forEach(function(h){container.insertAdjacentHTML("beforeend","<div class=\"cal-header\">"+h+"</div>");});var today=new Date().toISOString().slice(0,10);for(var i=0;i<7;i++){var w=weekDays[i];var d=w?parseInt(w.date.slice(8,10)):"";var posts=w?(w.posts||[]):[];var isToday=w&&today===w.date;var postsHtml=posts.map(function(p,pi){var label=(p.topic||p.tema||"").slice(0,22)||(p.type||"post");var status=p.status||"pendente";var wDate=w.date;return"<div class=\"cal-post "+status+"\" onclick=\"openWeekCalendarPost('"+wDate+"',"+pi+")\" title=\""+( p.topic||"")+"\">"+"<span class=\"cal-post-icon\">"+typeIcon(p.type)+"</span>"+"<span>"+(p.time?p.time+" ":"")+"<strong>"+label+"</strong></span></div>";}).join("");container.insertAdjacentHTML("beforeend","<div class=\"cal-day"+(isToday?" today":"")+"\">"+"<div class=\"cal-day-num\">"+d+"</div>"+"<div class=\"cal-posts\">"+postsHtml+"</div></div>");}document.getElementById("calendarContainer").style.display="block";}
+function openWeekCalendarPost(date,postIndex){if(!currentCalendarData)return;var day=parseInt(date.slice(8,10));var dayEntry=currentCalendarData.calendar.find(function(e){return e.date===date;});if(!dayEntry||!dayEntry.posts[postIndex])return;currentCalendarPost=Object.assign({},dayEntry.posts[postIndex],{day:day,month:parseInt(date.slice(5,7)),year:parseInt(date.slice(0,4))});openCalendarPost(day,postIndex);}
+function initCalendarMonths(){const sel=document.getElementById('calMonth');['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);});}
 function saveCalendarToLocal(calendarData,profile,month,year){try{localStorage.setItem(`calendar_${profile}_${year}_${month}`,JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()}));}catch(e){}}
 function loadCalendarFromLocal(profile,month,year){try{const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}return null;}catch(e){return null;}}
 async function generateCalendar(){const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value),postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='none';calendarApproved=false;const btn=document.getElementById('btnGenCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';try{const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});const d=await r.json();if(d.error)throw new Error(d.error);currentCalendarData=d;saveCalendarToLocal(d.calendar,currentProfile,month,year);renderCalendar(d,month,year);document.getElementById('calendarPreviewBar').style.display='block';toast('Sugestão gerada! Revê e aprova.','info');}catch(e){toast('Erro: '+e.message,'error');}finally{document.getElementById('calendarLoading').style.display='none';btn.disabled=false;btn.textContent='✨ Gerar calendário';}}
