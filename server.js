@@ -297,16 +297,17 @@ const DEFAULT_PROFILES = {
   },
   pessoal: {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
-    handle: '@analuisa.moutinho', niche: 'Marca pessoal, construção de vida intencional, estratégia pessoal',
-    bio: 'Construindo a própria vida com intenção. Sem fórmulas, sem guru.',
-    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional.',
-    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula'],
-    pilares: ['Construção pessoal', 'Estratégia de vida', 'Estética de vida real', 'Marca pessoal inteligente'],
-    publicoAlvo: 'Mulheres 25-38 anos construindo identidade profissional e vida própria',
-    cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',
-    referencias: ['Sofia Coppola', 'Lana Del Rey visual universe', 'Lo-fi diary aesthetic', 'Candid editorial'],
+    handle: '@analuisa.moutinho',
+    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo',
+    bio: 'Construindo uma vida mais ordenada, virtuosa e significativa — enquanto constrói negócios que crescem de forma sólida e sustentável.',
+    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Mistura estratégia (como fazer), reflexão (por que fazer) e significado (vale a pena fazer?). Nunca motivacional raso, nunca guru, nunca coach.',
+    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo'],
+    pilares: ['Vida ordenada e sistemas pessoais', 'Virtudes e formação de caráter (prudência, coragem, temperança, disciplina)', 'Corrida e autoaperfeiçoamento físico', 'Leitura e filosofia prática', 'Bastidores do negócio e da vida intencional', 'Falhas, correções e aprendizados reais'],
+    publicoAlvo: 'Mulheres 25-38 anos que buscam construir uma vida com ordem e intenção, não apenas performance. Interessadas em desenvolvimento real de caráter, não em fórmulas motivacionais.',
+    cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido pra você.',
+    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial feminino', 'Estética minimalista — azul marinho, branco, preto, texturas clássicas'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Não é coach, não é guru.',
+    observacoes: 'Ana é empreendedora e estrategista de marketing, mas o conteúdo pessoal não gira em torno de negócios. O marketing é apenas uma expressão da pessoa. Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, checklist, leitura de livros sobre virtudes/liderança/filosofia, corrida de rua, autoaperfeiçoamento. Conflitos internos reais: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância. Sucesso para ela = liberdade + impacto + evolução pessoal + coerência entre o que acredita e o que vive. Estética: elegança, minimalismo, sofisticação, tons profundos. Sem pasteis.',
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -527,9 +528,13 @@ PALETA: off-white/creme (#FAF8F5), preto suave, marrom café (#8B7355), rosa que
 TOM: reflexivo, direto, levemente provocativo, íntimo, inteligente.
 NUNCA: motivacional raso, tom de guru, coach, LinkedIn.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
-1. HOOK: afirmação provocativa que nomeia algo que a pessoa sente mas não sabe nomear.
-2. ESTRUTURA: gancho (3 segundos) → história real → conclusão com tese clara.
-3. TOM: íntimo e observador. Direto. PROIBIDO: "desbloqueie", "seja sua melhor versão", "sucesso".`,
+IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel.
+1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia.
+2. TOM: reflexivo + direto + provocativo. Mistura como fazer com por que fazer com vale a pena fazer.
+3. ESTRUTURA: gancho -> historia real ou observacao -> conclusao com tese clara -> CTA intimo.
+4. TEMAS PERMITIDOS: planejamento, rotinas, sistemas, metas, disciplina, coragem, prudencia, temperanca, corrida de rua, leitura de livros, virtudes aristotelicas, ordem pessoal, bastidores reais, falhas e aprendizados, construcao de longo prazo, legado, fundacao, constancia.
+5. PROIBIDO: desbloqueie, seja sua melhor versao, sucesso, qualquer tom de guru ou coach.
+6. CONFLITOS REAIS QUE CONECTAM: perfeccionismo vs acao, excesso de interesses, dificuldade de constancia, querer excelencia sem paralisar.`,
   },
   virttus: {
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
@@ -1246,6 +1251,57 @@ app.post('/api/canva/prepare-texts', (req, res) => {
 });
 
 // ── Health ────────────────────────────────────────────────────────────────
+
+// Geracao de imagem por slide (GPT Image-1)
+app.post('/api/image/carousel-slide', async (req, res) => {
+  try {
+    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality } = req.body;
+    const quality = resolveQuality(rawQuality);
+    const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
+    const account = getAccount(profile);
+    const styleHint = designStyleHint || (brand.aestheticDNA || '').split('\n')[0] || 'editorial premium';
+    const sceneHint = imagePromptHint || heading || topic || '';
+    const promptPhoto = [styleHint, sceneHint ? 'Scene concept: ' + sceneHint : '', 'Portrait orientation 4:5. No text overlays. Clean composition.', funcao === 'CAPA' ? 'Hero image, strong visual impact.' : 'Supporting editorial visual.'].filter(Boolean).join(' ');
+    const moodList = brand.moods || ['HERO_DARK'];
+    const moodIndex = Math.min(slideNumber - 1, moodList.length - 1);
+    const mood = moodList[moodIndex] || 'HERO_DARK';
+    const isDark = mood.includes('DARK') || mood.includes('LOFI') || mood.includes('WARM') || mood === 'FRASE_IMPACTO' || mood === 'VIRADA' || mood === 'CTA_INTIMO';
+    const designMeta = { heading: heading||'', body: body||'', accent: brand.accent||'#C8A020', bgDark: brand.bgDark||'#0A0A0A', bgLight: brand.bgLight||'#F5F4F0', handle: brand.handle||account.handle, isDark, mood, slideNumber, totalSlides, funcao: funcao||(slideNumber===1?'CAPA':slideNumber===totalSlides?'ASSINATURA':'CONTEUDO') };
+    const r = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
+    const data = await r.json();
+    if (data.error) { console.error('[carousel-slide] GPT error:', data.error); return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) }); }
+    const imageData = data.data && data.data[0];
+    if (!imageData) return res.status(500).json({ error: 'Nenhuma imagem retornada' });
+    res.json({ success: true, b64: imageData.b64_json || null, url: imageData.url || null, designMeta, quality });
+  } catch (err) { console.error('[image/carousel-slide]', err); res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/image/save-b64', async (req, res) => {
+  try {
+    const { b64, contentId, slideIndex } = req.body;
+    if (!b64) return res.status(400).json({ error: 'b64 obrigatorio' });
+    const filename = 'slide_' + (contentId||'tmp') + '_' + (slideIndex||0) + '_' + Date.now() + '.png';
+    const buffer = Buffer.from(b64, 'base64');
+    if (supabase) {
+      try {
+        const { error } = await supabase.storage.from('carousel-images').upload(filename, buffer, { contentType: 'image/png', upsert: true });
+        if (!error) { const { data: urlData } = supabase.storage.from('carousel-images').getPublicUrl(filename); if (urlData && urlData.publicUrl) return res.json({ success: true, url: urlData.publicUrl, storage: 'supabase' }); }
+      } catch(e) { console.warn('[save-b64] Supabase:', e.message); }
+    }
+    const fp = path.join(IMAGES_DIR, filename);
+    fs.writeFileSync(fp, buffer);
+    res.json({ success: true, url: (process.env.PUBLIC_URL||'').replace(/\/$/,'') + '/api/image/file/' + filename, storage: 'local' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/image/file/:filename', (req, res) => {
+  const fp = path.join(IMAGES_DIR, req.params.filename);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Nao encontrado' });
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(fp);
+});
+
 app.get('/api/health', (req, res) => { const settings = loadUserSettings(); res.json({ status: 'ok', ts: new Date().toISOString(), image_quality: settings.image_quality, valid_qualities: VALID_QUALITIES, metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] }); });
 
 
