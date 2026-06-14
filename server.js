@@ -303,9 +303,9 @@ const DEFAULT_PROFILES = {
     tom: 'Reflexivo, íntimo, direto, levemente provocativo. Mistura estratégia (como fazer), reflexão (por que fazer) e significado (vale a pena fazer?). Nunca motivacional raso, nunca guru, nunca coach.',
     proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo'],
     pilares: ['Vida ordenada e sistemas pessoais', 'Virtudes e formação de caráter (prudência, coragem, temperança, disciplina)', 'Corrida e autoaperfeiçoamento físico', 'Leitura e filosofia prática', 'Bastidores do negócio e da vida intencional', 'Falhas, correções e aprendizados reais'],
-    publicoAlvo: 'Mulheres 25-38 anos que buscam construir uma vida com ordem e intenção, não apenas performance. Interessadas em desenvolvimento real de caráter, não em fórmulas motivacionais.',
+    publicoAlvo: 'Homens e mulheres 25-38 anos que buscam construir uma vida com ordem e intenção, não apenas performance. Interessados em desenvolvimento real de caráter, virtudes e autoaperfeiçoamento, não em fórmulas motivacionais.',
     cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido pra você.',
-    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial feminino', 'Estética minimalista — azul marinho, branco, preto, texturas clássicas'],
+    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial', 'Estética minimalista clara — off-white, creme, marrom café, tons quentes neutros'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
     observacoes: 'Ana é empreendedora e estrategista de marketing, mas o conteúdo pessoal não gira em torno de negócios. O marketing é apenas uma expressão da pessoa. Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, checklist, leitura de livros sobre virtudes/liderança/filosofia, corrida de rua, autoaperfeiçoamento. Conflitos internos reais: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância. Sucesso para ela = liberdade + impacto + evolução pessoal + coerência entre o que acredita e o que vive. Estética: elegança, minimalismo, sofisticação, tons profundos. Sem pasteis.',
     pdfUploadedAt: null, updatedAt: null,
@@ -518,15 +518,15 @@ ALWAYS: structure, clarity, strategic intelligence, data-driven precision.
 PHOTOGRAPHY: executive boardroom, architectural details, desaturated editorial tones.`,
   },
   pessoal: {
-    accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#1A1612',bgLight:'#FAF8F5',
-    bgMid:'#EDEAE4',bgBrand:'#2C2420',textOnDark:'#F5F2EE',textOnLight:'#1A1612',
+    accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
+    bgMid:'#EDEAE4',bgBrand:'#F5F2EE',textOnDark:'#F5F2EE',textOnLight:'#2C2420',
     handle:'@analuisa.moutinho',name:'Ana Moutinho',
-    moods:['HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','TYPE_DARK_WARM','DIARIO_EDITORIAL','VIRADA','CTA_INTIMO'],
-    aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de uma mulher construindo a própria vida com intenção.
-ESTÉTICA: real, crua, íntima, sofisticada, levemente granulada. Luz natural, fotos espontâneas.
-PALETA: off-white/creme (#FAF8F5), preto suave, marrom café (#8B7355), rosa queimado (#C17B6F).
+    moods:['DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','VIRADA','CTA_INTIMO'],
+    aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de alguém construindo a própria vida com intenção.
+ESTÉTICA: real, íntima, sofisticada, arejada, levemente granulada. Luz natural, fotos espontâneas. Predominantemente claro.
+PALETA: off-white/creme (#FAF8F5) como base dominante, bege claro (#EDEAE4), marrom café (#8B7355) como acento, rosa queimado (#C17B6F) com uso pontual. EVITAR fundos escuros ou pretos — preferir sempre versões claras dos layouts.
 TOM: reflexivo, direto, levemente provocativo, íntimo, inteligente.
-NUNCA: motivacional raso, tom de guru, coach, LinkedIn.`,
+NUNCA: motivacional raso, tom de guru, coach, LinkedIn, fundos pretos ou muito escuros.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
 IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel.
 1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia.
