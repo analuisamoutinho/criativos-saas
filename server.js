@@ -556,7 +556,8 @@ app.post('/api/manual/upload', upload.single('pdf'), (req, res) => {
   fs.renameSync(req.file.path, dest);
   const profiles = loadProfiles();
   if (profiles[profile]) {
-    profiles[profile].pdfUploadedAt = new Date().toISOString();(profiles);
+    profiles[profile].pdfUploadedAt = new Date().toISOString();
+    saveProfiles(profiles);
   }
   res.json({ success: true, message: `Manual do perfil "${profile}" guardado.` });
 });
