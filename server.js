@@ -1275,36 +1275,6 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     res.json({ success: true, b64: imageData.b64_json || null, url: imageData.url || null, designMeta, quality });
   } catch (err) { console.error('[image/carousel-slide]', err); res.status(500).json({ error: err.message }); }
 });
-
-app.post('/api/image/save-b64', async (req, res) => {
-  try {
-    const { b64, contentId, slideIndex } = req.body;
-    if (!b64) return res.status(400).json({ error: 'b64 obrigatorio' });
-    const filename = 'slide_' + (contentId||'tmp') + '_' + (slideIndex||0) + '_' + Date.now() + '.png';
-    const buffer = Buffer.from(b64, 'base64');
-    if (supabase) {
-      try {
-        const { error } = await supabase.storage.from('carousel-images').upload(filename, buffer, { contentType: 'image/png', upsert: true });
-        if (!error) { const { data: urlData } = supabase.storage.from('carousel-images').getPublicUrl(filename); if (urlData && urlData.publicUrl) return res.json({ success: true, url: urlData.publicUrl, storage: 'supabase' }); }
-      } catch(e) { console.warn('[save-b64] Supabase:', e.message); }
-    }
-    const fp = path.join(IMAGES_DIR, filename);
-    fs.writeFileSync(fp, buffer);
-    res.json({ success: true, url: (process.env.PUBLIC_URL||'').replace(/\/$/,'') + '/api/image/file/' + filename, storage: 'local' });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.get('/api/image/file/:filename', (req, res) => {
-  const fp = path.join(IMAGES_DIR, req.params.filename);
-  if (!fs.existsSync(fp)) return res.status(404).json({ error: 'Nao encontrado' });
-  res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-  res.sendFile(fp);
-});
-
-app.get('/api/health', (req, res) => { const settings = loadUserSettings(); res.json({ status: 'ok', ts: new Date().toISOString(), image_quality: settings.image_quality, valid_qualities: VALID_QUALITIES, metodologias: ['rr (pessoal)', 'brandsdecoded (corporativa)'] }); });
-
-
 // ── Base de conteúdos ─────────────────────────────────────────────────────
 app.get('/api/content', async (req, res) => {
   const { profile, type, status } = req.query;
