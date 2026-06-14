@@ -954,7 +954,7 @@ function showSection(id,navBtn){
   if(id==='criar')renderCriarHub();
   if(id==='dashboard')loadDashboard();
   if(id==='library')loadLibrary();
-  if(id==='photos')loadPhotos();
+  if(id==='photos'){loadPhotos();checkGPhotoStatus();}
   if(id==='manual')initManualSection();
   if(id==='carousel')setTimeout(initSlidesDragScroll,250);
 }
@@ -1752,7 +1752,23 @@ function handlePhotoDrop(event){event.preventDefault();document.getElementById('
 
 async function uploadPhoto(){if(!_photoFiles.length)return toast('Seleciona pelo menos uma foto','error');const desc=document.getElementById('photoDesc').value.trim();const tags=document.getElementById('photoTags').value.trim();const profile=document.getElementById('photoProfile').value;const btn=document.getElementById('btnUploadPhoto');const result=document.getElementById('photoUploadResult');btn.disabled=true;btn.textContent='⏳ A guardar...';let uploaded=0;for(const file of _photoFiles){try{const fd=new FormData();fd.append('photo',file);fd.append('profile',profile);fd.append('description',desc);fd.append('tags',tags);const r=await fetch('/api/photos/upload',{method:'POST',body:fd});const d=await r.json();if(d.success)uploaded++;}catch(e){console.error('upload:',e);}}btn.disabled=false;btn.textContent='💾 Guardar no banco';result.innerHTML=`<span style="color:#10B981;">✅ ${uploaded} de ${_photoFiles.length} foto(s) guardadas!</span>`;_photoFiles=[];document.getElementById('photoFileInput').value='';const zt=document.querySelector('#photoDropZone .photo-upload-text');if(zt)zt.innerHTML='<strong>Clica para selecionar</strong> ou arrasta aqui<br>JPG, PNG, HEIC até 20MB';if(uploaded){toast(uploaded+' foto(s) guardadas!','success');loadPhotos();}}
 
-async function suggestPhotos(){const topic=document.getElementById('photoSearchTopic').value.trim();const profile=document.getElementById('photoSearchProfile').value;const results=document.getElementById('photoSuggestResults');if(!topic)return toast('Escreve um tema','error');results.innerHTML='<div style="color:var(--mid);font-size:.82rem;">⏳ A procurar...</div>';try{const r=await fetch('/api/photos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic,profile,limit:4})});const d=await r.json();if(!d.suggestions?.length){results.innerHTML='<div style="color:var(--mid);font-size:.82rem;">Nenhuma foto encontrada para este tema.</div>';return;}results.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:8px;">'+d.suggestions.map(p=>`<div style="border-radius:8px;overflow:hidden;background:var(--pale);aspect-ratio:1;">${p.dataUrl||p.publicUrl?`<img src="${p.dataUrl||p.publicUrl}" style="width:100%;height:100%;object-fit:cover;"/>`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;">📸</div>'}</div>`).join('')+'</div>';toast(d.suggestions.length+' fotos sugeridas','success');}catch(e){results.innerHTML='<div style="color:#EF4444;font-size:.82rem;">Erro: '+e.message+'</div>';}}
+async function suggestPhotos(){const topic=document.getElementById('photoSearchTopic').value.trim();const profile=document.getElementById('photoSearchProfile').value;const results=document.getElementById('photoSuggestResults');if(!topic)return toast('Escreve um tema','error');results.innerHTML='<div style="color:var(--mid);font-size:.82rem;">⏳ A procurar...</div>';try{
+  // Tenta Google Fotos primeiro se conectado
+  if(gpConnected){
+    const gpR=await fetch('/api/gphotos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tema:topic,slideIndex:0,totalSlides:1,userId:'default',limit:6})});
+    const gpD=await gpR.json();
+    if(gpD.suggestions?.length){
+      results.innerHTML='<div style="font-size:.72rem;color:var(--mid);margin-bottom:8px;">📸 Fotos do Google Fotos</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;">'+gpD.suggestions.map(p=>`<div style="border-radius:8px;overflow:hidden;background:var(--pale);aspect-ratio:1;"><img src="${p.previewUrl}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"/></div>`).join('')+'</div>';
+      toast(gpD.suggestions.length+' fotos encontradas no Google Fotos','success');return;
+    }
+  }
+  // Fallback: banco local
+  const r=await fetch('/api/photos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic,profile,limit:6})});
+  const d=await r.json();
+  if(!d.suggestions?.length){results.innerHTML='<div style="color:var(--mid);font-size:.82rem;">Nenhuma foto encontrada. '+(gpConnected?'Tenta pesquisar pelo Google Fotos abaixo.':'Adiciona fotos ao banco primeiro.')+'</div>';return;}
+  results.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;">'+d.suggestions.map(p=>`<div style="border-radius:8px;overflow:hidden;background:var(--pale);aspect-ratio:1;">${p.dataUrl||p.publicUrl?`<img src="${p.dataUrl||p.publicUrl}" style="width:100%;height:100%;object-fit:cover;"/>`:'<div style="display:flex;align-items:center;justify-content:center;height:100%;">📸</div>'}</div>`).join('')+'</div>';
+  toast(d.suggestions.length+' fotos sugeridas','success');
+}catch(e){results.innerHTML='<div style="color:#EF4444;font-size:.82rem;">Erro: '+e.message+'</div>';}}
 
 /* ── INIT ── */
 initCalendarMonths();
