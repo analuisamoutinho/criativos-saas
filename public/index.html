@@ -1732,24 +1732,32 @@ function exportCarouselForDesigner(){
   if(!currentCarouselData)return toast('Gera um carrossel primeiro','error');
   const d=currentCarouselData;
   const title=d.title||d.tema||'Carrossel';
+  const total=(d.slides||[]).length;
   const lines=[];
   lines.push('════════════════════════════════════════');
   lines.push('  '+title.toUpperCase());
   lines.push('  '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}));
+  lines.push('  '+total+' slides');
   lines.push('════════════════════════════════════════');
   lines.push('');
   (d.slides||[]).forEach((s,i)=>{
-    const funcao=s.funcao||('SLIDE '+(i+1));
+    const n=i+1;
+    const funcao=typeof s.funcao==='string'&&s.funcao?s.funcao:(n===1?'CAPA':n===total?'CTA':'DESENVOLVIMENTO');
     lines.push('────────────────────────────────────────');
-    lines.push('SLIDE '+(i+1)+' — '+funcao);
+    lines.push('SLIDE '+n+' — '+funcao);
     lines.push('────────────────────────────────────────');
-    if(s.heading)lines.push('TÍTULO:\n'+s.heading);
-    if(s.body)lines.push('\nCORPO:\n'+s.body);
-    if(s.textos&&s.textos.length){
-      lines.push('\nTEXTOS:');
-      s.textos.forEach(t=>lines.push('  ['+((t.tipo||t.posicao||'').toString().toUpperCase())+']\n  '+t.texto));
+    const heading=s.heading||s.titulo||s.title||'';
+    if(heading){lines.push(heading);lines.push('');}
+    const body=s.body||s.corpo||s.content||s.conteudo||'';
+    if(body){lines.push(body);lines.push('');}
+    if(Array.isArray(s.textos)&&s.textos.length){
+      const valid=s.textos.filter(t=>t&&typeof t==='object'&&!Array.isArray(t));
+      valid.forEach(t=>{
+        const txt=t.texto||t.conteudo||t.text||t.content||'';
+        const label=typeof t.tipo==='string'&&t.tipo?t.tipo.toUpperCase():(typeof t.posicao==='number'?'TEXTO '+t.posicao:'');
+        if(txt){if(label)lines.push('['+label+']');lines.push(txt);lines.push('');}
+      });
     }
-    lines.push('');
   });
   const caption=document.getElementById('carouselGeneratedCaption')?.value||d.caption||'';
   if(caption){
