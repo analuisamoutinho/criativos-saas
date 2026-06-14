@@ -623,8 +623,9 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           <div id="imageGenStatus" style="font-size:.78rem;color:var(--mid);margin:6px 0;"></div>
           <div id="photoSuggestArea" style="display:none;margin:10px 0;"><div style="font-size:.75rem;color:var(--mid);margin-bottom:6px;">📸 Fotos do banco relevantes:</div><div class="photo-suggestions" id="photoSuggestions"></div></div>
           <div class="form-group" style="margin-top:14px;"><label class="form-label">Legenda + Hashtags</label><textarea class="textarea" id="carouselGeneratedCaption" rows="4"></textarea></div>
-          <div style="display:flex;gap:8px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-secondary btn-sm" onclick="downloadCarousel()">⬇️ Exportar JSON</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportCarouselForDesigner()">📄 Exportar para Designer</button>
             <button class="btn btn-primary btn-sm" onclick="generateCarouselImages()" id="btnGenImages">🎨 Gerar imagens</button>
           </div>
         </div>
@@ -1726,6 +1727,44 @@ async function publishFromCalendarPost(){if(!currentCalendarPost?.contentId)retu
 function toggleScheduleTime(){document.getElementById('scheduleTimeGroup').style.display=document.getElementById('publishAction').value==='schedule'?'block':'none';}
 
 function downloadCarousel(){if(!currentCarouselData)return toast('Gera um carrossel primeiro','error');const blob=new Blob([JSON.stringify(currentCarouselData,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='carrossel.json';a.click();}
+
+function exportCarouselForDesigner(){
+  if(!currentCarouselData)return toast('Gera um carrossel primeiro','error');
+  const d=currentCarouselData;
+  const title=d.title||d.tema||'Carrossel';
+  const lines=[];
+  lines.push('════════════════════════════════════════');
+  lines.push('  '+title.toUpperCase());
+  lines.push('  '+new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}));
+  lines.push('════════════════════════════════════════');
+  lines.push('');
+  (d.slides||[]).forEach((s,i)=>{
+    const funcao=s.funcao||('SLIDE '+(i+1));
+    lines.push('────────────────────────────────────────');
+    lines.push('SLIDE '+(i+1)+' — '+funcao);
+    lines.push('────────────────────────────────────────');
+    if(s.heading)lines.push('TÍTULO:\n'+s.heading);
+    if(s.body)lines.push('\nCORPO:\n'+s.body);
+    if(s.textos&&s.textos.length){
+      lines.push('\nTEXTOS:');
+      s.textos.forEach(t=>lines.push('  ['+((t.tipo||t.posicao||'').toString().toUpperCase())+']\n  '+t.texto));
+    }
+    lines.push('');
+  });
+  const caption=document.getElementById('carouselGeneratedCaption')?.value||d.caption||'';
+  if(caption){
+    lines.push('════════════════════════════════════════');
+    lines.push('LEGENDA + HASHTAGS');
+    lines.push('════════════════════════════════════════');
+    lines.push(caption);
+  }
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=(title.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'').slice(0,40)||'carrossel')+'_designer.txt';
+  a.click();
+  toast('Arquivo exportado!','success');
+}
 
 async function publishCarouselDirect(){if(!currentCarouselData)return toast('Gera um carrossel primeiro','error');const action=document.getElementById('publishAction').value;const caption=document.getElementById('carouselGeneratedCaption').value;const allImgs=(currentCarouselImages||[]).filter(Boolean);if(!allImgs.length)return toast('Gera as imagens primeiro','error');const contentId=currentCarouselContentId;const btn=document.getElementById('btnPublishCarousel');const result=document.getElementById('publishResult');btn.disabled=true;btn.textContent='⏳ A publicar...';
   // Upload any base64 images to get public URLs
