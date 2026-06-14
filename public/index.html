@@ -1095,31 +1095,25 @@ const SlideRenderer={
     return`${normal?normal+' ':''}<span style="color:${accentColor};display:inline;">${accented}</span>`;
   },
   _buildSlideHTML(photoUrl,designMeta){
-    const{heading,body,accent,bgDark,bgLight,handle,isDark,mood,slideNumber,totalSlides,funcao}=designMeta;
-    const overlayStyle=isDark
-      ?(mood.includes('HERO')
-        ?'background:linear-gradient(to bottom,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.08) 30%,rgba(0,0,0,0.50) 55%,rgba(0,0,0,0.82) 75%,rgba(0,0,0,0.94) 100%);'
-        :'background:rgba(0,0,0,0.55);')
-      :'background:rgba(255,255,255,0.0);';
-    const isCenter=['TYPE_LIGHT','TYPE_CREME','TYPE_DARK','TYPE_DARK_WARM','FRASE_IMPACTO','TABLE_LIGHT'].includes(mood);
-    const headingLen=heading.length;
-    const headingSize=headingLen>90?'60px':headingLen>65?'70px':headingLen>40?'82px':'90px';
-    const textShadow=isDark?'text-shadow:0 2px 14px rgba(0,0,0,0.90),0 1px 4px rgba(0,0,0,0.95);':'text-shadow:none;';
-    const bodyShadow=isDark?'text-shadow:0 1px 10px rgba(0,0,0,0.85),0 1px 3px rgba(0,0,0,0.90);':'text-shadow:none;';
-    const headingHTML=this._applyAccentWords(heading,accent);
-    const metaColor=isDark?'rgba(255,255,255,0.95)':'rgba(17,17,17,0.65)';
-    const slideNumColor=isDark?'rgba(255,255,255,0.55)':'rgba(0,0,0,0.35)';
-    return`<div class="sr-slide-wrapper" style="background:${isDark?bgDark:bgLight};">
+    const{heading,body,accent,bgDark,handle,slideNumber,totalSlides,funcao,overlayCSS,photoSource}=designMeta;
+    const headingLen=(heading||'').length;
+    const headingSize=headingLen>90?'58px':headingLen>65?'68px':headingLen>40?'80px':'90px';
+    const textShadow='text-shadow:0 2px 16px rgba(0,0,0,0.95),0 1px 5px rgba(0,0,0,0.98);';
+    const bodyShadow='text-shadow:0 1px 12px rgba(0,0,0,0.90),0 1px 4px rgba(0,0,0,0.95);';
+    const headingHTML=this._applyAccentWords(heading||'',accent);
+    const overlay=overlayCSS||'rgba(0,0,0,0.50)';
+    const showFuncao=funcao&&funcao!=='CAPA'&&funcao!=='ASSINATURA'&&funcao!=='CTA'&&funcao!=='CONTEUDO';
+    return`<div class="sr-slide-wrapper" style="background:${bgDark};">
 <img class="sr-bg" src="${photoUrl}" crossorigin="anonymous" />
-<div style="position:absolute;inset:0;z-index:1;${overlayStyle}"></div>
-<div style="position:absolute;top:52px;right:76px;z-index:3;font-size:19px;font-weight:600;letter-spacing:.06em;color:${slideNumColor};">${slideNumber}/${totalSlides}</div>
-<div style="position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:${isCenter?'center':'flex-end'};padding:68px 76px;">
-<div style="font-size:22px;font-weight:800;letter-spacing:.05em;text-transform:lowercase;margin-bottom:28px;color:${accent};${textShadow}">${handle}</div>
-${funcao&&funcao!=='CAPA'?`<div style="font-size:18px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;margin-bottom:18px;color:${metaColor};${textShadow}">${funcao}</div>`:''}
-<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:${headingSize};font-weight:800;line-height:1.04;letter-spacing:-.02em;margin-bottom:28px;color:${isDark?'#FFFFFF':'#111111'};${textShadow}">${headingHTML}</div>
-${body?`<div style="font-size:32px;font-weight:400;line-height:1.55;letter-spacing:-.01em;max-width:880px;color:${isDark?'rgba(255,255,255,0.92)':'rgba(17,17,17,0.72)'};${bodyShadow}">${body}</div>`:''}
+<div style="position:absolute;inset:0;z-index:1;background:${overlay};"></div>
+<div style="position:absolute;top:52px;right:72px;font-size:18px;font-weight:600;color:rgba(255,255,255,0.40);letter-spacing:.06em;z-index:3;">${slideNumber}/${totalSlides}</div>
+<div style="position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:68px 76px;">
+<div style="font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:lowercase;color:${accent};margin-bottom:28px;opacity:.9;${textShadow}">${handle}</div>
+${showFuncao?`<div style="font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:18px;${textShadow}">${funcao}</div>`:''}
+<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:${headingSize};font-weight:800;line-height:1.04;letter-spacing:-.02em;margin-bottom:${body?'28px':'0'};color:#FFFFFF;${textShadow}">${headingHTML}</div>
+${body?`<div style="font-size:32px;font-weight:400;line-height:1.58;letter-spacing:-.01em;max-width:880px;color:rgba(255,255,255,0.88);${bodyShadow}">${body}</div>`:''}
 </div>
-<div style="position:absolute;bottom:0;left:0;right:0;height:6px;z-index:3;background:${accent};"></div>
+<div style="position:absolute;bottom:0;left:0;right:0;height:5px;z-index:3;background:${accent};"></div>
 </div>`;
   },
   async renderSlide(photoUrl,designMeta){
@@ -1138,7 +1132,7 @@ ${body?`<div style="font-size:32px;font-weight:400;line-height:1.55;letter-spaci
       const canvas=await html2canvas(slideEl,{
         width:1024,height:1536,scale:2,
         useCORS:true,allowTaint:false,
-        backgroundColor:designMeta.isDark?designMeta.bgDark:designMeta.bgLight,
+        backgroundColor:designMeta.bgDark||'#0A0A0A',
         logging:false,imageTimeout:10000,
       });
       const pngB64=canvas.toDataURL('image/png',1.0).split(',')[1];
@@ -1148,123 +1142,81 @@ ${body?`<div style="font-size:32px;font-weight:400;line-height:1.55;letter-spaci
   },
 };
 /* ── GERAR IMAGENS ── */
-async function generateCarouselImages(autoPublishConfig=null){if(!currentCarouselData)return;const engine=document.getElementById('imageEngine').value;if(engine==='none')return toast('Selecciona um gerador','info');const slides=currentCarouselData.slides,topic=currentCarouselData.title||'',contentId=currentCarouselContentId;const btn=document.getElementById('btnGenImages'),progressBar=document.getElementById('imageProgress'),progressFill=document.getElementById('imageProgressFill'),statusEl=document.getElementById('imageGenStatus');btn.disabled=true;progressBar.style.display='block';currentCarouselImages=[];for(let i=0;i<slides.length;i++){const s=slides[i];const pct=Math.round((i/slides.length)*100);progressFill.style.width=`${pct}%`;const card=document.getElementById(`slideCard_${i}`);if(card){card.style.opacity='0.5';}try{const funcao=s.funcao||(i===0?'CAPA':i===slides.length-1?'ASSINATURA':'CONTEÚDO');const heading=s.heading||'';const body=s.body||'';let finalUrl=null;statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span>`;if(engine==='gpt'){const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading,body,slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||'',quality:getSelectedQuality()})});const slideData=await slideRes.json();if(slideData.error)throw new Error(slideData.error);const photoUrl=slideData.url||(slideData.b64?`data:image/png;base64,${slideData.b64}`:null);const designMeta=slideData.designMeta;if(photoUrl&&designMeta){const pngB64=await SlideRenderer.renderSlide(photoUrl,designMeta);if(pngB64){try{const saveRes=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const saveData=await saveRes.json();if(saveData.url)finalUrl=saveData.url;}catch(e){}finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;}else{finalUrl=photoUrl;}}else{finalUrl=photoUrl;}}else{const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.marca;const geminiPrompt=`Premium Instagram carousel slide ${i+1}/${slides.length}. Topic: "${topic}". Brand colors: background ${brand.bg}, accent ${brand.accent}. ${i===0?`COVER: hero image. MASSIVE heading: "${heading}".`:`Heading "${heading}". Body: "${body}".`} Portrait 4:5.`;const r=await fetch('/api/gemini-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:geminiPrompt})});const d=await r.json();const b64=d.b64||null;finalUrl=d.url||(b64?`data:image/png;base64,${b64}`:null);if(b64&&contentId){try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,contentId,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}}}currentCarouselImages.push(finalUrl);if(card&&finalUrl){let img=card.querySelector('.slide-img');if(!img){img=document.createElement('img');img.className='slide-img';card.insertBefore(img,card.firstChild);}img.style.opacity='0';img.src=finalUrl;img.onload=()=>{img.style.transition='opacity 0.5s ease';img.style.opacity='1';};}if(card){card.style.opacity='1';}}catch(e){console.error(`Slide ${i+1}:`,e);currentCarouselImages.push(null);if(card)card.style.opacity='1';}}progressFill.style.width='100%';const ok=currentCarouselImages.filter(Boolean).length;statusEl.innerHTML=`<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides compostos!</span>`;btn.disabled=false;btn.textContent='🔄 Regenerar imagens';if(currentCarouselData)currentCarouselData.imageUrls=currentCarouselImages.filter(Boolean);const validUrls=currentCarouselImages.filter(u=>u&&!u.startsWith('data:'));if(contentId&&validUrls.length){try{await fetch(`/api/content/${contentId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls:validUrls,status:'pendente'})});}catch(e){}}toast(`${ok} slides compostos! 🎨`,'success');if(autoPublishConfig){const{action,scheduledAt,caption,calendarPost}=autoPublishConfig;await _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost});}else{document.getElementById('publishPanel').classList.add('visible');}}
-async function _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost}){const imageUrls=currentCarouselImages.filter(Boolean);if(!imageUrls.length){toast('Nenhuma imagem gerada para publicar.','error');return;}try{if(action==='now'){const r=await fetch('/api/instagram/carousel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls,caption,profile:currentProfile,contentId})});const d=await r.json();if(d.error)throw new Error(d.error);toast('✅ Carrossel publicado!','success');}else if(action==='schedule'&&scheduledAt){const r=await fetch('/api/instagram/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId,scheduledAt,profile:currentProfile,type:'carrossel',topic:calendarPost?.topic||'',caption,imageUrls})});const d=await r.json();if(d.error)throw new Error(d.error);toast(`📆 Agendado para ${formatDate(scheduledAt)}`,'success');}await refreshContentCache();}catch(e){toast('Erro ao publicar: '+e.message,'error');}}
-async function publishCarouselDirect(){const action=document.getElementById('publishAction').value,caption=document.getElementById('carouselGeneratedCaption').value,imageUrls=currentCarouselImages.filter(Boolean),btn=document.getElementById('btnPublishCarousel'),resultEl=document.getElementById('publishResult');if(!caption)return toast('Adiciona uma legenda','error');btn.disabled=true;btn.textContent='⏳ A processar...';try{if(action==='now'){if(!imageUrls.length)return toast('Gera as imagens primeiro','error');const r=await fetch('/api/instagram/carousel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls,caption,profile:currentProfile,contentId:currentCarouselContentId})});const d=await r.json();if(d.error)throw new Error(d.error);resultEl.innerHTML='<span style="color:#065F46;">✅ Publicado no Instagram!</span>';toast('Carrossel publicado! ✅','success');}else{const dt=document.getElementById('scheduleDateTime').value;if(!dt)return toast('Escolhe data e hora','error');const r=await fetch('/api/instagram/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:currentCarouselContentId,scheduledAt:new Date(dt).toISOString(),profile:currentProfile,type:'carrossel',topic:currentCarouselData?.title,caption,imageUrls})});const d=await r.json();if(d.error)throw new Error(d.error);resultEl.innerHTML=`<span style="color:#1E40AF;">📆 Agendado para ${formatDate(new Date(dt).toISOString())}</span>`;toast('Agendado!','success');}}catch(e){toast('Erro: '+e.message,'error');resultEl.innerHTML=`<span style="color:#EF4444;">❌ ${e.message}</span>`;}finally{btn.disabled=false;btn.textContent='📤 Publicar carrossel';}}
-function toggleScheduleTime(){document.getElementById('scheduleTimeGroup').style.display=document.getElementById('publishAction').value==='schedule'?'block':'none';}
-function downloadCarousel(){if(!currentCarouselData)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(currentCarouselData,null,2)],{type:'application/json'}));a.download='carrossel.json';a.click();}
-
-/* ── FEED ── */
-async function generateFeedPost(){const promptText=document.getElementById('feedPrompt').value.trim();if(!promptText)return toast('Descreve o post','error');const engine=document.getElementById('feedEngine').value,size=document.getElementById('feedSize').value,userCaption=document.getElementById('feedCaption').value;toast('A gerar imagem...','info');try{let caption=userCaption;if(!caption){const cr=await fetch('/api/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:`Escreve uma legenda para Instagram sobre: "${promptText}". Inclui emojis, CTA e hashtags relevantes.`,profile:currentProfile})});const cd=await cr.json();caption=cd.content||promptText;}const endpoint=engine==='gpt'?'/api/image':'/api/gemini-image';const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:promptText,size,quality:getSelectedQuality()})});const d=await r.json();if(d.error)throw new Error(d.error);const url=d.url||(d.b64?`data:image/png;base64,${d.b64}`:null);currentFeedImageUrl=url;const saveR=await fetch('/api/content/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'feed',profile:currentProfile,topic:promptText.slice(0,60),caption,imageUrl:url})});const saveD=await saveR.json();currentFeedContentId=saveD.item?.id;document.getElementById('feedPreviewImg').src=url||'';document.getElementById('feedGeneratedCaption').value=caption;document.getElementById('feedPreviewCard').style.display='block';document.getElementById('feedPublishPanel').classList.add('visible');toast('Imagem gerada!','success');}catch(e){toast('Erro: '+e.message,'error');}}
-async function publishFeedPost(){const action=document.getElementById('feedPublishAction').value,caption=document.getElementById('feedGeneratedCaption').value,resultEl=document.getElementById('feedPublishResult');if(!currentFeedImageUrl)return toast('Gera a imagem primeiro','error');try{if(action==='now'){const r=await fetch('/api/instagram/post',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrl:currentFeedImageUrl,caption,profile:currentProfile,contentId:currentFeedContentId})});const d=await r.json();if(d.error)throw new Error(d.error);resultEl.innerHTML='<span style="color:#065F46;">✅ Publicado!</span>';toast('Post publicado!','success');}else{const dt=document.getElementById('feedScheduleDateTime').value;if(!dt)return toast('Escolhe data e hora','error');const r=await fetch('/api/instagram/schedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contentId:currentFeedContentId,scheduledAt:new Date(dt).toISOString(),profile:currentProfile,type:'feed',caption,imageUrl:currentFeedImageUrl})});const d=await r.json();if(d.error)throw new Error(d.error);resultEl.innerHTML=`<span style="color:#1E40AF;">📆 Agendado</span>`;toast('Agendado!','success');}}catch(e){toast('Erro: '+e.message,'error');}}
-function toggleFeedScheduleTime(){document.getElementById('feedScheduleTimeGroup').style.display=document.getElementById('feedPublishAction').value==='schedule'?'block':'none';}
-
-/* ── BANCO DE FOTOS ── */
-let allPhotos=[],pendingPhotoFile=null;
-function handlePhotoSelect(e){const f=Array.from(e.target.files);if(f.length)processPendingPhoto(f[0]);}
-function handlePhotoDrop(e){e.preventDefault();document.getElementById('photoDropZone').classList.remove('dragover');const f=Array.from(e.dataTransfer.files).filter(x=>x.type.startsWith('image/'));if(f.length)processPendingPhoto(f[0]);}
-function processPendingPhoto(file){pendingPhotoFile=file;const reader=new FileReader();reader.onload=e=>{const zone=document.getElementById('photoDropZone');zone.innerHTML=`<img src="${e.target.result}" style="max-height:140px;border-radius:8px;margin-bottom:8px;"/><div style="font-size:.82rem;font-weight:600;">${file.name}</div>`;};reader.readAsDataURL(file);}
-async function uploadPhoto(){if(!pendingPhotoFile)return toast('Seleciona uma foto','error');const btn=document.getElementById('btnUploadPhoto');btn.disabled=true;btn.textContent='⏳ A guardar...';const fd=new FormData();fd.append('photo',pendingPhotoFile);fd.append('profile',document.getElementById('photoProfile').value);fd.append('description',document.getElementById('photoDesc').value);fd.append('tags',document.getElementById('photoTags').value);try{const r=await fetch('/api/photos/upload',{method:'POST',body:fd});const d=await r.json();if(d.error)throw new Error(d.error);toast('Foto guardada! 📸','success');document.getElementById('photoUploadResult').innerHTML=`<span style="color:#065F46;">✅ ${d.photo.originalName}</span>`;document.getElementById('photoDesc').value='';document.getElementById('photoTags').value='';pendingPhotoFile=null;document.getElementById('photoDropZone').innerHTML='<div class="photo-upload-icon">📸</div><div class="photo-upload-text"><strong>Clica para selecionar</strong> ou arrasta aqui<br>JPG, PNG, HEIC até 20MB</div>';loadPhotos();}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='💾 Guardar no banco';}}
-async function loadPhotos(){const profile=document.getElementById('galleryProfileFilter')?.value||'';try{const r=await fetch(`/api/photos${profile?`?profile=${profile}`:''}`);allPhotos=await r.json();renderPhotosGrid(allPhotos);}catch(e){}}
-function filterPhotosByTag(){const tag=document.getElementById('galleryTagFilter').value.toLowerCase().trim();if(!tag){renderPhotosGrid(allPhotos);return;}renderPhotosGrid(allPhotos.filter(p=>p.tags.some(t=>t.toLowerCase().includes(tag))||p.description.toLowerCase().includes(tag)));}
-async function renderPhotosGrid(photos){const grid=document.getElementById('photosGrid');if(!photos.length){grid.innerHTML='<div style="color:var(--mid);grid-column:1/-1;text-align:center;padding:40px;">Nenhuma foto no banco ainda. 📸</div>';return;}grid.innerHTML='<div style="color:var(--mid);font-size:.82rem;grid-column:1/-1;padding:8px 0;">A carregar imagens...</div>';const withImages=await Promise.all(photos.map(async p=>{try{const r=await fetch(`/api/photos/${p.id}`);return r.json();}catch{return p;}}));grid.innerHTML=withImages.map(p=>`<div class="photo-card"><img src="${p.dataUrl||''}" alt="${p.description||''}" loading="lazy"/><div class="photo-card-overlay"><button class="photo-action-btn" onclick="deletePhoto('${p.id}')" title="Apagar">🗑️</button></div><div class="photo-card-info"><div class="photo-card-desc">${p.description||'Sem descrição'}</div><div class="photo-tags">${(p.tags||[]).map(t=>`<span class="photo-tag">${t}</span>`).join('')}<span class="photo-tag" style="background:rgba(59,15,76,.08);color:var(--purple);">${p.profile}</span></div></div></div>`).join('');}
-async function deletePhoto(id){if(!confirm('Apagar esta foto?'))return;const r=await fetch(`/api/photos/${id}`,{method:'DELETE'});const d=await r.json();if(d.success){toast('Foto apagada','info');loadPhotos();}else toast('Erro: '+d.error,'error');}
-async function suggestPhotos(){const topic=document.getElementById('photoSearchTopic').value.trim(),profile=document.getElementById('photoSearchProfile').value;if(!topic)return toast('Escreve um tema','error');const resultEl=document.getElementById('photoSuggestResults');resultEl.innerHTML='<div style="color:var(--mid);font-size:.82rem;">✨ A procurar...</div>';try{const r=await fetch('/api/photos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic,profile,limit:5})});const d=await r.json();if(!d.suggestions?.length){resultEl.innerHTML='<div style="color:var(--mid);font-size:.82rem;">Nenhuma foto encontrada.</div>';return;}resultEl.innerHTML=`<div style="font-size:.75rem;color:var(--mid);margin-bottom:8px;">${d.suggestions.length} foto(s):</div><div style="display:flex;gap:10px;flex-wrap:wrap;">${d.suggestions.map(p=>`<div style="text-align:center;"><img src="${p.dataUrl}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid var(--magenta);"/><div style="font-size:.65rem;color:var(--mid);margin-top:3px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.description||''}</div></div>`).join('')}</div>`;}catch(e){resultEl.innerHTML=`<div style="color:#EF4444;">Erro: ${e.message}</div>`;}}
-
-/* ── CALENDÁRIO ── */
-var calCurrentMode="mensal";function setCalMode(mode){calCurrentMode=mode;document.getElementById("calModeMensal").classList.toggle("active",mode==="mensal");document.getElementById("calModeSemanal").classList.toggle("active",mode==="semanal");document.getElementById("calControlsMensal").style.display=mode==="mensal"?"block":"none";document.getElementById("calControlsSemanal").style.display=mode==="semanal"?"block":"none";if(mode==="semanal"){var today=new Date();var day=today.getDay();var diff=day===0?-6:1-day;var monday=new Date(today);monday.setDate(today.getDate()+diff);document.getElementById("calWeekStart").value=monday.toISOString().slice(0,10);}}
-async function generateWeekCalendar(){var weekStart=document.getElementById("calWeekStart").value;var postsPerDay=parseInt(document.getElementById("calWeekPostsPerDay").value);if(!weekStart)return toast("Escolhe a data de inicio da semana","error");var btn=document.getElementById("btnGenWeekCalendar");btn.disabled=true;btn.textContent="A gerar...";document.getElementById("calendarLoading").style.display="flex";document.getElementById("calendarContainer").style.display="none";document.getElementById("calendarPreviewBar").style.display="none";calendarApproved=false;try{var r=await fetch("/api/calendar/generate-week",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({weekStart:weekStart,profile:currentProfile,postsPerDay:postsPerDay})});var d=await r.json();if(d.error)throw new Error(d.error);var calendarDays=(d.week||[]).map(function(w){return{day:parseInt(w.date.slice(8,10)),date:w.date,dayOfWeek:w.dayOfWeek,posts:(w.posts||[]).map(function(p){return{time:p.time||"09:00",type:p.type||"carrossel",topic:p.topic||"",date:w.date,status:"pendente",contentId:null};})};});currentCalendarData={calendar:calendarDays,isWeek:true,weekStart:weekStart};renderWeekCalendar(d.week,weekStart);document.getElementById("calendarPreviewBar").style.display="block";toast("Semana gerada!","info");}catch(e){toast("Erro: "+e.message,"error");}finally{document.getElementById("calendarLoading").style.display="none";btn.disabled=false;btn.textContent="Gerar semana";}}
-function renderWeekCalendar(weekDays,weekStart){var container=document.getElementById("calendarGrid");var firstDate=new Date(weekStart+"T12:00:00Z");document.getElementById("calendarTitle").textContent="Semana de "+firstDate.toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric",timeZone:"UTC"});container.innerHTML="";["Seg","Ter","Qua","Qui","Sex","Sab","Dom"].forEach(function(h){container.insertAdjacentHTML("beforeend","<div class=\"cal-header\">"+h+"</div>");});var today=new Date().toISOString().slice(0,10);for(var i=0;i<7;i++){var w=weekDays[i];var d=w?parseInt(w.date.slice(8,10)):"";var posts=w?(w.posts||[]):[];var isToday=w&&today===w.date;var postsHtml=posts.map(function(p,pi){var label=(p.topic||p.tema||"").slice(0,22)||(p.type||"post");var status=p.status||"pendente";var wDate=w.date;return"<div class=\"cal-post "+status+"\" onclick=\"openWeekCalendarPost('"+wDate+"',"+pi+")\" title=\""+( p.topic||"")+"\">"+"<span class=\"cal-post-icon\">"+typeIcon(p.type)+"</span>"+"<span>"+(p.time?p.time+" ":"")+"<strong>"+label+"</strong></span></div>";}).join("");container.insertAdjacentHTML("beforeend","<div class=\"cal-day"+(isToday?" today":"")+"\">"+"<div class=\"cal-day-num\">"+d+"</div>"+"<div class=\"cal-posts\">"+postsHtml+"</div></div>");}document.getElementById("calendarContainer").style.display="block";}
-function openWeekCalendarPost(date,postIndex){if(!currentCalendarData)return;var day=parseInt(date.slice(8,10));var dayEntry=currentCalendarData.calendar.find(function(e){return e.date===date;});if(!dayEntry||!dayEntry.posts[postIndex])return;currentCalendarPost=Object.assign({},dayEntry.posts[postIndex],{day:day,month:parseInt(date.slice(5,7)),year:parseInt(date.slice(0,4))});openCalendarPost(day,postIndex);}
-function initCalendarMonths(){const sel=document.getElementById('calMonth');['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].forEach((m,i)=>{const opt=document.createElement('option');opt.value=i+1;opt.textContent=m;if(i+1===new Date().getMonth()+1)opt.selected=true;sel.appendChild(opt);});}
-function saveCalendarToLocal(calendarData,profile,month,year){try{localStorage.setItem(`calendar_${profile}_${year}_${month}`,JSON.stringify({calendar:calendarData,savedAt:new Date().toISOString()}));}catch(e){}}
-function loadCalendarFromLocal(profile,month,year){try{const raw=localStorage.getItem(`calendar_${profile}_${year}_${month}`);if(raw){const d=JSON.parse(raw);if(d?.calendar?.length)return d;}return null;}catch(e){return null;}}
-async function generateCalendar(){const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value),postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='none';calendarApproved=false;const btn=document.getElementById('btnGenCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';try{const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});const d=await r.json();if(d.error)throw new Error(d.error);currentCalendarData=d;saveCalendarToLocal(d.calendar,currentProfile,month,year);renderCalendar(d,month,year);document.getElementById('calendarPreviewBar').style.display='block';toast('Sugestão gerada! Revê e aprova.','info');}catch(e){toast('Erro: '+e.message,'error');}finally{document.getElementById('calendarLoading').style.display='none';btn.disabled=false;btn.textContent='✨ Gerar calendário';}}
-function approveCalendar(){const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);calendarApproved=true;document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='inline-block';if(currentCalendarData)saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);toast('Calendário aprovado e salvo!','success');}
-function downloadCalendarPDF(){
-  if(!currentCalendarData){return toast('Gera ou carrega um calendário primeiro.','error');}
-  const month=parseInt(document.getElementById('calMonth').value);
-  const year=parseInt(document.getElementById('calYear').value);
-  const monthNames=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const monthName=monthNames[month-1];
-  const daysInMonth=new Date(year,month,0).getDate();
-  const firstDay=new Date(year,month-1,1).getDay();
-  const offset=firstDay===0?6:firstDay-1;
-  const postsByDay={};
-  (currentCalendarData.calendar||[]).forEach(e=>{postsByDay[Number(e.day)]=e.posts||[];});
-  const statusColors={pendente:'#FEF3C7;color:#92400E',agendado:'#DBEAFE;color:#1E40AF',publicado:'#D1FAE5;color:#065F46'};
-  const typeIcons={lofi:'🎥',carrossel:'📋',video_curto:'⚡',video_medio:'🎬',frase:'✍️',dump:'📸',bastidores:'🎬',tendencia:'📡',case:'🏆',educativo:'📚',comparacao:'⚖️',lista:'📋',prova_social:'🌟',oferta:'🎯'};
-
-  let cells='';
-  // Cabeçalho
-  ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>{cells+=`<div style="background:#3B0F4C;color:#fff;text-align:center;font-size:10px;font-weight:700;padding:6px;border-radius:4px;">${d}</div>`;});
-  // Células vazias
-  for(let i=0;i<offset;i++) cells+=`<div></div>`;
-  // Dias
-  for(let d=1;d<=daysInMonth;d++){
-    const posts=postsByDay[d]||[];
-    const today=new Date();
-    const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d;
-    const postsHtml=posts.map(p=>{
-      const topic=(p.topic||p.tema||'').slice(0,40)||p.type||'';
-      const st=p.status||'pendente';
-      const sc=statusColors[st]||statusColors.pendente;
-      return `<div style="font-size:8px;background:${sc.split(';')[0].replace('background:','')};color:${sc.split('color:')[1]||'#333'};border-radius:3px;padding:2px 4px;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${typeIcons[p.type]||'📄'} ${p.time?p.time+' ':''}<b>${topic}</b></div>`;
-    }).join('');
-    cells+=`<div style="min-height:80px;border:1px solid #E5E7EB;border-radius:6px;padding:5px;background:${isToday?'#FFF0F9':'#fff'};${isToday?'border-color:#E4007C;box-shadow:0 0 0 1.5px rgba(228,0,124,.2);':''}">
-      <div style="font-size:11px;font-weight:700;color:${isToday?'#E4007C':'#6B7280'};margin-bottom:3px;">${d}</div>
-      ${postsHtml}
-    </div>`;
+async function generateCarouselImages(autoPublishConfig=null){
+  if(!currentCarouselData)return;
+  const engine=document.getElementById('imageEngine').value;
+  if(engine==='none')return toast('Selecciona um gerador','info');
+  const slides=currentCarouselData.slides,topic=currentCarouselData.title||'',contentId=currentCarouselContentId;
+  const btn=document.getElementById('btnGenImages'),progressBar=document.getElementById('imageProgress'),progressFill=document.getElementById('imageProgressFill'),statusEl=document.getElementById('imageGenStatus');
+  btn.disabled=true;progressBar.style.display='block';currentCarouselImages=[];
+ 
+  // Verificar Google Fotos (só para perfil pessoal)
+  let gphotosAccessToken=null;
+  if(currentProfile==='pessoal'){
+    try{
+      const stR=await fetch('/api/gphotos/status?userId=default');
+      const stD=await stR.json();
+      if(stD.connected){
+        const tkR=await fetch('/api/gphotos/token?userId=default');
+        if(tkR.ok){const tkD=await tkR.json();gphotosAccessToken=tkD.access_token||null;}
+      }
+    }catch(e){console.warn('[gphotos]',e.message);}
   }
-
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Calendário ${monthName} ${year}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet"/>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Plus Jakarta Sans',sans-serif;background:#F8FAFC;padding:24px;}
-    h1{font-size:22px;font-weight:800;color:#3B0F4C;margin-bottom:4px;}
-    .sub{font-size:12px;color:#6B7280;margin-bottom:20px;}
-    .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
-    @media print{body{padding:12px;}@page{size:A4 landscape;margin:10mm;}}
-  </style></head><body>
-  <h1>📅 Calendário Editorial — ${monthName} ${year}</h1>
-  <div class="sub">Gerado em ${new Date().toLocaleDateString('pt-BR')} · ${(currentCalendarData.calendar||[]).reduce((a,e)=>a+(e.posts?.length||0),0)} posts planeados</div>
-  <div class="grid">${cells}</div>
-  <script>window.onload=()=>window.print();<\/script>
-  </body></html>`;
-
-  const w=window.open('','_blank');
-  if(w){w.document.write(html);w.document.close();}
-  else toast('Permite popups para fazer download do PDF.','error');
+  if(gphotosAccessToken)toast('📸 Usando suas fotos do Google Fotos!','info');
+ 
+  for(let i=0;i<slides.length;i++){
+    const s=slides[i];
+    const pct=Math.round((i/slides.length)*100);
+    const funcao=s.funcao||(i===0?'CAPA':i===slides.length-1?'ASSINATURA':'CONTEUDO');
+    progressFill.style.width=`${pct}%`;
+    const card=document.getElementById(`slideCard_${i}`);
+    if(card)card.style.opacity='0.5';
+ 
+    // Label indicando tipo de foto para este slide
+    const fu=(funcao||'').toUpperCase();
+    const isFirst=i===0,isLast=i===slides.length-1;
+    const isSelf=isFirst||isLast||fu.includes('CAPA')||fu.includes('CTA')||fu.includes('ASSINATURA')||fu.includes('FRASE')||fu.includes('QUOTE');
+    statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> <span style="font-size:.75rem;color:var(--mid);">${isSelf?'👤 Foto sua':'🌿 Respiro'}</span>`;
+ 
+    try{
+      let finalUrl=null;
+      if(engine==='gpt'){
+        const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading:s.heading||'',body:s.body||'',slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||'',quality:getSelectedQuality(),gphotosAccessToken:gphotosAccessToken||null})});
+        const slideData=await slideRes.json();
+        if(slideData.error)throw new Error(slideData.error);
+        const photoUrl=slideData.url||(slideData.b64?`data:image/png;base64,${slideData.b64}`:null);
+        const designMeta=slideData.designMeta;
+        if(photoUrl&&designMeta){
+          const pngB64=await SlideRenderer.renderSlide(photoUrl,designMeta);
+          if(pngB64){
+            try{const saveRes=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const saveData=await saveRes.json();if(saveData.url)finalUrl=saveData.url;}catch(e){}
+            finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+          }else{finalUrl=photoUrl;}
+        }else{finalUrl=photoUrl;}
+      }else{
+        const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.marca;
+        const geminiPrompt=`Premium Instagram carousel slide ${i+1}/${slides.length}. Topic: "${topic}". Brand colors: background ${brand.bg}, accent ${brand.accent}. ${i===0?`COVER: hero image. MASSIVE heading: "${s.heading}".`:`Heading "${s.heading}". Body: "${s.body}".`} Moody dark tones. White text readable when overlaid. Portrait 4:5.`;
+        const r=await fetch('/api/gemini-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:geminiPrompt})});
+        const d=await r.json();const b64=d.b64||null;finalUrl=d.url||(b64?`data:image/png;base64,${b64}`:null);
+        if(b64&&contentId){try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64,contentId,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}}
+      }
+      currentCarouselImages.push(finalUrl);
+      if(card&&finalUrl){let img=card.querySelector('.slide-img');if(!img){img=document.createElement('img');img.className='slide-img';card.insertBefore(img,card.firstChild);}img.style.opacity='0';img.src=finalUrl;img.onload=()=>{img.style.transition='opacity 0.5s ease';img.style.opacity='1';};}
+      if(card)card.style.opacity='1';
+    }catch(e){console.error(`Slide ${i+1}:`,e);currentCarouselImages.push(null);if(card)card.style.opacity='1';}
+  }
+ 
+  progressFill.style.width='100%';
+  const ok=currentCarouselImages.filter(Boolean).length;
+  statusEl.innerHTML=`<span style="color:#10B981;font-weight:600;">✅ ${ok}/${slides.length} slides compostos!</span>${gphotosAccessToken?' <span style="font-size:.72rem;color:var(--mid);">📸 Com suas fotos reais</span>':''}`;
+  btn.disabled=false;btn.textContent='🔄 Regenerar imagens';
+  if(currentCarouselData)currentCarouselData.imageUrls=currentCarouselImages.filter(Boolean);
+  const validUrls=currentCarouselImages.filter(u=>u&&!u.startsWith('data:'));
+  if(contentId&&validUrls.length){try{await fetch(`/api/content/${contentId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls:validUrls,status:'pendente'})});}catch(e){}}
+  toast(`${ok} slides compostos! 🎨`,'success');
+  if(autoPublishConfig){const{action,scheduledAt,caption,calendarPost}=autoPublishConfig;await _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost});}
+  else{document.getElementById('publishPanel').classList.add('visible');}
 }
-
-function rejectCalendar(){document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calendarContainer').style.display='none';currentCalendarData=null;calendarApproved=false;toast('Calendário rejeitado.','info');}
-async function loadSavedCalendar(){const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);const local=loadCalendarFromLocal(currentProfile,month,year);if(local?.calendar?.length){currentCalendarData={calendar:local.calendar};renderCalendar(currentCalendarData,month,year);calendarApproved=true;document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('calendarPreviewBar').style.display='none';_refreshCalendarFromServer(month,year);return;}await _refreshCalendarFromServer(month,year);}
-async function _refreshCalendarFromServer(month,year){try{const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);const d=await r.json();if(d.found&&d.calendar?.length){
-  // Só sobrescreve localStorage/estado se ainda não há dados locais aprovados
-  if(!calendarApproved){
-    currentCalendarData={calendar:d.calendar};
-    saveCalendarToLocal(d.calendar,currentProfile,month,year);
-    renderCalendar(currentCalendarData,month,year);
-    calendarApproved=true;
-    document.getElementById('calApprovedBadge').style.display='inline-block';
-    document.getElementById('calendarPreviewBar').style.display='none';
-    toast('Calendário anterior carregado.','info');
-  }
-  // Se já há dados locais aprovados, não sobrescreve — preserva edições do utilizador
-}}catch(e){console.warn('server calendar load:',e);}}
-function renderCalendar(data,month,year){const pdfBtn=document.getElementById('btnCalPDF');if(pdfBtn)pdfBtn.disabled=false;const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];document.getElementById('calendarTitle').textContent=`${months[month-1]} ${year}`;const grid=document.getElementById('calendarGrid');grid.innerHTML='';['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].forEach(d=>grid.insertAdjacentHTML('beforeend',`<div class="cal-header">${d}</div>`));const firstDay=new Date(year,month-1,1).getDay();const offset=firstDay===0?6:firstDay-1;for(let i=0;i<offset;i++)grid.insertAdjacentHTML('beforeend','<div class="cal-day empty"></div>');const today=new Date();const daysInMonth=new Date(year,month,0).getDate();const postsByDay={};(data.calendar||[]).forEach(entry=>{const dayKey=Number(entry.day);if(!isNaN(dayKey))postsByDay[dayKey]=entry.posts||[];});for(let d=1;d<=daysInMonth;d++){const isToday=today.getFullYear()===year&&today.getMonth()+1===month&&today.getDate()===d;const posts=postsByDay[d]||[];const postsHtml=posts.map((p,pi)=>{const rawTopic=(p.topic||p.tema||'').trim();const label=rawTopic?rawTopic.slice(0,22):(p.type||'post');const status=p.status||'pendente';return`<div class="cal-post ${status}" onclick="openCalendarPost(${d},${pi})" title="${rawTopic}"><span class="cal-post-icon">${typeIcon(p.type)}</span><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.time?p.time+' ':''}<strong>${label}</strong></span></div>`;}).join('');grid.insertAdjacentHTML('beforeend',`<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div><div class="cal-posts">${postsHtml}</div></div>`);} document.getElementById('calendarContainer').style.display='block';}
-function saveCalendarPostEdit(day,postIndex){if(!currentCalendarData)return;const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);if(!dayEntry||!dayEntry.posts[postIndex])return;const newTopic=document.getElementById('calEditTopic')?.value?.trim(),newType=document.getElementById('calEditType')?.value,newTime=document.getElementById('calEditTime')?.value;if(newTopic)dayEntry.posts[postIndex].topic=newTopic;if(newType)dayEntry.posts[postIndex].type=newType;if(newTime)dayEntry.posts[postIndex].time=newTime;if(currentCalendarPost&&currentCalendarPost.day===day){currentCalendarPost.topic=dayEntry.posts[postIndex].topic;currentCalendarPost.type=dayEntry.posts[postIndex].type;currentCalendarPost.time=dayEntry.posts[postIndex].time;}const month=parseInt(document.getElementById('calMonth').value),year=parseInt(document.getElementById('calYear').value);
-  // Marca como aprovado para proteger de sobrescrita pelo servidor
-  calendarApproved=true;
-  // Salva local E no servidor para garantir persistência
-  saveCalendarToLocal(currentCalendarData.calendar,currentProfile,month,year);
-  fetch('/api/calendar/saved',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:currentProfile,month,year,calendar:currentCalendarData.calendar})}).catch(()=>{});
-  renderCalendar(currentCalendarData,month,year);closeModal('calPostModal');toast('Post guardado! ✅','success');}
-function openCalendarPost(day,postIndex){if(!currentCalendarData)return;const dayEntry=currentCalendarData.calendar.find(e=>Number(e.day)===day);if(!dayEntry)return;const post=dayEntry.posts[postIndex];if(!post)return;currentCalendarPost={...post,day,month:parseInt(document.getElementById('calMonth').value),year:parseInt(document.getElementById('calYear').value)};const topicVal=(post.topic||post.tema||'').replace(/"/g,'&quot;');document.getElementById('calPostModalTitle').textContent=`${typeIcon(post.type)} Dia ${day}`;document.getElementById('calPostModalBody').innerHTML=`<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;"><span class="badge badge-${post.status||'pendente'}">${statusLabel(post.status||'pendente')}</span><span class="badge" style="background:#F3E8FF;color:var(--purple);">${post.type}</span></div><div class="form-group"><label class="form-label">Tema do post</label><input class="input" id="calEditTopic" value="${topicVal}"/></div><div style="display:flex;gap:12px;"><div class="form-group" style="flex:1;margin-bottom:0;"><label class="form-label">Tipo</label><select class="select" id="calEditType"><option value="lofi" ${post.type==='lofi'?'selected':''}>🎥 Lo-Fi</option><option value="carrossel" ${post.type==='carrossel'?'selected':''}>📋 Carrossel</option><option value="video_curto" ${post.type==='video_curto'?'selected':''}>⚡ Vídeo Curto</option><option value="video_medio" ${post.type==='video_medio'?'selected':''}>🎬 Vídeo Médio</option><option value="frase" ${post.type==='frase'?'selected':''}>✍️ Frase</option><option value="dump" ${post.type==='dump'?'selected':''}>📸 Dump</option><option value="tendencia" ${post.type==='tendencia'?'selected':''}>📡 Tendência</option><option value="case" ${post.type==='case'?'selected':''}>🏆 Case</option><option value="educativo" ${post.type==='educativo'?'selected':''}>📚 Educativo</option><option value="comparacao" ${post.type==='comparacao'?'selected':''}>⚖️ Comparação</option><option value="lista" ${post.type==='lista'?'selected':''}>📋 Lista</option><option value="prova_social" ${post.type==='prova_social'?'selected':''}>🌟 Prova Social</option><option value="oferta" ${post.type==='oferta'?'selected':''}>🎯 Oferta</option></select></div><div class="form-group" style="width:120px;margin-bottom:0;"><label class="form-label">Horário</label><input class="input" type="time" id="calEditTime" value="${post.time||'09:00'}"/></div></div><div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;"><button class="btn btn-outline btn-sm" onclick="saveCalendarPostEdit(${day},${postIndex})">💾 Guardar</button></div>${post.status==='pendente'||!post.status?`<hr style="border:none;border-top:1px solid var(--light);margin:16px 0;"/><div style="background:var(--pale);border-radius:var(--radius);padding:12px;"><div class="form-row"><div class="form-group" style="margin:0;"><label class="form-label">Agendar para</label><input type="datetime-local" class="input" id="calPostScheduleTime" value="${currentCalendarPost.year}-${String(currentCalendarPost.month).padStart(2,'0')}-${String(day).padStart(2,'0')}T${post.time||'09:00'}"/></div><div class="form-group" style="margin:0;"><label class="form-label">Ação</label><select class="select" id="calPostAction"><option value="generate">Só gerar criativo</option><option value="schedule">Gerar e agendar</option><option value="now">Gerar e publicar agora</option></select></div></div></div>`:`<div style="font-size:.82rem;margin-top:12px;color:${post.status==='publicado'?'#065F46':'#1E40AF'};">${post.status==='agendado'?`📆 Agendado`:''}</div>`}`;document.getElementById('modalBtnGenerate').style.display=(!post.status||post.status==='pendente')?'inline-flex':'none';document.getElementById('modalBtnPublish').style.display=(!post.status||post.status==='pendente')?'inline-flex':'none';showModal('calPostModal');}
-async function generateFromCalendarPost(){if(!currentCalendarPost)return;const p=currentCalendarPost;const genBtn=document.getElementById('modalBtnGenerate');genBtn.disabled=true;genBtn.textContent='⏳ A gerar copy...';try{const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})});const d=await r.json();if(d.error)throw new Error(d.error);currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};toast('Copy gerada!','success');closeModal('calPostModal');showSection('carousel',null);setTimeout(()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselSlideCount').textContent=`${(d.slides||[]).length} slides — ${p.topic||p.tema}`;document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewTitle').textContent=d.title||p.topic||p.tema;document.getElementById('carouselPreviewCard').style.display='block';const scheduledDT=`${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}T${p.time||'09:00'}`;document.getElementById('publishAction').value='schedule';document.getElementById('scheduleDateTime').value=scheduledDT;document.getElementById('scheduleTimeGroup').style.display='block';document.getElementById('publishPanel').classList.add('visible');},300);}catch(e){toast('Erro: '+e.message,'error');}finally{genBtn.disabled=false;genBtn.textContent='✨ Gerar criativo';}}
-async function publishFromCalendarPost(){if(!currentCalendarPost)return;const p=currentCalendarPost,action=document.getElementById('calPostAction')?.value||'generate',dt=document.getElementById('calPostScheduleTime')?.value,pubBtn=document.getElementById('modalBtnPublish');pubBtn.disabled=true;pubBtn.textContent='⏳ A processar...';try{const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:p.topic||p.tema,profile:currentProfile,calendarDay:p.day,calendarMonth:p.month,calendarYear:p.year})});const d=await r.json();if(d.error)throw new Error(d.error);currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};closeModal('calPostModal');if(action==='generate'){showSection('carousel',null);setTimeout(()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewCard').style.display='block';document.getElementById('publishPanel').classList.add('visible');},300);toast('Copy gerada! Clica em "Gerar imagens" para continuar.','success');}else{showSection('carousel',null);setTimeout(async()=>{renderSlidesPreview(d.slides||[]);document.getElementById('carouselGeneratedCaption').value=`${d.caption||''}\n\n${d.hashtags||''}`;document.getElementById('carouselPreviewCard').style.display='block';const scheduledAt=dt?new Date(dt).toISOString():null;toast(`A gerar ${(d.slides||[]).length} slides...`,'info');await generateCarouselImages({action:action==='now'?'now':'schedule',scheduledAt,caption:d.caption||'',contentId:d.contentId,calendarPost:p});},400);}}catch(e){toast('Erro: '+e.message,'error');}finally{pubBtn.disabled=false;pubBtn.textContent='🚀 Agendar / Publicar';}}
-
 /* ── CONTENT MACHINE ── */
 const CM_TYPES_ALL = {
   lofi:{label:'Lo-Fi (câmera ligada)',emoji:'🎥',tag:'Lo-Fi',color:'#C17B6F',metodologia:'rr',desc:'Liga a câmera e fala direto. Maior ROI para quem tem oratória.'},
