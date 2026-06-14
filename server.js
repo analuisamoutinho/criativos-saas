@@ -1086,7 +1086,7 @@ app.post('/api/carousel/generate-and-save', async (req, res) => {
     const carouselData = extractJSON(d.content[0].text.trim());
     function sanitizeCopy(text) { if (!text) return text; return text.replace(/\s*—\s*/g, ' ').replace(/\s*–\s*/g, ' ').replace(/^\s*[–—]\s*/gm, '').trim(); }
     if (carouselData.slides) { carouselData.slides = carouselData.slides.map(s => ({ ...s, heading: sanitizeCopy(s.heading), body: sanitizeCopy(s.body) })); }
-    if (carouselData.hashtags) { const tags = carouselData.hashtags.match(/#\w+/g) || []; carouselData.hashtags = tags.slice(0, 4).join(' '); }
+    if (carouselData.hashtags) { const tags = carouselData.hashtags.match(/#[\wÀ-ɏ]+/g) || []; carouselData.hashtags = tags.slice(0, 4).join(' '); }
     const item = saveGeneratedContent({ id: 'cnt_' + Date.now(), createdAt: new Date().toISOString(), status: 'pendente', type: 'carrossel', mode, profile, topic: topic || ('Carrossel ' + carouselData.slideCount + ' slides'), caption: caption || carouselData.caption, hashtags: hashtags || carouselData.hashtags, contentMachineType: contentMachineType || null, carouselData, calendarDay: calendarDay || null, calendarMonth: calendarMonth || null, calendarYear: calendarYear || null, imageUrls: [], metodologia: isRR ? 'rr' : 'brandsdecoded' });
     res.json({ success: true, contentId: item.id, ...carouselData });
   } catch(err) { res.status(500).json({ error: err.message }); }
