@@ -1183,8 +1183,24 @@ async function generateCarouselImages(autoPublishConfig=null){
  
     try{
       let finalUrl=null;
-      if(engine==='gpt'){
-        const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading:s.heading||'',body:s.body||'',slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||'',quality:getSelectedQuality(),gphotosAccessToken:gphotosAccessToken||null})});
+
+      // ── Tenta Google Fotos primeiro (perfil pessoal com conta conectada) ──
+      if(gphotosAccessToken){
+        try{
+          const gpR=await fetch('/api/gphotos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tema:topic||s.heading||'',slideIndex:i,totalSlides:slides.length,userId:'default',limit:1})});
+          const gpD=await gpR.json();
+          if(gpD.suggestions?.length){
+            const gPhotoUrl=gpD.suggestions[0].slideUrl;
+            const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.pessoal;
+            const designMeta={heading:s.heading||'',body:s.body||'',accent:brand.accent,bgDark:brand.bg,handle:brand.handle,slideNumber:i+1,totalSlides:slides.length,funcao};
+            const pngB64=await SlideRenderer.renderSlide(gPhotoUrl,designMeta);
+            if(pngB64){finalUrl=`data:image/png;base64,${pngB64}`;}
+          }
+        }catch(gpErr){console.warn('[gphotos slide '+i+']',gpErr.message);}
+      }
+
+      if(engine==='gpt'&&!finalUrl){
+        const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading:s.heading||'',body:s.body||'',slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||'',quality:getSelectedQuality()})});
         const slideData=await slideRes.json();
         if(slideData.error)throw new Error(slideData.error);
         const photoUrl=slideData.url||(slideData.b64?`data:image/png;base64,${slideData.b64}`:null);
@@ -1196,7 +1212,7 @@ async function generateCarouselImages(autoPublishConfig=null){
             finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
           }else{finalUrl=photoUrl;}
         }else{finalUrl=photoUrl;}
-      }else{
+      }else if(!finalUrl){
         const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.marca;
         const geminiPrompt=`Premium Instagram carousel slide ${i+1}/${slides.length}. Topic: "${topic}". Brand colors: background ${brand.bg}, accent ${brand.accent}. ${i===0?`COVER: hero image. MASSIVE heading: "${s.heading}".`:`Heading "${s.heading}". Body: "${s.body}".`} Moody dark tones. White text readable when overlaid. Portrait 4:5.`;
         const r=await fetch('/api/gemini-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:geminiPrompt})});

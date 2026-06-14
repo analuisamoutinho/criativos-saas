@@ -855,6 +855,15 @@ app.delete('/api/gphotos/disconnect', async (req, res) => {
   res.json({ success: true });
 });
 
+app.get('/api/gphotos/token', async (req, res) => {
+  const userId = req.query.userId || 'default';
+  try {
+    const token = await getGPhotoAccessToken(userId);
+    if (!token) return res.status(401).json({ error: 'Não autenticado' });
+    res.json({ access_token: token });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.get('/api/gphotos/albums', async (req, res) => {
   const userId = req.query.userId || 'default';
   const accessToken = await getGPhotoAccessToken(userId);
