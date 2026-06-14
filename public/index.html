@@ -1101,19 +1101,22 @@ const SlideRenderer={
     const textShadow='text-shadow:0 2px 16px rgba(0,0,0,0.95),0 1px 5px rgba(0,0,0,0.98);';
     const bodyShadow='text-shadow:0 1px 12px rgba(0,0,0,0.90),0 1px 4px rgba(0,0,0,0.95);';
     const headingHTML=this._applyAccentWords(heading||'',accent);
-    const overlay=overlayCSS||'rgba(0,0,0,0.50)';
+    // Overlay leve no topo + gradiente escuro pesado na metade inferior — foto respira no topo, texto lê-se na base
+    const topOverlay=overlayCSS||'rgba(0,0,0,0.22)';
+    const gradient=`linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.78) 30%, rgba(0,0,0,0.40) 55%, rgba(0,0,0,0.00) 100%)`;
     const showFuncao=funcao&&funcao!=='CAPA'&&funcao!=='ASSINATURA'&&funcao!=='CTA'&&funcao!=='CONTEUDO';
     return`<div class="sr-slide-wrapper" style="background:${bgDark};">
 <img class="sr-bg" src="${photoUrl}" crossorigin="anonymous" />
-<div style="position:absolute;inset:0;z-index:1;background:${overlay};"></div>
-<div style="position:absolute;top:52px;right:72px;font-size:18px;font-weight:600;color:rgba(255,255,255,0.40);letter-spacing:.06em;z-index:3;">${slideNumber}/${totalSlides}</div>
-<div style="position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:68px 76px;">
-<div style="font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:lowercase;color:${accent};margin-bottom:28px;opacity:.9;${textShadow}">${handle}</div>
-${showFuncao?`<div style="font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:18px;${textShadow}">${funcao}</div>`:''}
-<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:${headingSize};font-weight:800;line-height:1.04;letter-spacing:-.02em;margin-bottom:${body?'28px':'0'};color:#FFFFFF;${textShadow}">${headingHTML}</div>
-${body?`<div style="font-size:32px;font-weight:400;line-height:1.58;letter-spacing:-.01em;max-width:880px;color:rgba(255,255,255,0.88);${bodyShadow}">${body}</div>`:''}
+<div style="position:absolute;inset:0;z-index:1;background:${topOverlay};"></div>
+<div style="position:absolute;inset:0;z-index:1;background:${gradient};"></div>
+<div style="position:absolute;top:52px;right:72px;font-size:18px;font-weight:600;color:rgba(255,255,255,0.50);letter-spacing:.06em;z-index:3;">${slideNumber}/${totalSlides}</div>
+<div style="position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;justify-content:flex-end;padding:140px 76px;">
+<div style="font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:lowercase;color:${accent};margin-bottom:24px;opacity:.95;${textShadow}">${handle}</div>
+${showFuncao?`<div style="font-size:18px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:16px;${textShadow}">${funcao}</div>`:''}
+<div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:${headingSize};font-weight:800;line-height:1.06;letter-spacing:-.02em;margin-bottom:${body?'24px':'0'};color:#FFFFFF;${textShadow}">${headingHTML}</div>
+${body?`<div style="font-size:30px;font-weight:400;line-height:1.60;letter-spacing:-.01em;max-width:880px;color:rgba(255,255,255,0.90);${bodyShadow}">${body}</div>`:''}
 </div>
-<div style="position:absolute;bottom:0;left:0;right:0;height:5px;z-index:3;background:${accent};"></div>
+<div style="position:absolute;bottom:0;left:0;right:0;height:6px;z-index:3;background:${accent};"></div>
 </div>`;
   },
   async renderSlide(photoUrl,designMeta){
