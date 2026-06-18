@@ -987,6 +987,32 @@ app.get('/api/gphotos/photo/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Proxy server-side para imagens do Google Fotos — evita CORS no canvas do frontend.
+// Também aceita URLs temporárias do Google Photos como ?url=...
+app.get('/api/gphotos/proxy-image', async (req, res) => {
+  const userId = req.query.userId || 'default';
+  const photoUrl = req.query.url;
+  if (!photoUrl) return res.status(400).json({ error: 'url obrigatório' });
+  // Validação mínima — só permite domínios Google Fotos
+  if (!photoUrl.startsWith('https://lh3.googleusercontent.com') &&
+      !photoUrl.startsWith('https://photos.google.com') &&
+      !photoUrl.startsWith('https://googleusercontent.com')) {
+    return res.status(403).json({ error: 'Domínio não permitido' });
+  }
+  const accessToken = await getGPhotoAccessToken(userId);
+  if (!accessToken) return res.status(401).json({ error: 'Não autenticado' });
+  try {
+    const imgRes = await fetch(photoUrl, { headers: { 'Authorization': 'Bearer ' + accessToken } });
+    if (!imgRes.ok) return res.status(imgRes.status).json({ error: 'Falha ao buscar imagem' });
+    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await imgRes.arrayBuffer());
+    res.set('Content-Type', contentType);
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'private, max-age=300');
+    res.send(buffer);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CALENDÁRIO
@@ -1351,9 +1377,10 @@ app.post('/api/canva/prepare-texts', (req, res) => {
 // ── Health ────────────────────────────────────────────────────────────────
 
 // Geracao de imagem por slide (GPT Image-1)
+// Aceita referenceImageB64 (base64 sem prefixo) para usar a foto real do Google Fotos como base
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
-    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality } = req.body;
+    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality, referenceImageB64 } = req.body;
     const quality = resolveQuality(rawQuality);
     const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account = getAccount(profile);
@@ -1369,14 +1396,50 @@ app.post('/api/image/carousel-slide', async (req, res) => {
       sceneHint,
     });
     const moodList = brand.moods || ['HERO_DARK'];
-    const moodIndex = Math.min(slideNumber - 1, moodList.length - 1);
+    const moodIndex = Math.min((slideNumber || 1) - 1, moodList.length - 1);
     const mood = moodList[moodIndex] || 'HERO_DARK';
     const isDark = mood.includes('DARK') || mood.includes('LOFI') || mood.includes('WARM') || mood === 'FRASE_IMPACTO' || mood === 'VIRADA' || mood === 'CTA_INTIMO';
     const designMeta = { heading: heading||'', body: body||'', accent: brand.accent||'#C8A020', bgDark: brand.bgDark||'#0A0A0A', bgLight: brand.bgLight||'#F5F4F0', handle: brand.handle||account.handle, isDark, mood, slideNumber, totalSlides, funcao: funcao||(slideNumber===1?'CAPA':slideNumber===totalSlides?'ASSINATURA':'CONTEUDO') };
-    const r = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
-    const data = await r.json();
-    if (data.error) { console.error('[carousel-slide] GPT error:', data.error); return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) }); }
-    const imageData = data.data && data.data[0];
+
+    let imageData;
+
+    if (referenceImageB64) {
+      // Usa a foto real como imagem de entrada via edits endpoint
+      const imgBuffer = Buffer.from(referenceImageB64, 'base64');
+      const { FormData: NodeFormData, Blob: NodeBlob } = await import('node:buffer').catch(() => ({}));
+      const FormDataLib = (typeof FormData !== 'undefined') ? FormData : (await import('formdata-node').catch(() => null))?.FormData;
+      const form = new (FormDataLib || FormData)();
+      form.append('model', 'gpt-image-1');
+      form.append('prompt', promptPhoto + ' Keep the person/subject from the reference photo as the main element. Apply the brand editorial style on top.');
+      form.append('n', '1');
+      form.append('size', '1024x1536');
+      form.append('quality', quality);
+      // Envia a imagem como ficheiro PNG
+      const blob = new Blob([imgBuffer], { type: 'image/png' });
+      form.append('image', blob, 'photo.png');
+      const r = await fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
+        body: form,
+      });
+      const data = await r.json();
+      if (data.error) {
+        console.warn('[carousel-slide] edits falhou, fallback para generations:', data.error.message);
+        // Fallback: gera normalmente sem a foto
+        const r2 = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
+        const data2 = await r2.json();
+        if (data2.error) return res.status(500).json({ error: data2.error.message });
+        imageData = data2.data?.[0];
+      } else {
+        imageData = data.data?.[0];
+      }
+    } else {
+      const r = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
+      const data = await r.json();
+      if (data.error) { console.error('[carousel-slide] GPT error:', data.error); return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) }); }
+      imageData = data.data?.[0];
+    }
+
     if (!imageData) return res.status(500).json({ error: 'Nenhuma imagem retornada' });
     res.json({ success: true, b64: imageData.b64_json || null, url: imageData.url || null, designMeta, quality });
   } catch (err) { console.error('[image/carousel-slide]', err); res.status(500).json({ error: err.message }); }

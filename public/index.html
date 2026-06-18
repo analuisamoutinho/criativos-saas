@@ -1192,12 +1192,38 @@ async function generateCarouselImages(autoPublishConfig=null){
           const gpD=await gpR.json();
           if(gpD.suggestions?.length){
             const gPhotoUrl=gpD.suggestions[0].slideUrl;
+            // Proxy via servidor para evitar CORS no canvas
+            const proxiedUrl=`/api/gphotos/proxy-image?url=${encodeURIComponent(gPhotoUrl)}&userId=default`;
             const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.pessoal;
             const designMeta={heading:s.heading||'',body:s.body||'',accent:brand.accent,bgDark:brand.bg,handle:brand.handle,slideNumber:i+1,totalSlides:slides.length,funcao};
-            const pngB64=await SlideRenderer.renderSlide(gPhotoUrl,designMeta);
-            if(pngB64){
-              try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}
-              finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+
+            if(engine==='gpt'){
+              // Para engine GPT: passa a foto real como base64 para o endpoint de geração
+              const proxyRes=await fetch(proxiedUrl);
+              if(proxyRes.ok){
+                const blob=await proxyRes.blob();
+                const reader=new FileReader();
+                const photoB64=await new Promise(resolve=>{reader.onload=e=>resolve(e.target.result.split(',')[1]);reader.readAsDataURL(blob);});
+                const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading:s.heading||'',body:s.body||'',slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||'',quality:getSelectedQuality(),referenceImageB64:photoB64})});
+                const slideData=await slideRes.json();
+                if(!slideData.error){
+                  const photoUrl=slideData.url||(slideData.b64?`data:image/png;base64,${slideData.b64}`:null);
+                  if(photoUrl&&slideData.designMeta){
+                    const pngB64=await SlideRenderer.renderSlide(photoUrl,slideData.designMeta);
+                    if(pngB64){
+                      try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}
+                      finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+                    }else{finalUrl=photoUrl;}
+                  }else if(photoUrl){finalUrl=photoUrl;}
+                }
+              }
+            }else{
+              // Para engine Gemini/canvas: renderiza a foto proxied diretamente
+              const pngB64=await SlideRenderer.renderSlide(proxiedUrl,designMeta);
+              if(pngB64){
+                try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}
+                finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+              }
             }
           }
         }catch(gpErr){console.warn('[gphotos slide '+i+']',gpErr.message);}
