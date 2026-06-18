@@ -31,6 +31,73 @@ const VALID_QUALITIES = ['low', 'medium', 'high', 'auto'];
 const DEFAULT_QUALITY = 'medium';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
+// ── Prompt builder for carousel slide images ──────────────────────────────
+// Produces quality-differentiated prompts grounded in brand identity.
+function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
+  const aesthetic = aestheticOverride || (brand.aestheticDNA || '').split('\n')[0] || 'premium editorial design';
+
+  // Brand color context
+  const accent   = brand.accent   || '#C8A020';
+  const bgDark   = brand.bgDark   || '#0A0A0A';
+  const bgLight  = brand.bgLight  || '#F5F4F0';
+  const isFirst  = slideNumber === 1 || slideRole === 'CAPA';
+  const isLast   = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
+  const roleStr  = isFirst ? 'cover / hero slide' : isLast ? 'closing CTA slide' : `content slide ${slideNumber} of ${totalSlides}`;
+
+  // Slide text context
+  const textCtx = heading
+    ? `Main headline (render as large, legible typographic element integrated into design): "${heading}"` +
+      (body ? ` Supporting body text (smaller, secondary): "${body}"` : '')
+    : `Slide ${slideNumber} — abstract visual composition, no mandatory text.`;
+
+  // Quality-specific visual instructions
+  const qualityLayers = {
+    low: [
+      'Flat, clean composition. Simple geometric shapes.',
+      'Solid or very subtle gradient background.',
+      'Basic typographic layout, minimal shadows.',
+      'Muted color palette, low contrast.',
+      'Simple details — no textures, no photography.',
+    ],
+    medium: [
+      'Semi-detailed composition with depth and hierarchy.',
+      'Soft gradients, subtle textures, balanced shadows.',
+      `Brand accent color ${accent} used with intention as highlight.`,
+      'Clear typographic hierarchy, moderate contrast.',
+      'Optional abstract background element (geometric or photographic crop).',
+      'Balanced lighting — not flat, not overly dramatic.',
+    ],
+    high: [
+      'Highly detailed, premium editorial composition.',
+      `Rich, multi-layered background using brand palette: dark ${bgDark}, light ${bgLight}, accent ${accent}.`,
+      'Professional studio-quality lighting — directional, with depth and shadow.',
+      'Sophisticated typographic design: strong weight contrast, precise spacing.',
+      'Textured overlays: subtle grain, material depth (paper, metal, glass depending on brand).',
+      'Vibrant, vivid colors — not flat. Depth, contrast, premium finish.',
+      isFirst ? 'Hero visual: maximum impact, full-bleed dramatic composition.' : '',
+      isLast  ? 'CTA visual: warm, inviting, strong call-to-action energy.' : '',
+    ].filter(Boolean),
+  };
+
+  const qInstructions = qualityLayers[quality] || qualityLayers.medium;
+
+  return [
+    // Core aesthetic from brand
+    `Instagram carousel slide — ${roleStr}.`,
+    `Brand aesthetic: ${aesthetic}`,
+    // Slide text
+    textCtx,
+    // Scene
+    sceneHint ? `Visual concept: ${sceneHint}` : '',
+    // Quality-specific rendering
+    ...qInstructions,
+    // Technical constraints
+    'Aspect ratio portrait 4:5 (vertical), 1024x1536px.',
+    'Text fully integrated into design — no floating labels, no watermarks, no logos.',
+    'Professional social-media design quality.',
+  ].filter(Boolean).join(' ');
+}
+
 // ── User Settings ─────────────────────────────────────────────────────────
 function loadUserSettings() {
   try {
@@ -920,6 +987,32 @@ app.get('/api/gphotos/photo/:id', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+// Proxy server-side para imagens do Google Fotos — evita CORS no canvas do frontend.
+// Também aceita URLs temporárias do Google Photos como ?url=...
+app.get('/api/gphotos/proxy-image', async (req, res) => {
+  const userId = req.query.userId || 'default';
+  const photoUrl = req.query.url;
+  if (!photoUrl) return res.status(400).json({ error: 'url obrigatório' });
+  // Validação mínima — só permite domínios Google Fotos
+  if (!photoUrl.startsWith('https://lh3.googleusercontent.com') &&
+      !photoUrl.startsWith('https://photos.google.com') &&
+      !photoUrl.startsWith('https://googleusercontent.com')) {
+    return res.status(403).json({ error: 'Domínio não permitido' });
+  }
+  const accessToken = await getGPhotoAccessToken(userId);
+  if (!accessToken) return res.status(401).json({ error: 'Não autenticado' });
+  try {
+    const imgRes = await fetch(photoUrl, { headers: { 'Authorization': 'Bearer ' + accessToken } });
+    if (!imgRes.ok) return res.status(imgRes.status).json({ error: 'Falha ao buscar imagem' });
+    const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+    const buffer = Buffer.from(await imgRes.arrayBuffer());
+    res.set('Content-Type', contentType);
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cache-Control', 'private, max-age=300');
+    res.send(buffer);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CALENDÁRIO
@@ -1284,24 +1377,69 @@ app.post('/api/canva/prepare-texts', (req, res) => {
 // ── Health ────────────────────────────────────────────────────────────────
 
 // Geracao de imagem por slide (GPT Image-1)
+// Aceita referenceImageB64 (base64 sem prefixo) para usar a foto real do Google Fotos como base
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
-    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality } = req.body;
+    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality, referenceImageB64 } = req.body;
     const quality = resolveQuality(rawQuality);
     const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account = getAccount(profile);
-    const styleHint = designStyleHint || (brand.aestheticDNA || '').split('\n')[0] || 'editorial premium';
-    const sceneHint = imagePromptHint || heading || topic || '';
-    const promptPhoto = [styleHint, sceneHint ? 'Scene concept: ' + sceneHint : '', 'Portrait orientation 4:5. No text overlays. Clean composition.', funcao === 'CAPA' ? 'Hero image, strong visual impact.' : 'Supporting editorial visual.'].filter(Boolean).join(' ');
+    const sceneHint = imagePromptHint || topic || '';
+    const promptPhoto = buildCarouselPrompt({
+      quality,
+      brand,
+      aestheticOverride: designStyleHint || null,
+      slideRole: funcao,
+      heading, body,
+      slideNumber: slideNumber || 1,
+      totalSlides: totalSlides || 1,
+      sceneHint,
+    });
     const moodList = brand.moods || ['HERO_DARK'];
-    const moodIndex = Math.min(slideNumber - 1, moodList.length - 1);
+    const moodIndex = Math.min((slideNumber || 1) - 1, moodList.length - 1);
     const mood = moodList[moodIndex] || 'HERO_DARK';
     const isDark = mood.includes('DARK') || mood.includes('LOFI') || mood.includes('WARM') || mood === 'FRASE_IMPACTO' || mood === 'VIRADA' || mood === 'CTA_INTIMO';
     const designMeta = { heading: heading||'', body: body||'', accent: brand.accent||'#C8A020', bgDark: brand.bgDark||'#0A0A0A', bgLight: brand.bgLight||'#F5F4F0', handle: brand.handle||account.handle, isDark, mood, slideNumber, totalSlides, funcao: funcao||(slideNumber===1?'CAPA':slideNumber===totalSlides?'ASSINATURA':'CONTEUDO') };
-    const r = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
-    const data = await r.json();
-    if (data.error) { console.error('[carousel-slide] GPT error:', data.error); return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) }); }
-    const imageData = data.data && data.data[0];
+
+    let imageData;
+
+    if (referenceImageB64) {
+      // Usa a foto real como imagem de entrada via edits endpoint
+      const imgBuffer = Buffer.from(referenceImageB64, 'base64');
+      const { FormData: NodeFormData, Blob: NodeBlob } = await import('node:buffer').catch(() => ({}));
+      const FormDataLib = (typeof FormData !== 'undefined') ? FormData : (await import('formdata-node').catch(() => null))?.FormData;
+      const form = new (FormDataLib || FormData)();
+      form.append('model', 'gpt-image-1');
+      form.append('prompt', promptPhoto + ' Keep the person/subject from the reference photo as the main element. Apply the brand editorial style on top.');
+      form.append('n', '1');
+      form.append('size', '1024x1536');
+      form.append('quality', quality);
+      // Envia a imagem como ficheiro PNG
+      const blob = new Blob([imgBuffer], { type: 'image/png' });
+      form.append('image', blob, 'photo.png');
+      const r = await fetch('https://api.openai.com/v1/images/edits', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY },
+        body: form,
+      });
+      const data = await r.json();
+      if (data.error) {
+        console.warn('[carousel-slide] edits falhou, fallback para generations:', data.error.message);
+        // Fallback: gera normalmente sem a foto
+        const r2 = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
+        const data2 = await r2.json();
+        if (data2.error) return res.status(500).json({ error: data2.error.message });
+        imageData = data2.data?.[0];
+      } else {
+        imageData = data.data?.[0];
+      }
+    } else {
+      const r = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', headers: { 'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-image-1', prompt: promptPhoto, n: 1, size: '1024x1536', quality, output_format: 'png' }) });
+      const data = await r.json();
+      if (data.error) { console.error('[carousel-slide] GPT error:', data.error); return res.status(500).json({ error: data.error.message || JSON.stringify(data.error) }); }
+      imageData = data.data?.[0];
+    }
+
     if (!imageData) return res.status(500).json({ error: 'Nenhuma imagem retornada' });
     res.json({ success: true, b64: imageData.b64_json || null, url: imageData.url || null, designMeta, quality });
   } catch (err) { console.error('[image/carousel-slide]', err); res.status(500).json({ error: err.message }); }
@@ -1456,6 +1594,107 @@ setInterval(async () => {
   }
   if (changed) writeJSON(SCHEDULED_FILE, posts);
 }, 60000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CANVA TEMPLATE SLIDE GENERATOR
+// POST /api/canva/generate-slides
+// Gera imagens PNG de cada slide no estilo visual do template escolhido
+// ═══════════════════════════════════════════════════════════════════════════
+
+app.post('/api/canva/generate-slides', async (req, res) => {
+  try {
+    const { templateId, slides, profile, quality: rawQuality } = req.body;
+
+    if (!templateId) return res.status(400).json({ error: 'templateId obrigatório' });
+    if (!slides || !slides.length) return res.status(400).json({ error: 'slides obrigatório' });
+
+    const quality = resolveQuality(rawQuality || 'medium');
+    const templates = loadCT();
+    const tmpl = templates.find(t => t.id === templateId);
+    if (!tmpl) return res.status(404).json({ error: 'Template não encontrado' });
+
+    const aesthetic = tmpl.aesthetic || 'editorial clean, Instagram carousel';
+    const templateName = tmpl.name || 'Template';
+    const notes = tmpl.notes || '';
+    const results = [];
+
+    const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
+
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i];
+      const slideNumber = slide.slideNumber || slide.slide || (i + 1);
+      const totalSlides = slides.length;
+      const heading = slide.heading || (slide.textos && slide.textos[0]?.texto) || '';
+      const body    = slide.body    || (slide.textos && slide.textos[1]?.texto) || '';
+      const funcao  = slide.funcao  || (i === 0 ? 'CAPA' : i === slides.length - 1 ? 'CTA' : 'DESENVOLVIMENTO');
+
+      // Template-specific aesthetic appended to brand DNA
+      const aestheticOverride = [aesthetic, notes].filter(Boolean).join('. ');
+
+      const imagePrompt = buildCarouselPrompt({
+        quality,
+        brand,
+        aestheticOverride,
+        slideRole: funcao,
+        heading, body,
+        slideNumber,
+        totalSlides,
+        sceneHint: '',
+      });
+
+      try {
+        const r = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-image-1',
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1536',
+            quality,
+            output_format: 'png',
+          }),
+        });
+
+        const data = await r.json();
+        if (data.error) {
+          results.push({ slideNumber, error: data.error.message, b64: null });
+          continue;
+        }
+
+        const imageData = data.data && data.data[0];
+        results.push({
+          slideNumber,
+          funcao,
+          heading,
+          body,
+          b64: imageData?.b64_json || null,
+          url: imageData?.url || null,
+          prompt: imagePrompt,
+        });
+      } catch (slideErr) {
+        results.push({ slideNumber, error: slideErr.message, b64: null });
+      }
+    }
+
+    const ok = results.filter(r => r.b64 || r.url).length;
+    res.json({
+      success: true,
+      templateName,
+      aesthetic,
+      quality,
+      total: slides.length,
+      generated: ok,
+      slides: results,
+    });
+  } catch (err) {
+    console.error('[canva/generate-slides]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });

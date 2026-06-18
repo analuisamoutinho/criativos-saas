@@ -1192,12 +1192,38 @@ async function generateCarouselImages(autoPublishConfig=null){
           const gpD=await gpR.json();
           if(gpD.suggestions?.length){
             const gPhotoUrl=gpD.suggestions[0].slideUrl;
+            // Proxy via servidor para evitar CORS no canvas
+            const proxiedUrl=`/api/gphotos/proxy-image?url=${encodeURIComponent(gPhotoUrl)}&userId=default`;
             const brand=BRAND_ACCENT[currentProfile]||BRAND_ACCENT.pessoal;
             const designMeta={heading:s.heading||'',body:s.body||'',accent:brand.accent,bgDark:brand.bg,handle:brand.handle,slideNumber:i+1,totalSlides:slides.length,funcao};
-            const pngB64=await SlideRenderer.renderSlide(gPhotoUrl,designMeta);
-            if(pngB64){
-              try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}
-              finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+
+            if(engine==='gpt'){
+              // Para engine GPT: passa a foto real como base64 para o endpoint de geração
+              const proxyRes=await fetch(proxiedUrl);
+              if(proxyRes.ok){
+                const blob=await proxyRes.blob();
+                const reader=new FileReader();
+                const photoB64=await new Promise(resolve=>{reader.onload=e=>resolve(e.target.result.split(',')[1]);reader.readAsDataURL(blob);});
+                const slideRes=await fetch('/api/image/carousel-slide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({heading:s.heading||'',body:s.body||'',slideNumber:i+1,totalSlides:slides.length,funcao,topic,profile:currentProfile,contentId,imagePromptHint:s.imagePrompt||'',designStyleHint:getActiveDesignStyle()?.promptStyle||'',quality:getSelectedQuality(),referenceImageB64:photoB64})});
+                const slideData=await slideRes.json();
+                if(!slideData.error){
+                  const photoUrl=slideData.url||(slideData.b64?`data:image/png;base64,${slideData.b64}`:null);
+                  if(photoUrl&&slideData.designMeta){
+                    const pngB64=await SlideRenderer.renderSlide(photoUrl,slideData.designMeta);
+                    if(pngB64){
+                      try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}
+                      finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+                    }else{finalUrl=photoUrl;}
+                  }else if(photoUrl){finalUrl=photoUrl;}
+                }
+              }
+            }else{
+              // Para engine Gemini/canvas: renderiza a foto proxied diretamente
+              const pngB64=await SlideRenderer.renderSlide(proxiedUrl,designMeta);
+              if(pngB64){
+                try{const sv=await fetch('/api/image/save-b64',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({b64:pngB64,contentId:contentId||`tmp_${Date.now()}`,slideIndex:i})});const svd=await sv.json();if(svd.url)finalUrl=svd.url;}catch(e){}
+                finalUrl=finalUrl||`data:image/png;base64,${pngB64}`;
+              }
             }
           }
         }catch(gpErr){console.warn('[gphotos slide '+i+']',gpErr.message);}
@@ -1829,6 +1855,405 @@ loadDashboard();
 loadUserSettings();
 document.addEventListener('DOMContentLoaded',()=>{initSlidesDragScroll();});
 setTimeout(initSlidesDragScroll,500);
+
+/* ═══════════════════════════════════════════════════════
+   PATCH: Canva → Aba "Gerar com Template"
+   ═══════════════════════════════════════════════════════ */
+
+const CANVA_GERAR_HTML = `
+<div id="canvaTabGerar" style="display:none;">
+
+  <!-- Seletor de Conteúdo -->
+  <div class="card" style="max-width:800px;margin-bottom:20px;">
+    <div class="card-title">📄 Conteúdo + Template</div>
+    <div class="form-row" style="align-items:flex-end;gap:16px;">
+      <div class="form-group" style="flex:1;margin:0;">
+        <label class="form-label">Conteúdo da biblioteca</label>
+        <select class="select" id="canvaGerarContentSelect" onchange="onCanvaGerarContentSelect()">
+          <option value="">— escolhe um conteúdo —</option>
+        </select>
+      </div>
+      <div class="form-group" style="width:60px;margin:0;">
+        <label class="form-label">Qualidade</label>
+        <select class="select" id="canvaGerarQuality">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Preview do conteúdo selecionado -->
+    <div id="canvaGerarContentPreview" style="display:none;margin-top:12px;padding:10px 14px;background:var(--pale);border-radius:var(--radius);font-size:.82rem;color:var(--mid);border-left:3px solid var(--magenta);"></div>
+  </div>
+
+  <!-- Grid de templates para escolher -->
+  <div class="card" style="max-width:800px;margin-bottom:20px;">
+    <div class="card-title">🎨 Escolher estilo do template</div>
+    <div id="canvaGerarTemplateGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+      <div style="color:var(--mid);font-size:.82rem;grid-column:1/-1;text-align:center;padding:24px;">A carregar templates...</div>
+    </div>
+  </div>
+
+  <!-- Botão gerar -->
+  <div style="max-width:800px;margin-bottom:24px;">
+    <button class="btn btn-primary" id="btnCanvaGerar" onclick="gerarSlidesComTemplate()" disabled style="width:100%;padding:14px;font-size:.95rem;">
+      🖼️ Gerar slides com este estilo
+    </button>
+    <div id="canvaGerarInfo" style="font-size:.75rem;color:var(--mid);text-align:center;margin-top:6px;display:none;">
+      Cada slide é gerado individualmente — pode levar ~10–20s por slide.
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div id="canvaGerarProgress" style="display:none;max-width:800px;margin-bottom:24px;">
+    <div class="card" style="padding:20px 24px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+        <div class="spinner"></div>
+        <div>
+          <div style="font-weight:700;font-size:.9rem;" id="canvaGerarProgressLabel">Gerando slide 1...</div>
+          <div style="font-size:.75rem;color:var(--mid);margin-top:2px;" id="canvaGerarProgressSub">Aplicando estilo do template</div>
+        </div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="canvaGerarProgressFill" style="width:0%"></div></div>
+      <div style="font-size:.72rem;color:var(--mid);text-align:right;margin-top:4px;" id="canvaGerarProgressCount">0 / 0</div>
+    </div>
+  </div>
+
+  <!-- Resultado: grid de slides gerados -->
+  <div id="canvaGerarResult" style="display:none;max-width:1100px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-family:var(--font-head);font-size:1rem;font-weight:700;" id="canvaGerarResultTitle">Slides gerados</div>
+        <div style="font-size:.75rem;color:var(--mid);margin-top:2px;" id="canvaGerarResultSub"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="gerarSlidesComTemplate()">🔄 Regenerar</button>
+        <button class="btn btn-primary btn-sm" onclick="baixarTodosSlides()">⬇️ Baixar todos os PNGs</button>
+      </div>
+    </div>
+    <div id="canvaGerarSlidesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;"></div>
+  </div>
+
+</div>
+`;
+
+const CANVA_GERAR_CSS = `
+.cg-template-card {
+  background: var(--white);
+  border: 2px solid var(--light);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  cursor: pointer;
+  transition: all .18s;
+  text-align: left;
+}
+.cg-template-card:hover { border-color: var(--magenta); box-shadow: var(--shadow); transform: translateY(-2px); }
+.cg-template-card.selected { border-color: var(--magenta); background: rgba(228,0,124,.04); box-shadow: 0 0 0 3px rgba(228,0,124,.15); }
+.cg-template-thumb {
+  height: 90px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--pale), var(--light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.cg-template-thumb img { width:100%;height:100%;object-fit:cover; }
+.cg-template-name { font-size:.82rem;font-weight:700;color:var(--dark);margin-bottom:4px;line-height:1.3; }
+.cg-template-aesthetic { font-size:.68rem;color:var(--mid);line-height:1.4; }
+.cg-template-types { display:flex;gap:4px;flex-wrap:wrap;margin-top:6px; }
+
+.cg-slide-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: transform .2s, box-shadow .2s;
+}
+.cg-slide-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.cg-slide-preview {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  display: block;
+  background: var(--pale);
+}
+.cg-slide-preview-placeholder {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: var(--gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: white;
+  font-size: .8rem;
+}
+.cg-slide-info { padding: 10px 12px 12px; }
+.cg-slide-num { font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--magenta);margin-bottom:3px; }
+.cg-slide-heading { font-size:.8rem;font-weight:600;color:var(--dark);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px; }
+.cg-slide-error { background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;padding:6px 10px;font-size:.72rem;color:#dc2626;margin-bottom:8px; }
+.cg-slide-generating {
+  width: 100%;
+  aspect-ratio: 2/3;
+  background: linear-gradient(135deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 200%;
+  animation: shimmer 1.5s infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+`;
+
+let canvaGerarSelectedTemplate = null;
+let canvaGerarSelectedContent  = null;
+let canvaGerarGeneratedSlides  = [];
+
+function initCanvaGerarTab() {
+  if (!document.getElementById('canvaGerarStyles')) {
+    const style = document.createElement('style');
+    style.id = 'canvaGerarStyles';
+    style.textContent = CANVA_GERAR_CSS;
+    document.head.appendChild(style);
+  }
+  renderCanvaGerarTemplateGrid();
+  populateCanvaGerarContentSelect();
+}
+
+function renderCanvaGerarTemplateGrid() {
+  const grid = document.getElementById('canvaGerarTemplateGrid');
+  if (!grid) return;
+  const templates = canvaTemplates;
+  if (!templates || !templates.length) {
+    grid.innerHTML = '<div style="color:var(--mid);grid-column:1/-1;text-align:center;padding:32px;font-size:.85rem;">Nenhum template cadastrado ainda.<br><button class="btn btn-outline btn-sm" onclick="canvaTab(\'templates\',document.querySelector(\'.canva-tab\'))" style="margin-top:10px;">+ Adicionar template</button></div>';
+    return;
+  }
+  grid.innerHTML = templates.map(t => {
+    const types = (Array.isArray(t.contentTypes) ? t.contentTypes : [t.contentTypes]).filter(Boolean);
+    const typePills = types.map(ct => {
+      const f = CANVA_CT.find(x => x.id === ct);
+      return f ? `<span class="canva-type-pill">${f.e} ${f.l}</span>` : '';
+    }).join('');
+    const thumb = t.thumbnailUrl
+      ? `<img src="${t.thumbnailUrl}" style="width:100%;height:100%;object-fit:cover;"/>`
+      : `<span style="font-size:2rem;opacity:.4;">🎨</span>`;
+    return `<div class="cg-template-card" id="cgTmpl_${t.id}" onclick="selecionarTemplateGerar('${t.id}')">
+      <div class="cg-template-thumb">${thumb}</div>
+      <div class="cg-template-name">${t.name}</div>
+      <div class="cg-template-aesthetic">${(t.aesthetic || '').slice(0, 80)}${(t.aesthetic || '').length > 80 ? '…' : ''}</div>
+      <div class="cg-template-types">${typePills}</div>
+      ${t.slideCount ? `<div style="font-size:.65rem;color:var(--mid);margin-top:4px;">🖼️ ${t.slideCount} slides</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function selecionarTemplateGerar(templateId) {
+  canvaGerarSelectedTemplate = templateId;
+  document.querySelectorAll('.cg-template-card').forEach(el => el.classList.remove('selected'));
+  const card = document.getElementById(`cgTmpl_${templateId}`);
+  if (card) card.classList.add('selected');
+  atualizarBotaoGerar();
+}
+
+async function populateCanvaGerarContentSelect() {
+  await refreshContentCache();
+  const sel = document.getElementById('canvaGerarContentSelect');
+  if (!sel) return;
+  const items = contentCache.filter(i => i.profile === currentProfile || !i.profile);
+  sel.innerHTML = '<option value="">— escolhe um conteúdo —</option>' +
+    items.slice(0, 40).map(i => {
+      const label = (i.topic || i.caption?.slice(0, 50) || 'Sem título').replace(/"/g, '&quot;');
+      const tipo  = i.contentMachineType || i.type || '';
+      return `<option value="${i.id}">[${tipo}] ${label}</option>`;
+    }).join('');
+}
+
+function onCanvaGerarContentSelect() {
+  const id = document.getElementById('canvaGerarContentSelect')?.value;
+  const preview = document.getElementById('canvaGerarContentPreview');
+  if (!id) {
+    canvaGerarSelectedContent = null;
+    if (preview) preview.style.display = 'none';
+    atualizarBotaoGerar();
+    return;
+  }
+  const item = contentCache.find(i => i.id === id);
+  canvaGerarSelectedContent = item;
+  if (item && preview) {
+    const slides = item.carouselData?.slides || [];
+    preview.style.display = 'block';
+    preview.innerHTML = `<strong>${item.topic || 'Sem título'}</strong> &nbsp;·&nbsp; ${slides.length} slides &nbsp;·&nbsp; ${item.contentMachineType || item.type || 'post'}`;
+  }
+  atualizarBotaoGerar();
+}
+
+function atualizarBotaoGerar() {
+  const btn  = document.getElementById('btnCanvaGerar');
+  const info = document.getElementById('canvaGerarInfo');
+  const ok   = canvaGerarSelectedTemplate && canvaGerarSelectedContent;
+  if (btn) btn.disabled = !ok;
+  if (info) info.style.display = ok ? 'block' : 'none';
+}
+
+async function gerarSlidesComTemplate() {
+  if (!canvaGerarSelectedTemplate || !canvaGerarSelectedContent) {
+    return toast('Escolhe um conteúdo e um template primeiro', 'error');
+  }
+  const item   = canvaGerarSelectedContent;
+  const slides = item.carouselData?.slides || [];
+  if (!slides.length) return toast('Este conteúdo não tem slides gerados', 'error');
+
+  const quality  = document.getElementById('canvaGerarQuality')?.value || 'medium';
+  const template = canvaTemplates.find(t => t.id === canvaGerarSelectedTemplate);
+
+  document.getElementById('btnCanvaGerar').disabled = true;
+  document.getElementById('canvaGerarResult').style.display = 'none';
+  document.getElementById('canvaGerarProgress').style.display = 'block';
+
+  const progressLabel = document.getElementById('canvaGerarProgressLabel');
+  const progressSub   = document.getElementById('canvaGerarProgressSub');
+  const progressFill  = document.getElementById('canvaGerarProgressFill');
+  const progressCount = document.getElementById('canvaGerarProgressCount');
+
+  canvaGerarGeneratedSlides = [];
+
+  document.getElementById('canvaGerarResult').style.display = 'block';
+  document.getElementById('canvaGerarResultTitle').textContent = `${template?.name || 'Template'} — ${item.topic || 'Conteúdo'}`;
+  document.getElementById('canvaGerarResultSub').textContent = `${slides.length} slides · estilo: ${(template?.aesthetic || '').slice(0, 60)}`;
+
+  const grid = document.getElementById('canvaGerarSlidesGrid');
+  grid.innerHTML = slides.map((s, i) => `
+    <div class="cg-slide-card" id="cgSlideCard_${i}">
+      <div class="cg-slide-generating" id="cgSlideShimmer_${i}">
+        <div class="spinner" style="border-top-color:var(--magenta);"></div>
+      </div>
+      <div class="cg-slide-info">
+        <div class="cg-slide-num">Slide ${s.slideNumber || i + 1} · ${s.funcao || ''}</div>
+        <div class="cg-slide-heading">${s.heading || ''}</div>
+        <div style="text-align:center;">
+          <button class="btn btn-secondary btn-sm" style="width:100%;opacity:.4;" disabled id="cgDlBtn_${i}">⬇️ Baixar PNG</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  for (let i = 0; i < slides.length; i++) {
+    const s   = slides[i];
+    const pct = Math.round(((i) / slides.length) * 100);
+    progressLabel.textContent = `Gerando slide ${i + 1} de ${slides.length}…`;
+    progressSub.textContent   = `"${(s.heading || '').slice(0, 50)}"`;
+    progressFill.style.width  = `${pct}%`;
+    progressCount.textContent = `${i} / ${slides.length}`;
+
+    try {
+      const r = await fetch('/api/canva/generate-slides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateId: canvaGerarSelectedTemplate,
+          slides: [s],
+          profile: currentProfile,
+          quality,
+        }),
+      });
+      const d = await r.json();
+      if (d.error) throw new Error(d.error);
+
+      const slideResult = d.slides?.[0];
+      canvaGerarGeneratedSlides[i] = slideResult;
+
+      const shimmer = document.getElementById(`cgSlideShimmer_${i}`);
+      const dlBtn   = document.getElementById(`cgDlBtn_${i}`);
+
+      if (slideResult?.b64) {
+        const dataUrl = `data:image/png;base64,${slideResult.b64}`;
+        if (shimmer) {
+          const img = document.createElement('img');
+          img.className = 'cg-slide-preview';
+          img.src = dataUrl;
+          shimmer.replaceWith(img);
+        }
+        if (dlBtn) {
+          dlBtn.disabled = false;
+          dlBtn.style.opacity = '1';
+          dlBtn.onclick = () => baixarSlide(i, s.slideNumber || i + 1, dataUrl, item.topic);
+        }
+      } else if (slideResult?.error) {
+        if (shimmer) shimmer.innerHTML = `<div style="padding:16px;font-size:.75rem;color:#dc2626;text-align:center;">❌ ${slideResult.error}</div>`;
+      }
+    } catch (err) {
+      const shimmer = document.getElementById(`cgSlideShimmer_${i}`);
+      if (shimmer) shimmer.innerHTML = `<div style="padding:16px;font-size:.75rem;color:#dc2626;text-align:center;">❌ Erro: ${err.message}</div>`;
+      canvaGerarGeneratedSlides[i] = null;
+    }
+  }
+
+  progressFill.style.width  = '100%';
+  progressCount.textContent = `${slides.length} / ${slides.length}`;
+  progressLabel.textContent = '✅ Todos os slides gerados!';
+  progressSub.textContent   = '';
+  setTimeout(() => { document.getElementById('canvaGerarProgress').style.display = 'none'; }, 1500);
+  document.getElementById('btnCanvaGerar').disabled = false;
+
+  const ok = canvaGerarGeneratedSlides.filter(s => s?.b64).length;
+  toast(`${ok} slides gerados com sucesso! ✅`, 'success');
+}
+
+function baixarSlide(idx, slideNum, dataUrl, topicName) {
+  const topic = (topicName || 'slide').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 30);
+  const a = document.createElement('a');
+  a.href     = dataUrl;
+  a.download = `slide_${String(slideNum).padStart(2, '0')}_${topic}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+async function baixarTodosSlides() {
+  const item  = canvaGerarSelectedContent;
+  const topic = item?.topic || 'carrossel';
+  const validos = canvaGerarGeneratedSlides
+    .map((s, i) => s?.b64 ? { idx: i, b64: s.b64, num: s.slideNumber || i + 1 } : null)
+    .filter(Boolean);
+  if (!validos.length) return toast('Nenhum slide disponível para download', 'error');
+  toast(`Baixando ${validos.length} slides…`, 'info');
+  for (let i = 0; i < validos.length; i++) {
+    const { b64, num } = validos[i];
+    baixarSlide(i, num, `data:image/png;base64,${b64}`, topic);
+    await new Promise(r => setTimeout(r, 400));
+  }
+  toast(`${validos.length} PNGs baixados! 🎉`, 'success');
+}
+
+const _origCanvaTab = canvaTab;
+function canvaTab(t, b) {
+  document.querySelectorAll('.canva-tab').forEach(x => x.classList.remove('active'));
+  if (b) b.classList.add('active');
+  document.getElementById('canvaTabTemplates').style.display = t === 'templates' ? 'block' : 'none';
+  document.getElementById('canvaTabMatcher').style.display   = t === 'matcher'   ? 'block' : 'none';
+  const gerarEl = document.getElementById('canvaTabGerar');
+  if (gerarEl) gerarEl.style.display = t === 'gerar' ? 'block' : 'none';
+  if (t === 'gerar') initCanvaGerarTab();
+  if (t === 'matcher') populateCanvaContentSelect();
+}
+
+const _origInitCanva = initCanvaSection;
+async function initCanvaSection() {
+  await _origInitCanva();
+  if (!document.getElementById('canvaTabGerar')) {
+    const sectionCanva = document.getElementById('section-canva');
+    if (sectionCanva) sectionCanva.insertAdjacentHTML('beforeend', CANVA_GERAR_HTML);
+  }
+  if (!document.getElementById('canvaTabGerarBtn')) {
+    const tabsEl = document.querySelector('.canva-tabs');
+    if (tabsEl) tabsEl.insertAdjacentHTML('beforeend',
+      `<button class="canva-tab" onclick="canvaTab('gerar',this)" id="canvaTabGerarBtn">🖼️ Gerar com Template</button>`
+    );
+  }
+}
 </script>
 </body>
 </html>
