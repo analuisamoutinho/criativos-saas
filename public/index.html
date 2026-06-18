@@ -9,19 +9,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&display=swap" rel="stylesheet" />
 <style>
 :root {
-  --purple:    #3B0F4C;
+  --purple:    #160728;
   --magenta:   #E4007C;
   --dark:      #111827;
   --mid:       #6B7280;
   --light:     #E5E7EB;
-  --pale:      #F8FAFC;
+  --pale:      #F4F6F9;
   --white:     #FFFFFF;
-  --gradient:  linear-gradient(135deg, var(--purple) 0%, var(--magenta) 100%);
+  --gradient:  linear-gradient(135deg, #3B0F4C 0%, var(--magenta) 100%);
   --radius:    12px;
-  --radius-lg: 20px;
-  --shadow:    0 4px 24px rgba(59,15,76,.15);
-  --shadow-lg: 0 12px 48px rgba(59,15,76,.22);
-  --sidebar:   260px;
+  --radius-lg: 16px;
+  --shadow:    0 2px 12px rgba(0,0,0,.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.13);
+  --sidebar:   240px;
   --font-head: 'Plus Jakarta Sans', sans-serif;
   --font-body: 'DM Sans', sans-serif;
 }
@@ -37,38 +37,60 @@
 html{font-size:15px;}
 body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-height:100vh;display:flex;}
 .sidebar{width:var(--sidebar);min-height:100vh;background:var(--purple);display:flex;flex-direction:column;position:fixed;left:0;top:0;z-index:100;overflow:hidden;}
-.sidebar::before{content:'';position:absolute;bottom:-80px;right:-80px;width:260px;height:260px;background:var(--magenta);border-radius:50%;opacity:.12;pointer-events:none;}
-.logo{padding:28px 24px 20px;border-bottom:1px solid rgba(255,255,255,.1);}
-.logo-icon{width:44px;height:44px;background:var(--gradient);border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:22px;}
-.logo-name{font-family:var(--font-head);font-size:1.05rem;font-weight:800;color:var(--white);line-height:1.2;letter-spacing:-.01em;}
-.logo-name span{color:var(--magenta);display:block;font-size:1.2rem;}
-.logo-sub{font-size:.7rem;color:rgba(255,255,255,.45);margin-top:2px;letter-spacing:.04em;}
-.profile-switcher{padding:16px 16px 10px;}
-.profile-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);padding:0 8px;margin-bottom:6px;}
-.profile-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);border:none;background:transparent;color:rgba(255,255,255,.65);font-family:var(--font-body);font-size:.82rem;cursor:pointer;transition:all .2s;text-align:left;}
-.profile-btn:hover{background:rgba(255,255,255,.08);color:var(--white);}
-.profile-btn.active{background:rgba(228,0,124,.2);color:var(--white);}
-.profile-btn.active .profile-dot{background:var(--magenta);}
-.profile-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;}
-.profile-handle{font-size:.7rem;color:rgba(255,255,255,.4);margin-top:1px;}
-.nav{flex:1;padding:10px 16px;display:flex;flex-direction:column;gap:2px;overflow-y:auto;}
-.nav-section-title{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.3);padding:14px 8px 4px;}
-.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:var(--radius);border:none;background:transparent;color:rgba(255,255,255,.6);font-family:var(--font-body);font-size:.85rem;cursor:pointer;transition:all .2s;text-align:left;width:100%;}
-.nav-item:hover{background:rgba(255,255,255,.08);color:var(--white);}
-.nav-item.active{background:var(--gradient);color:var(--white);box-shadow:0 4px 16px rgba(228,0,124,.3);}
-.nav-icon{font-size:1.1rem;width:22px;text-align:center;flex-shrink:0;}
-.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh;}
-.topbar{height:64px;background:var(--white);border-bottom:1px solid var(--light);display:flex;align-items:center;justify-content:space-between;padding:0 32px;position:sticky;top:0;z-index:50;}
-.topbar-title{font-family:var(--font-head);font-size:1.1rem;font-weight:700;color:var(--dark);}
-.topbar-actions{display:flex;gap:10px;align-items:center;}
-.section{display:none;padding:32px;animation:fadeIn .3s ease;}
+.sidebar::before{content:'';position:absolute;bottom:-60px;right:-60px;width:200px;height:200px;background:var(--magenta);border-radius:50%;opacity:.08;pointer-events:none;}
+.logo{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:12px;}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,#3B0F4C,var(--magenta));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.logo-text{display:flex;flex-direction:column;}
+.logo-name{font-family:var(--font-head);font-size:.95rem;font-weight:800;color:var(--white);line-height:1.1;letter-spacing:-.01em;}
+.logo-name span{color:var(--magenta);}
+.logo-sub{font-size:.63rem;color:rgba(255,255,255,.38);margin-top:2px;letter-spacing:.03em;}
+.profile-switcher{padding:14px 14px 8px;}
+.profile-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.35);padding:0 8px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.profile-label-chevron{font-size:.55rem;opacity:.5;}
+.profile-btn{width:100%;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,.6);font-family:var(--font-body);font-size:.8rem;cursor:pointer;transition:all .18s;text-align:left;}
+.profile-btn:hover{background:rgba(255,255,255,.07);color:var(--white);}
+.profile-btn.active{background:rgba(228,0,124,.18);color:var(--white);}
+.profile-btn.active .profile-dot{background:var(--magenta);box-shadow:0 0 0 2px rgba(228,0,124,.3);}
+.profile-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#3B0F4C,var(--magenta));display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#fff;flex-shrink:0;overflow:hidden;}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;}
+.profile-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);flex-shrink:0;}
+.profile-name-wrap{display:flex;flex-direction:column;min-width:0;}
+.profile-handle{font-size:.65rem;color:rgba(255,255,255,.38);margin-top:1px;}
+.profile-see-all{display:flex;align-items:center;gap:6px;padding:6px 10px;margin:4px 0;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-family:var(--font-body);font-size:.72rem;cursor:pointer;transition:all .18s;width:100%;}
+.profile-see-all:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);}
+.nav{flex:1;padding:8px 12px;display:flex;flex-direction:column;gap:1px;overflow-y:auto;}
+.nav-section-title{font-size:.58rem;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.28);padding:14px 8px 5px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;border:none;background:transparent;color:rgba(255,255,255,.55);font-family:var(--font-body);font-size:.82rem;cursor:pointer;transition:all .18s;text-align:left;width:100%;}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.9);}
+.nav-item.active{background:var(--magenta);color:var(--white);box-shadow:0 4px 14px rgba(228,0,124,.35);}
+.nav-icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0;}
+.sidebar-user{padding:14px 14px 18px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;}
+.sidebar-user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3B0F4C,var(--magenta));display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0;}
+.sidebar-user-info{flex:1;min-width:0;}
+.sidebar-user-name{font-size:.78rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sidebar-user-role{font-size:.65rem;color:rgba(255,255,255,.38);}
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh;background:var(--pale);}
+.topbar{height:64px;background:var(--white);border-bottom:1px solid var(--light);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:0;z-index:50;gap:16px;}
+.topbar-title{font-family:var(--font-head);font-size:1rem;font-weight:700;color:var(--dark);flex-shrink:0;}
+.topbar-search{flex:1;max-width:400px;position:relative;}
+.topbar-search input{width:100%;padding:9px 16px 9px 38px;border-radius:99px;border:1.5px solid var(--light);background:var(--pale);font-family:var(--font-body);font-size:.82rem;color:var(--dark);outline:none;transition:border-color .2s;}
+.topbar-search input:focus{border-color:var(--magenta);background:var(--white);}
+.topbar-search input::placeholder{color:var(--mid);opacity:.7;}
+.topbar-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.85rem;color:var(--mid);pointer-events:none;}
+.topbar-actions{display:flex;gap:10px;align-items:center;flex-shrink:0;}
+.topbar-bell{position:relative;width:38px;height:38px;border-radius:50%;border:1.5px solid var(--light);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:var(--mid);transition:all .18s;}
+.topbar-bell:hover{border-color:var(--magenta);color:var(--magenta);}
+.topbar-bell-badge{position:absolute;top:2px;right:2px;background:var(--magenta);color:#fff;border-radius:50%;width:16px;height:16px;font-size:.55rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--white);}
+.btn-new-content{background:var(--magenta);color:var(--white);border:none;border-radius:99px;padding:9px 18px;font-family:var(--font-body);font-size:.82rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .18s;box-shadow:0 4px 14px rgba(228,0,124,.3);}
+.btn-new-content:hover{background:#c4006a;box-shadow:0 6px 20px rgba(228,0,124,.4);}
+.section{display:none;padding:28px 32px;animation:fadeIn .3s ease;}
 .section.active{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.section-header{margin-bottom:28px;}
-.section-header h2{font-family:var(--font-head);font-size:1.6rem;font-weight:800;color:var(--dark);margin-bottom:4px;}
-.section-header p{color:var(--mid);font-size:.9rem;}
-.card{background:var(--white);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow);margin-bottom:20px;}
-.card-title{font-family:var(--font-head);font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.section-header{margin-bottom:24px;}
+.section-header h2{font-family:var(--font-head);font-size:1.75rem;font-weight:800;color:var(--dark);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+.section-header p{color:var(--mid);font-size:.88rem;}
+.card{background:var(--white);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow);margin-bottom:20px;border:1px solid rgba(0,0,0,.04);}
+.card-title{font-family:var(--font-head);font-size:.95rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:var(--dark);}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:var(--radius);border:none;font-family:var(--font-body);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
 .btn-primary{background:var(--gradient);color:var(--white);box-shadow:0 4px 14px rgba(228,0,124,.3);}
@@ -92,14 +114,16 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .badge-agendado{background:#DBEAFE;color:#1E40AF;}
 .badge-publicado{background:#D1FAE5;color:#065F46;}
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
-.stat-card{background:var(--white);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow);border-left:4px solid transparent;}
-.stat-card.accent-purple{border-left-color:var(--purple);}
-.stat-card.accent-magenta{border-left-color:var(--magenta);}
-.stat-card.accent-blue{border-left-color:#3B82F6;}
-.stat-card.accent-green{border-left-color:#10B981;}
-.stat-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mid);margin-bottom:6px;}
-.stat-value{font-family:var(--font-head);font-size:2rem;font-weight:800;color:var(--dark);}
-.stat-sub{font-size:.75rem;color:var(--mid);margin-top:3px;}
+.stat-card{background:var(--white);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.04);display:flex;align-items:center;gap:16px;}
+.stat-card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.stat-card.accent-purple .stat-card-icon{background:rgba(59,15,76,.1);}
+.stat-card.accent-magenta .stat-card-icon{background:rgba(228,0,124,.1);}
+.stat-card.accent-blue .stat-card-icon{background:rgba(59,130,246,.1);}
+.stat-card.accent-green .stat-card-icon{background:rgba(16,185,129,.1);}
+.stat-card-body{flex:1;min-width:0;}
+.stat-label{font-size:.72rem;font-weight:500;color:var(--mid);margin-bottom:4px;}
+.stat-value{font-family:var(--font-head);font-size:1.8rem;font-weight:800;color:var(--dark);line-height:1;}
+.stat-sub{font-size:.72rem;color:var(--mid);margin-top:4px;}
 .content-feed{display:flex;flex-direction:column;gap:10px;}
 .content-item{background:var(--white);border-radius:var(--radius);padding:14px 18px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:box-shadow .2s;}
 .content-item:hover{box-shadow:var(--shadow);}
@@ -437,39 +461,75 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 </head>
 <body>
 <aside class="sidebar">
-  <div class="logo"><div class="logo-icon">📱</div><div class="logo-name">Máquina <span>de Conteúdo</span></div><div class="logo-sub">Automação para Instagram</div></div>
+  <div class="logo">
+    <div class="logo-icon">
+      <img src="/logo-icon.svg" alt="Logo" style="width:26px;height:26px;object-fit:contain;" onerror="this.style.display='none';this.parentElement.textContent='📱';" />
+    </div>
+    <div class="logo-text">
+      <div class="logo-name">Máquina <span>de Conteúdo</span></div>
+      <div class="logo-sub">Automação para Instagram</div>
+    </div>
+  </div>
   <div class="profile-switcher">
-    <div class="profile-label">Perfil activo</div>
-    <button class="profile-btn active" onclick="setProfile('marca',this)"><div><div style="display:flex;align-items:center;gap:6px;"><span class="profile-dot"></span>Case Aceleradora</div><div class="profile-handle">@caseaceleradora</div></div></button>
-    <button class="profile-btn" onclick="setProfile('pessoal',this)"><div><div style="display:flex;align-items:center;gap:6px;"><span class="profile-dot"></span>Ana Moutinho</div><div class="profile-handle">@analuisa.moutinho</div></div></button>
-    <button class="profile-btn" onclick="setProfile('virttus',this)"><div><div style="display:flex;align-items:center;gap:6px;"><span class="profile-dot"></span>Virttus</div><div class="profile-handle">@virttus</div></div></button>
+    <div class="profile-label">Perfil ativo <span class="profile-label-chevron">▾</span></div>
+    <button class="profile-btn active" onclick="setProfile('marca',this)">
+      <div class="profile-avatar">A</div>
+      <div class="profile-name-wrap"><div>Case Aceleradora</div><div class="profile-handle">@caseaceleradora</div></div>
+      <span style="margin-left:auto;font-size:.6rem;color:rgba(228,0,124,.8);">●</span>
+    </button>
+    <button class="profile-btn" onclick="setProfile('pessoal',this)">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#7C3AED,#C026D3);">M</div>
+      <div class="profile-name-wrap"><div>Ana Moutinho</div><div class="profile-handle">@analuisa.moutinho</div></div>
+    </button>
+    <button class="profile-btn" onclick="setProfile('virttus',this)">
+      <div class="profile-avatar" style="background:linear-gradient(135deg,#0EA5E9,#6366F1);">V</div>
+      <div class="profile-name-wrap"><div>Virttus</div><div class="profile-handle">@virttus</div></div>
+    </button>
+    <button class="profile-see-all">↗ Ver todos os perfis</button>
   </div>
   <nav class="nav">
-    <div class="nav-section-title">Visão Geral</div>
+    <div class="nav-section-title">Principal</div>
     <button class="nav-item active" data-section="dashboard" onclick="showSection('dashboard',this)"><span class="nav-icon">⚡</span>Dashboard</button>
-    <button class="nav-item" data-section="library" onclick="showSection('library',this)"><span class="nav-icon">🗂️</span>Biblioteca</button>
-    <div class="nav-section-title">Criar</div>
-    <button class="nav-item" data-section="criar" onclick="showSection('criar',this)"><span class="nav-icon">✏️</span>Criar</button>
-    <div class="nav-section-title">Publicação</div>
+    <button class="nav-item" data-section="criar" onclick="showSection('criar',this)"><span class="nav-icon">✏️</span>Criar conteúdo</button>
     <button class="nav-item" data-section="calendar" onclick="showSection('calendar',this)"><span class="nav-icon">📅</span>Calendário</button>
-    <div class="nav-section-title">Recursos</div>
+    <div class="nav-section-title">Gestão</div>
+    <button class="nav-item" data-section="library" onclick="showSection('library',this)"><span class="nav-icon">🗂️</span>Biblioteca</button>
+    <div class="nav-section-title">Inteligência</div>
     <button class="nav-item" data-section="trends" onclick="showSection('trends',this)"><span class="nav-icon">📡</span>Tendências</button>
-    <button class="nav-item" data-section="photos" onclick="showSection('photos',this)"><span class="nav-icon">📸</span>Banco de Fotos</button>
-    <button class="nav-item" data-section="manual" onclick="showSection('manual',this)"><span class="nav-icon">📖</span>Manual</button>
-    <button class="nav-item" data-section="canva" onclick="showSection('canva',this)"><span class="nav-icon">🎨</span>Templates Canva</button>
+    <div class="nav-section-title">Marca</div>
+    <button class="nav-item" data-section="photos" onclick="showSection('photos',this)"><span class="nav-icon">📸</span>Banco de fotos</button>
+    <button class="nav-item" data-section="canva" onclick="showSection('canva',this)"><span class="nav-icon">🎨</span>Templates</button>
+    <button class="nav-item" data-section="manual" onclick="showSection('manual',this)"><span class="nav-icon">📖</span>Manual da marca</button>
   </nav>
+  <div class="sidebar-user">
+    <div class="sidebar-user-avatar">A</div>
+    <div class="sidebar-user-info">
+      <div class="sidebar-user-name">Case Aceleradora</div>
+      <div class="sidebar-user-role">Administrador</div>
+    </div>
+  </div>
 </aside>
 <main class="main">
-  <div class="topbar"><div class="topbar-title" id="topbarTitle">Dashboard</div><div class="topbar-actions"><span id="activeProfileBadge" style="font-size:.78rem;color:var(--mid);">Case Aceleradora</span><button class="btn btn-primary btn-sm" onclick="showSection('criar',null)">+ Criar conteúdo</button></div></div>
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-search">
+      <span class="topbar-search-icon">🔍</span>
+      <input type="text" placeholder="Buscar conteúdos, ideias, campanhas..." id="topbarSearch" />
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-bell" title="Notificações">🔔<span class="topbar-bell-badge">3</span></div>
+      <button class="btn-new-content" onclick="showSection('criar',null)">Novo conteúdo <span style="font-size:1rem;font-weight:400;">+</span></button>
+    </div>
+  </div>
 
   <!-- DASHBOARD -->
   <section class="section active" id="section-dashboard">
     <div class="section-header"><h2>Bom dia! 👋</h2><p>Resumo do teu conteúdo.</p></div>
     <div class="stats-row">
-      <div class="stat-card accent-purple"><div class="stat-label">Gerados</div><div class="stat-value" id="statTotal">–</div><div class="stat-sub">total na biblioteca</div></div>
-      <div class="stat-card accent-magenta"><div class="stat-label">Pendentes</div><div class="stat-value" id="statPendente">–</div><div class="stat-sub">aguardam publicação</div></div>
-      <div class="stat-card accent-blue"><div class="stat-label">Agendados</div><div class="stat-value" id="statAgendado">–</div><div class="stat-sub">prontos para publicar</div></div>
-      <div class="stat-card accent-green"><div class="stat-label">Publicados</div><div class="stat-value" id="statPublicado">–</div><div class="stat-sub">no Instagram</div></div>
+      <div class="stat-card accent-purple"><div class="stat-card-icon">📋</div><div class="stat-card-body"><div class="stat-label">Gerados</div><div class="stat-value" id="statTotal">–</div><div class="stat-sub">total na biblioteca</div></div></div>
+      <div class="stat-card accent-magenta"><div class="stat-card-icon">⏳</div><div class="stat-card-body"><div class="stat-label">Pendentes</div><div class="stat-value" id="statPendente">–</div><div class="stat-sub">aguardam publicação</div></div></div>
+      <div class="stat-card accent-blue"><div class="stat-card-icon">📅</div><div class="stat-card-body"><div class="stat-label">Agendados</div><div class="stat-value" id="statAgendado">–</div><div class="stat-sub">prontos para publicar</div></div></div>
+      <div class="stat-card accent-green"><div class="stat-card-icon">✅</div><div class="stat-card-body"><div class="stat-label">Publicados</div><div class="stat-value" id="statPublicado">–</div><div class="stat-sub">no Instagram</div></div></div>
     </div>
     <div class="grid-2">
       <div class="card"><div class="card-title">🕐 Recentes</div><div class="content-feed" id="dashRecentFeed"><div style="color:var(--mid);font-size:.85rem;text-align:center;padding:24px;">A carregar...</div></div></div>
