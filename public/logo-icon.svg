@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none">
+  <!-- Left stack (purple) - back cards -->
+  <rect x="4" y="14" width="32" height="46" rx="5" fill="#5B1FA8" opacity="0.5" transform="rotate(-10 20 37)"/>
+  <rect x="7" y="12" width="32" height="46" rx="5" fill="#6B2AB8" opacity="0.7" transform="rotate(-5 23 35)"/>
+  <!-- Left card (purple) -->
+  <rect x="8" y="10" width="33" height="48" rx="5" fill="#7B2FBE"/>
+  <!-- Play icon on left card -->
+  <polygon points="22,28 22,44 36,36" fill="white" opacity="0.9"/>
+  <!-- Lines on left card -->
+  <rect x="14" y="48" width="20" height="3" rx="1.5" fill="white" opacity="0.6"/>
+  <rect x="14" y="53" width="14" height="3" rx="1.5" fill="white" opacity="0.4"/>
+  <!-- Dot bottom left -->
+  <circle cx="32" cy="54" r="2" fill="white" opacity="0.5"/>
+
+  <!-- Right stack (pink) - back cards -->
+  <rect x="64" y="14" width="32" height="46" rx="5" fill="#D4006A" opacity="0.5" transform="rotate(10 80 37)"/>
+  <rect x="61" y="12" width="32" height="46" rx="5" fill="#E0006B" opacity="0.7" transform="rotate(5 77 35)"/>
+  <!-- Right card (magenta) -->
+  <rect x="59" y="10" width="33" height="48" rx="5" fill="#E4007C"/>
+  <!-- Image icon on right card -->
+  <circle cx="72" cy="27" r="5" fill="white" opacity="0.9"/>
+  <polygon points="62,48 72,36 78,42 82,38 92,48" fill="white" opacity="0.5" clip-path="inset(0 0 0 0)"/>
+  <!-- Lines on right card -->
+  <rect x="66" y="48" width="20" height="3" rx="1.5" fill="white" opacity="0.6"/>
+  <!-- Dots bottom right -->
+  <circle cx="64" cy="54" r="2" fill="white" opacity="0.5"/>
+  <circle cx="70" cy="54" r="2" fill="white" opacity="0.5"/>
+</svg>
