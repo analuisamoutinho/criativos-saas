@@ -426,6 +426,33 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .gp-photo-check{position:absolute;top:4px;right:4px;background:var(--magenta);color:#fff;border-radius:50%;width:20px;height:20px;display:none;align-items:center;justify-content:center;font-size:11px;}
 .gp-photo-item.selected .gp-photo-check{display:flex;}
 
+/* ── Carousel 3-column layout ── */
+.carousel-3col{display:grid;grid-template-columns:300px 1fr 260px;gap:16px;align-items:start;}
+.carousel-config-col{display:flex;flex-direction:column;gap:0;}
+.carousel-preview-col{display:flex;flex-direction:column;gap:16px;}
+.carousel-side-col{display:flex;flex-direction:column;gap:16px;position:sticky;top:80px;}
+.carousel-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;background:var(--white);border-radius:var(--radius-lg);border:2px dashed var(--light);color:var(--mid);text-align:center;padding:40px;gap:12px;}
+.carousel-empty-icon{font-size:3rem;opacity:.4;}
+.carousel-empty-text{font-size:.88rem;line-height:1.6;}
+.canva-suggest-card{background:var(--white);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.04);}
+.canva-suggest-title{font-family:var(--font-head);font-size:.88rem;font-weight:700;color:var(--dark);margin-bottom:4px;display:flex;align-items:center;gap:7px;}
+.canva-suggest-sub{font-size:.72rem;color:var(--mid);margin-bottom:14px;}
+.canva-suggest-grid{display:flex;flex-direction:column;gap:8px;}
+.canva-suggest-item{display:flex;align-items:center;gap:10px;padding:10px;border:1.5px solid var(--light);border-radius:10px;cursor:pointer;transition:all .15s;background:var(--white);}
+.canva-suggest-item:hover{border-color:var(--magenta);background:rgba(228,0,124,.03);}
+.canva-suggest-item.selected{border-color:var(--magenta);background:rgba(228,0,124,.06);box-shadow:0 0 0 2px rgba(228,0,124,.12);}
+.canva-suggest-thumb{width:44px;height:44px;border-radius:7px;background:var(--pale);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:1.2rem;}
+.canva-suggest-thumb img{width:100%;height:100%;object-fit:cover;}
+.canva-suggest-info{flex:1;min-width:0;}
+.canva-suggest-name{font-size:.78rem;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.canva-suggest-meta{font-size:.65rem;color:var(--mid);margin-top:2px;}
+.canva-suggest-match{font-size:.62rem;font-weight:700;color:var(--magenta);background:rgba(228,0,124,.1);padding:2px 6px;border-radius:99px;flex-shrink:0;}
+.canva-suggest-empty{text-align:center;padding:20px;font-size:.78rem;color:var(--mid);opacity:.7;}
+.publish-side-card{background:var(--white);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.04);}
+.publish-side-title{font-family:var(--font-head);font-size:.88rem;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+.carousel-actions-row{display:flex;gap:8px;flex-wrap:wrap;}
+.carousel-actions-row .btn{flex:1;justify-content:center;}
+
 /* CANVA CSS */
 .canva-tabs{display:flex;gap:4px;background:var(--pale);border-radius:var(--radius);padding:3px;border:1px solid var(--light);margin-bottom:20px;width:fit-content;}
 .canva-tab{padding:8px 18px;border:none;border-radius:9px;background:transparent;font-family:var(--font-body);font-size:.82rem;color:var(--mid);cursor:pointer;transition:all .2s;font-weight:500;}
@@ -648,9 +675,11 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 
   <!-- CARROSSEL -->
   <section class="section" id="section-carousel">
-    <div class="section-header"><h2>Gerar Carrossel</h2><p>Cola os blocos de texto ou descreve um tema.</p></div>
-    <div class="grid-2">
-      <div>
+    <div class="section-header"><h2>🎠 Gerar Carrossel</h2><p>Cola os blocos de texto ou descreve um tema livre — a IA cria os slides.</p></div>
+    <div class="carousel-3col">
+
+      <!-- COL 1: Config -->
+      <div class="carousel-config-col">
         <div class="card">
           <div class="card-title">✍️ Configuração</div>
           <div class="mode-toggle">
@@ -658,67 +687,97 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
             <button class="mode-btn" id="modeBtnTopic" onclick="setCarouselMode('topic')">💡 Tema livre</button>
           </div>
           <div id="modeBlocks">
-            <div class="form-group"><label class="form-label">Cole os blocos de texto</label><textarea class="textarea" id="carouselBlocks" rows="12" placeholder="# Bloco 1&#10;Texto do primeiro slide&#10;&#10;# Bloco 2&#10;..."></textarea></div>
+            <div class="form-group"><label class="form-label">Cole os blocos de texto</label><textarea class="textarea" id="carouselBlocks" rows="10" placeholder="# Bloco 1&#10;Texto do primeiro slide&#10;&#10;# Bloco 2&#10;..."></textarea></div>
           </div>
           <div id="modeTopic" style="display:none;">
-            <div class="form-group"><label class="form-label">Tema / Tópico</label><textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="4"></textarea></div>
+            <div class="form-group"><label class="form-label">Tema / Tópico</label><textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="5"></textarea></div>
           </div>
+
           <div class="form-group"><label class="form-label">Gerador de imagens</label><select class="select" id="imageEngine"><option value="gpt">GPT Image-1</option><option value="gemini">Gemini Imagen</option><option value="none">Só texto (sem imagens)</option></select></div>
-          <div class="form-group" id="designStyleGroup"><label class="form-label">Estilo visual</label><div id="designStyleOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div><div id="designStyleDesc" style="font-size:.73rem;color:var(--mid);margin-top:7px;padding:8px 12px;background:var(--pale);border-radius:8px;border-left:2px solid var(--magenta);display:none;"></div></div>
-          <div class="form-group" id="carouselTemplatePickerGroup">
-            <label class="form-label">Template Canva <span style="font-size:.68rem;color:var(--mid);font-weight:400;">(opcional — aplica estilo do template nas imagens)</span></label>
-            <div class="carousel-tmpl-picker" id="carouselTemplatePicker"><div style="font-size:.75rem;color:var(--mid);padding:8px 0;">A carregar templates...</div></div>
-            <div class="carousel-tmpl-selected-info" id="carouselTmplSelectedInfo"></div>
+
+          <div class="form-group" id="designStyleGroup">
+            <label class="form-label">Estilo visual</label>
+            <div id="designStyleOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div>
+            <div id="designStyleDesc" style="font-size:.73rem;color:var(--mid);margin-top:7px;padding:8px 12px;background:var(--pale);border-radius:8px;border-left:2px solid var(--magenta);display:none;"></div>
           </div>
+
           <div class="form-group" id="imageQualityGroup">
-  <label class="form-label">Qualidade das imagens</label>
-  <div class="quality-selector">
-    <label class="quality-option">
-      <input type="radio" name="imageQuality" value="low" id="qLow" onchange="saveImageQuality(this.value)"/>
-      <div>
-        <div class="quality-option-name">Low — Mais econômico</div>
-        <div class="quality-option-desc">Ideal para testes, rascunhos e validação rápida de ideias</div>
-      </div>
-    </label>
-    <label class="quality-option">
-      <input type="radio" name="imageQuality" value="medium" id="qMedium" checked onchange="saveImageQuality(this.value)"/>
-      <div>
-        <div class="quality-option-name">Medium — Melhor equilíbrio <span class="quality-badge-default">Padrão</span></div>
-        <div class="quality-option-desc">Entrega visual profissional para a maioria dos posts</div>
-      </div>
-    </label>
-  </div>
-  <div class="quality-note">Qualidades maiores geram imagens mais refinadas, mas também consomem mais créditos.</div>
-</div>
-<div class="form-group"><label class="form-label">Legenda personalizada (opcional)</label><textarea class="textarea" id="carouselCaption" placeholder="Deixar em branco para gerar automaticamente..." rows="2"></textarea></div>
-          <button class="btn btn-primary" onclick="generateCarousel()" id="btnGenCarousel" style="width:100%">✨ Gerar carrossel</button>
+            <label class="form-label">Qualidade das imagens</label>
+            <div class="quality-selector">
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="low" id="qLow" onchange="saveImageQuality(this.value)"/>
+                <div><div class="quality-option-name">Low — Econômico</div><div class="quality-option-desc">Para rascunhos e testes rápidos</div></div>
+              </label>
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="medium" id="qMedium" checked onchange="saveImageQuality(this.value)"/>
+                <div><div class="quality-option-name">Medium <span class="quality-badge-default">Padrão</span></div><div class="quality-option-desc">Visual profissional para a maioria dos posts</div></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group"><label class="form-label">Legenda personalizada <span style="font-weight:400;text-transform:none;font-size:.7rem;">(opcional)</span></label><textarea class="textarea" id="carouselCaption" placeholder="Deixar em branco para gerar automaticamente..." rows="2"></textarea></div>
+
+          <button class="btn btn-primary" onclick="generateCarousel()" id="btnGenCarousel" style="width:100%;justify-content:center;padding:12px;">✨ Gerar carrossel</button>
         </div>
       </div>
-      <div>
-        <div class="card" id="carouselPreviewCard" style="display:none">
-          <div class="card-title" id="carouselPreviewTitle">Pré-visualização</div>
-          <div id="carouselSlideCount" style="font-size:.75rem;color:var(--mid);margin:-8px 0 6px;"></div>
-          <div style="font-size:.72rem;color:var(--mid);margin-bottom:8px;opacity:.7;">↑ Clica em qualquer slide para ver, anotar e aprovar</div>
+
+      <!-- COL 2: Preview -->
+      <div class="carousel-preview-col">
+        <!-- Empty state (shown before generate) -->
+        <div class="carousel-empty-state" id="carouselEmptyState">
+          <div class="carousel-empty-icon">🎠</div>
+          <div class="carousel-empty-text">Configure o conteúdo ao lado e clique em<br><strong>✨ Gerar carrossel</strong> para ver os slides aqui.</div>
+        </div>
+
+        <!-- Preview (shown after generate) -->
+        <div class="card" id="carouselPreviewCard" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div class="card-title" id="carouselPreviewTitle" style="margin-bottom:0;">Slides gerados</div>
+            <span id="carouselSlideCount" style="font-size:.75rem;color:var(--mid);"></span>
+          </div>
+          <div style="font-size:.72rem;color:var(--mid);margin-bottom:10px;opacity:.8;">👆 Clica em qualquer slide para ver, anotar e aprovar</div>
           <div class="slides-preview" id="slidesPreview"></div>
           <div class="progress-bar" id="imageProgress" style="display:none"><div class="progress-fill" id="imageProgressFill" style="width:0%"></div></div>
           <div id="imageGenStatus" style="font-size:.78rem;color:var(--mid);margin:6px 0;"></div>
-          <div id="photoSuggestArea" style="display:none;margin:10px 0;"><div style="font-size:.75rem;color:var(--mid);margin-bottom:6px;">📸 Fotos do banco relevantes:</div><div class="photo-suggestions" id="photoSuggestions"></div></div>
-          <div class="form-group" style="margin-top:14px;"><label class="form-label">Legenda + Hashtags</label><textarea class="textarea" id="carouselGeneratedCaption" rows="4"></textarea></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div id="photoSuggestArea" style="display:none;margin:10px 0 0;"><div style="font-size:.75rem;color:var(--mid);margin-bottom:6px;">📸 Fotos do banco relevantes:</div><div class="photo-suggestions" id="photoSuggestions"></div></div>
+        </div>
+
+        <!-- Caption -->
+        <div class="card" id="carouselCaptionCard" style="display:none;">
+          <div class="card-title">📝 Legenda + Hashtags</div>
+          <textarea class="textarea" id="carouselGeneratedCaption" rows="5"></textarea>
+          <div class="carousel-actions-row" style="margin-top:12px;">
             <button class="btn btn-secondary btn-sm" onclick="downloadCarousel()">⬇️ Exportar JSON</button>
-            <button class="btn btn-secondary btn-sm" onclick="exportCarouselForDesigner()">📄 Exportar para Designer</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportCarouselForDesigner()">📄 Para Designer</button>
             <button class="btn btn-primary btn-sm" onclick="generateCarouselImages()" id="btnGenImages">🎨 Gerar imagens</button>
           </div>
         </div>
-        <div class="publish-panel" id="publishPanel">
-          <div class="publish-panel-title">🚀 Publicar no Instagram</div>
-          <div class="publish-row">
-            <div class="form-group"><label class="form-label">Ação</label><select class="select" id="publishAction" onchange="toggleScheduleTime()"><option value="now">Publicar agora</option><option value="schedule">Agendar</option></select></div>
-            <div class="form-group" id="scheduleTimeGroup" style="display:none"><label class="form-label">Data e hora</label><input type="datetime-local" class="input" id="scheduleDateTime"/></div>
+      </div>
+
+      <!-- COL 3: Template Canva + Publicar -->
+      <div class="carousel-side-col">
+
+        <!-- Template Canva suggestion -->
+        <div class="canva-suggest-card" id="carouselTemplatePickerGroup">
+          <div class="canva-suggest-title">🎨 Template Canva</div>
+          <div class="canva-suggest-sub">Escolha um template para aplicar o estilo nas imagens</div>
+          <div class="canva-suggest-grid" id="canvaTemplateSuggestList">
+            <div class="canva-suggest-empty">A carregar templates...</div>
           </div>
-          <button class="btn btn-primary" onclick="publishCarouselDirect()" id="btnPublishCarousel" style="width:100%">📤 Publicar carrossel</button>
+          <!-- Hidden picker mantido para compatibilidade com JS existente -->
+          <div class="carousel-tmpl-picker" id="carouselTemplatePicker" style="display:none;"></div>
+          <div class="carousel-tmpl-selected-info" id="carouselTmplSelectedInfo" style="display:none;"></div>
+        </div>
+
+        <!-- Publicar -->
+        <div class="publish-side-card" id="publishPanel" style="display:none;">
+          <div class="publish-side-title">🚀 Publicar no Instagram</div>
+          <div class="form-group"><label class="form-label">Ação</label><select class="select" id="publishAction" onchange="toggleScheduleTime()"><option value="now">Publicar agora</option><option value="schedule">Agendar</option></select></div>
+          <div class="form-group" id="scheduleTimeGroup" style="display:none;"><label class="form-label">Data e hora</label><input type="datetime-local" class="input" id="scheduleDateTime"/></div>
+          <button class="btn btn-primary" onclick="publishCarouselDirect()" id="btnPublishCarousel" style="width:100%;justify-content:center;">📤 Publicar carrossel</button>
           <div id="publishResult" style="margin-top:12px;font-size:.82rem;"></div>
         </div>
+
       </div>
     </div>
   </section>
@@ -1166,7 +1225,9 @@ async function gerarImagensDoModal() {
     document.getElementById('carouselGeneratedCaption').value = (item.caption || '') + (item.hashtags ? '\n\n' + item.hashtags : '');
     document.getElementById('carouselPreviewTitle').textContent = item.topic || 'Carrossel';
     document.getElementById('carouselPreviewCard').style.display = 'block';
-    document.getElementById('publishPanel').classList.add('visible');
+    const es = document.getElementById('carouselEmptyState'); if (es) es.style.display = 'none';
+    const cc = document.getElementById('carouselCaptionCard'); if (cc) cc.style.display = 'block';
+    document.getElementById('publishPanel').style.display = 'block';
     toast('Carrossel carregado! Clica em "Gerar imagens" para continuar.', 'success');
   }, 300);
 }
@@ -1177,7 +1238,7 @@ async function quickPublish(contentId){let item=contentCache.find(i=>i.id===cont
 /* ── CARROSSEL ── */
 let carouselMode='blocks';
 function setCarouselMode(mode){carouselMode=mode;document.getElementById('modeBtnBlocks').classList.toggle('active',mode==='blocks');document.getElementById('modeBtnTopic').classList.toggle('active',mode==='topic');document.getElementById('modeBlocks').style.display=mode==='blocks'?'block':'none';document.getElementById('modeTopic').style.display=mode==='topic'?'block':'none';}
-async function generateCarousel(){let body={};if(carouselMode==='blocks'){const blocks=document.getElementById('carouselBlocks').value.trim();if(!blocks)return toast('Cola os blocos de texto','error');body={blocks,profile:currentProfile,caption:document.getElementById('carouselCaption').value};}else{const topic=document.getElementById('carouselTopic').value.trim();if(!topic)return toast('Escreve o tema','error');body={topic,profile:currentProfile,caption:document.getElementById('carouselCaption').value};}const btn=document.getElementById('btnGenCarousel');btn.disabled=true;btn.textContent='⏳ A gerar...';try{const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(d.error)throw new Error(d.error);currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};renderSlidesPreview(d.slides);document.getElementById('carouselSlideCount').textContent=`${d.slides.length} slides gerados pela IA`;document.getElementById('carouselGeneratedCaption').value=`${d.caption}\n\n${d.hashtags}`;document.getElementById('carouselPreviewTitle').textContent=d.title||'Pré-visualização';document.getElementById('carouselPreviewCard').style.display='block';document.getElementById('publishPanel').classList.add('visible');if(currentProfile==='pessoal')loadPhotoSuggestions(body.topic||body.blocks?.slice(0,100));toast(`Carrossel com ${d.slides.length} slides gerado!`,'success');}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='✨ Gerar carrossel';}}
+async function generateCarousel(){let body={};if(carouselMode==='blocks'){const blocks=document.getElementById('carouselBlocks').value.trim();if(!blocks)return toast('Cola os blocos de texto','error');body={blocks,profile:currentProfile,caption:document.getElementById('carouselCaption').value};}else{const topic=document.getElementById('carouselTopic').value.trim();if(!topic)return toast('Escreve o tema','error');body={topic,profile:currentProfile,caption:document.getElementById('carouselCaption').value};}const btn=document.getElementById('btnGenCarousel');btn.disabled=true;btn.textContent='⏳ A gerar...';try{const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(d.error)throw new Error(d.error);currentCarouselData={...d,imageUrls:[]};currentCarouselContentId=d.contentId;currentCarouselImages=[];lbCommentStore={};lbStatusStore={};renderSlidesPreview(d.slides);document.getElementById('carouselSlideCount').textContent=`${d.slides.length} slides gerados pela IA`;document.getElementById('carouselGeneratedCaption').value=`${d.caption}\n\n${d.hashtags}`;document.getElementById('carouselPreviewTitle').textContent=d.title||'Pré-visualização';document.getElementById('carouselPreviewCard').style.display='block';const _es=document.getElementById('carouselEmptyState');if(_es)_es.style.display='none';const _cc=document.getElementById('carouselCaptionCard');if(_cc)_cc.style.display='block';const _pp=document.getElementById('publishPanel');if(_pp)_pp.style.display='block';if(currentProfile==='pessoal')loadPhotoSuggestions(body.topic||body.blocks?.slice(0,100));toast(`Carrossel com ${d.slides.length} slides gerado!`,'success');}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='✨ Gerar carrossel';}}
 async function loadPhotoSuggestions(topic){if(!topic)return;const area=document.getElementById('photoSuggestArea');area.style.display='block';document.getElementById('photoSuggestions').innerHTML='<div style="font-size:.75rem;color:var(--mid);">A procurar...</div>';try{const r=await fetch('/api/photos/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic,profile:'pessoal',limit:4})});const d=await r.json();if(!d.suggestions?.length){document.getElementById('photoSuggestions').innerHTML='<div style="font-size:.72rem;color:var(--mid);">Nenhuma foto encontrada.</div>';return;}document.getElementById('photoSuggestions').innerHTML=d.suggestions.map(p=>`<img src="${p.dataUrl}" class="photo-suggestion-item" title="${p.description}" onclick="this.classList.toggle('selected')"/>`).join('');}catch(e){area.style.display='none';}}
 
 /* ── RENDER SLIDES PREVIEW (com textos editáveis) ── */
@@ -1221,39 +1282,65 @@ let currentCarouselTemplate = null;
 
 function renderCarouselTemplatePicker() {
   const picker = document.getElementById('carouselTemplatePicker');
-  if (!picker) return;
+  if (picker) {
+    const templates = canvaTemplates || [];
+    const noneChip = `<div class="carousel-tmpl-chip-none selected" id="ctChip_none" onclick="selectCarouselTemplate(null)">✕<br>Nenhum</div>`;
+    if (!templates.length) {
+      picker.innerHTML = noneChip + `<div style="font-size:.72rem;color:var(--mid);display:flex;align-items:center;padding:0 8px;">Sem templates cadastrados</div>`;
+    } else {
+      picker.innerHTML = noneChip + templates.map(t => {
+        const thumb = t.thumbnailUrl ? `<img src="${t.thumbnailUrl}"/>` : `<span>🎨</span>`;
+        return `<div class="carousel-tmpl-chip" id="ctChip_${t.id}" onclick="selectCarouselTemplate('${t.id}')">
+          <div class="carousel-tmpl-chip-thumb">${thumb}</div>
+          <div class="carousel-tmpl-chip-name" title="${t.name}">${t.name}</div>
+        </div>`;
+      }).join('');
+    }
+  }
+  renderCanvaSuggestList();
+}
+
+function renderCanvaSuggestList() {
+  const list = document.getElementById('canvaTemplateSuggestList');
+  if (!list) return;
   const templates = canvaTemplates || [];
-  const noneChip = `<div class="carousel-tmpl-chip-none selected" id="ctChip_none" onclick="selectCarouselTemplate(null)">✕<br>Nenhum</div>`;
   if (!templates.length) {
-    picker.innerHTML = noneChip + `<div style="font-size:.72rem;color:var(--mid);display:flex;align-items:center;padding:0 8px;">Sem templates cadastrados</div>`;
+    list.innerHTML = `<div class="canva-suggest-empty">Nenhum template cadastrado.<br><a href="#" onclick="showSection('canva',null)" style="color:var(--magenta);font-weight:600;">+ Adicionar templates</a></div>`;
     return;
   }
-  picker.innerHTML = noneChip + templates.map(t => {
-    const thumb = t.thumbnailUrl
-      ? `<img src="${t.thumbnailUrl}"/>`
-      : `<span>🎨</span>`;
-    return `<div class="carousel-tmpl-chip" id="ctChip_${t.id}" onclick="selectCarouselTemplate('${t.id}')">
-      <div class="carousel-tmpl-chip-thumb">${thumb}</div>
-      <div class="carousel-tmpl-chip-name" title="${t.name}">${t.name}</div>
+  // "Nenhum" option first
+  const noneItem = `<div class="canva-suggest-item selected" id="csi_none" onclick="selectCarouselTemplate(null)">
+    <div class="canva-suggest-thumb" style="background:#f0f0f0;color:var(--mid);font-size:.75rem;">✕</div>
+    <div class="canva-suggest-info"><div class="canva-suggest-name">Sem template</div><div class="canva-suggest-meta">Gerar sem estilo Canva</div></div>
+  </div>`;
+  const items = templates.slice(0, 5).map((t, i) => {
+    const thumb = t.thumbnailUrl ? `<img src="${t.thumbnailUrl}"/>` : `🎨`;
+    const types = (t.types || []).join(', ') || 'Carrossel';
+    const match = i === 0 ? `<span class="canva-suggest-match">✦ Sugerido</span>` : '';
+    return `<div class="canva-suggest-item" id="csi_${t.id}" onclick="selectCarouselTemplate('${t.id}')">
+      <div class="canva-suggest-thumb">${thumb}</div>
+      <div class="canva-suggest-info">
+        <div class="canva-suggest-name">${t.name}</div>
+        <div class="canva-suggest-meta">${types}</div>
+      </div>
+      ${match}
     </div>`;
   }).join('');
+  list.innerHTML = noneItem + items;
 }
 
 function selectCarouselTemplate(templateId) {
   currentCarouselTemplate = templateId;
+  // Update old chips (hidden but kept for JS compat)
   document.querySelectorAll('.carousel-tmpl-chip, .carousel-tmpl-chip-none').forEach(el => el.classList.remove('selected'));
-  const target = document.getElementById(templateId ? `ctChip_${templateId}` : 'ctChip_none');
-  if (target) target.classList.add('selected');
+  const oldTarget = document.getElementById(templateId ? `ctChip_${templateId}` : 'ctChip_none');
+  if (oldTarget) oldTarget.classList.add('selected');
+  // Update new suggest list
+  document.querySelectorAll('.canva-suggest-item').forEach(el => el.classList.remove('selected'));
+  const newTarget = document.getElementById(templateId ? `csi_${templateId}` : 'csi_none');
+  if (newTarget) newTarget.classList.add('selected');
   const info = document.getElementById('carouselTmplSelectedInfo');
-  if (templateId) {
-    const t = (canvaTemplates || []).find(x => x.id === templateId);
-    if (t && info) {
-      info.style.display = 'block';
-      info.textContent = `🎨 ${t.name} · ${t.aesthetic || 'estilo personalizado'}`;
-    }
-  } else {
-    if (info) info.style.display = 'none';
-  }
+  if (info) info.style.display = 'none';
 }
 
 /* ── LIGHTBOX ── */
@@ -1448,7 +1535,7 @@ async function generateCarouselImages(autoPublishConfig=null){
   if(contentId&&validUrls.length){try{await fetch(`/api/content/${contentId}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({imageUrls:validUrls,status:'pendente'})});}catch(e){}}
   toast(`${ok} slides compostos! 🎨`,'success');
   if(autoPublishConfig){const{action,scheduledAt,caption,calendarPost}=autoPublishConfig;await _autoPublishAfterImages({action,scheduledAt,caption,contentId,calendarPost});}
-  else{document.getElementById('publishPanel').classList.add('visible');}
+  else{const _pp2=document.getElementById('publishPanel');if(_pp2)_pp2.style.display='block';}
 }
 /* ── CONTENT MACHINE ── */
 const CM_TYPES_ALL = {
