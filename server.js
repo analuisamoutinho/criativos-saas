@@ -31,6 +31,73 @@ const VALID_QUALITIES = ['low', 'medium', 'high', 'auto'];
 const DEFAULT_QUALITY = 'medium';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
+// ── Prompt builder for carousel slide images ──────────────────────────────
+// Produces quality-differentiated prompts grounded in brand identity.
+function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
+  const aesthetic = aestheticOverride || (brand.aestheticDNA || '').split('\n')[0] || 'premium editorial design';
+
+  // Brand color context
+  const accent   = brand.accent   || '#C8A020';
+  const bgDark   = brand.bgDark   || '#0A0A0A';
+  const bgLight  = brand.bgLight  || '#F5F4F0';
+  const isFirst  = slideNumber === 1 || slideRole === 'CAPA';
+  const isLast   = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
+  const roleStr  = isFirst ? 'cover / hero slide' : isLast ? 'closing CTA slide' : `content slide ${slideNumber} of ${totalSlides}`;
+
+  // Slide text context
+  const textCtx = heading
+    ? `Main headline (render as large, legible typographic element integrated into design): "${heading}"` +
+      (body ? ` Supporting body text (smaller, secondary): "${body}"` : '')
+    : `Slide ${slideNumber} — abstract visual composition, no mandatory text.`;
+
+  // Quality-specific visual instructions
+  const qualityLayers = {
+    low: [
+      'Flat, clean composition. Simple geometric shapes.',
+      'Solid or very subtle gradient background.',
+      'Basic typographic layout, minimal shadows.',
+      'Muted color palette, low contrast.',
+      'Simple details — no textures, no photography.',
+    ],
+    medium: [
+      'Semi-detailed composition with depth and hierarchy.',
+      'Soft gradients, subtle textures, balanced shadows.',
+      `Brand accent color ${accent} used with intention as highlight.`,
+      'Clear typographic hierarchy, moderate contrast.',
+      'Optional abstract background element (geometric or photographic crop).',
+      'Balanced lighting — not flat, not overly dramatic.',
+    ],
+    high: [
+      'Highly detailed, premium editorial composition.',
+      `Rich, multi-layered background using brand palette: dark ${bgDark}, light ${bgLight}, accent ${accent}.`,
+      'Professional studio-quality lighting — directional, with depth and shadow.',
+      'Sophisticated typographic design: strong weight contrast, precise spacing.',
+      'Textured overlays: subtle grain, material depth (paper, metal, glass depending on brand).',
+      'Vibrant, vivid colors — not flat. Depth, contrast, premium finish.',
+      isFirst ? 'Hero visual: maximum impact, full-bleed dramatic composition.' : '',
+      isLast  ? 'CTA visual: warm, inviting, strong call-to-action energy.' : '',
+    ].filter(Boolean),
+  };
+
+  const qInstructions = qualityLayers[quality] || qualityLayers.medium;
+
+  return [
+    // Core aesthetic from brand
+    `Instagram carousel slide — ${roleStr}.`,
+    `Brand aesthetic: ${aesthetic}`,
+    // Slide text
+    textCtx,
+    // Scene
+    sceneHint ? `Visual concept: ${sceneHint}` : '',
+    // Quality-specific rendering
+    ...qInstructions,
+    // Technical constraints
+    'Aspect ratio portrait 4:5 (vertical), 1024x1536px.',
+    'Text fully integrated into design — no floating labels, no watermarks, no logos.',
+    'Professional social-media design quality.',
+  ].filter(Boolean).join(' ');
+}
+
 // ── User Settings ─────────────────────────────────────────────────────────
 function loadUserSettings() {
   try {
@@ -1290,9 +1357,17 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     const quality = resolveQuality(rawQuality);
     const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account = getAccount(profile);
-    const styleHint = designStyleHint || (brand.aestheticDNA || '').split('\n')[0] || 'editorial premium';
-    const sceneHint = imagePromptHint || heading || topic || '';
-    const promptPhoto = [styleHint, sceneHint ? 'Scene concept: ' + sceneHint : '', 'Portrait orientation 4:5. No text overlays. Clean composition.', funcao === 'CAPA' ? 'Hero image, strong visual impact.' : 'Supporting editorial visual.'].filter(Boolean).join(' ');
+    const sceneHint = imagePromptHint || topic || '';
+    const promptPhoto = buildCarouselPrompt({
+      quality,
+      brand,
+      aestheticOverride: designStyleHint || null,
+      slideRole: funcao,
+      heading, body,
+      slideNumber: slideNumber || 1,
+      totalSlides: totalSlides || 1,
+      sceneHint,
+    });
     const moodList = brand.moods || ['HERO_DARK'];
     const moodIndex = Math.min(slideNumber - 1, moodList.length - 1);
     const mood = moodList[moodIndex] || 'HERO_DARK';
@@ -1480,6 +1555,8 @@ app.post('/api/canva/generate-slides', async (req, res) => {
     const notes = tmpl.notes || '';
     const results = [];
 
+    const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
+
     for (let i = 0; i < slides.length; i++) {
       const slide = slides[i];
       const slideNumber = slide.slideNumber || slide.slide || (i + 1);
@@ -1488,31 +1565,19 @@ app.post('/api/canva/generate-slides', async (req, res) => {
       const body    = slide.body    || (slide.textos && slide.textos[1]?.texto) || '';
       const funcao  = slide.funcao  || (i === 0 ? 'CAPA' : i === slides.length - 1 ? 'CTA' : 'DESENVOLVIMENTO');
 
-      const isFirstSlide = i === 0;
-      const isLastSlide  = i === slides.length - 1;
+      // Template-specific aesthetic appended to brand DNA
+      const aestheticOverride = [aesthetic, notes].filter(Boolean).join('. ');
 
-      const slideRole = isFirstSlide
-        ? 'Slide de CAPA (cover). Impacto visual máximo, headline dominante.'
-        : isLastSlide
-          ? 'Slide de CTA/encerramento. Tom conclusivo, chamada para ação.'
-          : `Slide de CONTEÚDO ${slideNumber}/${totalSlides}. Tom educativo/informativo.`;
-
-      const textInstruction = heading
-        ? `TEXTO PRINCIPAL (headline, ocupa destaque visual): "${heading}"` +
-          (body ? `\nTEXTO SECUNDÁRIO (corpo, menor): "${body}"` : '')
-        : `SLIDE ${slideNumber} — sem texto definido, criar composição visual abstrata no estilo do template.`;
-
-      const imagePrompt = [
-        `Instagram carousel slide — estilo visual: ${aesthetic}.`,
-        notes ? `Referências adicionais do template: ${notes}.` : '',
-        slideRole,
-        textInstruction,
-        `Orientação portrait 4:5 (vertical). Texto integrado ao design, tipografia legível e hierárquica.`,
-        `Composição profissional de rede social. Sem bordas artificiais, sem marca d'água, sem logotipos.`,
-        isFirstSlide
-          ? 'Composição hero: imagem/fundo impactante, headline em destaque máximo.'
-          : 'Composição limpa, equilíbrio entre visual e texto.',
-      ].filter(Boolean).join(' ');
+      const imagePrompt = buildCarouselPrompt({
+        quality,
+        brand,
+        aestheticOverride,
+        slideRole: funcao,
+        heading, body,
+        slideNumber,
+        totalSlides,
+        sceneHint: '',
+      });
 
       try {
         const r = await fetch('https://api.openai.com/v1/images/generations', {
