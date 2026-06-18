@@ -1457,6 +1457,117 @@ setInterval(async () => {
   if (changed) writeJSON(SCHEDULED_FILE, posts);
 }, 60000);
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CANVA TEMPLATE SLIDE GENERATOR
+// POST /api/canva/generate-slides
+// Gera imagens PNG de cada slide no estilo visual do template escolhido
+// ═══════════════════════════════════════════════════════════════════════════
+
+app.post('/api/canva/generate-slides', async (req, res) => {
+  try {
+    const { templateId, slides, profile, quality: rawQuality } = req.body;
+
+    if (!templateId) return res.status(400).json({ error: 'templateId obrigatório' });
+    if (!slides || !slides.length) return res.status(400).json({ error: 'slides obrigatório' });
+
+    const quality = resolveQuality(rawQuality || 'medium');
+    const templates = loadCT();
+    const tmpl = templates.find(t => t.id === templateId);
+    if (!tmpl) return res.status(404).json({ error: 'Template não encontrado' });
+
+    const aesthetic = tmpl.aesthetic || 'editorial clean, Instagram carousel';
+    const templateName = tmpl.name || 'Template';
+    const notes = tmpl.notes || '';
+    const results = [];
+
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i];
+      const slideNumber = slide.slideNumber || slide.slide || (i + 1);
+      const totalSlides = slides.length;
+      const heading = slide.heading || (slide.textos && slide.textos[0]?.texto) || '';
+      const body    = slide.body    || (slide.textos && slide.textos[1]?.texto) || '';
+      const funcao  = slide.funcao  || (i === 0 ? 'CAPA' : i === slides.length - 1 ? 'CTA' : 'DESENVOLVIMENTO');
+
+      const isFirstSlide = i === 0;
+      const isLastSlide  = i === slides.length - 1;
+
+      const slideRole = isFirstSlide
+        ? 'Slide de CAPA (cover). Impacto visual máximo, headline dominante.'
+        : isLastSlide
+          ? 'Slide de CTA/encerramento. Tom conclusivo, chamada para ação.'
+          : `Slide de CONTEÚDO ${slideNumber}/${totalSlides}. Tom educativo/informativo.`;
+
+      const textInstruction = heading
+        ? `TEXTO PRINCIPAL (headline, ocupa destaque visual): "${heading}"` +
+          (body ? `\nTEXTO SECUNDÁRIO (corpo, menor): "${body}"` : '')
+        : `SLIDE ${slideNumber} — sem texto definido, criar composição visual abstrata no estilo do template.`;
+
+      const imagePrompt = [
+        `Instagram carousel slide — estilo visual: ${aesthetic}.`,
+        notes ? `Referências adicionais do template: ${notes}.` : '',
+        slideRole,
+        textInstruction,
+        `Orientação portrait 4:5 (vertical). Texto integrado ao design, tipografia legível e hierárquica.`,
+        `Composição profissional de rede social. Sem bordas artificiais, sem marca d'água, sem logotipos.`,
+        isFirstSlide
+          ? 'Composição hero: imagem/fundo impactante, headline em destaque máximo.'
+          : 'Composição limpa, equilíbrio entre visual e texto.',
+      ].filter(Boolean).join(' ');
+
+      try {
+        const r = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + process.env.OPENAI_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-image-1',
+            prompt: imagePrompt,
+            n: 1,
+            size: '1024x1536',
+            quality,
+            output_format: 'png',
+          }),
+        });
+
+        const data = await r.json();
+        if (data.error) {
+          results.push({ slideNumber, error: data.error.message, b64: null });
+          continue;
+        }
+
+        const imageData = data.data && data.data[0];
+        results.push({
+          slideNumber,
+          funcao,
+          heading,
+          body,
+          b64: imageData?.b64_json || null,
+          url: imageData?.url || null,
+          prompt: imagePrompt,
+        });
+      } catch (slideErr) {
+        results.push({ slideNumber, error: slideErr.message, b64: null });
+      }
+    }
+
+    const ok = results.filter(r => r.b64 || r.url).length;
+    res.json({
+      success: true,
+      templateName,
+      aesthetic,
+      quality,
+      total: slides.length,
+      generated: ok,
+      slides: results,
+    });
+  } catch (err) {
+    console.error('[canva/generate-slides]', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
