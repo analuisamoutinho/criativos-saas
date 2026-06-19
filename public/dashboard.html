@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Meta Ads — Berry's BR</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --blue: #1877F2;
+    --blue-light: #E7F0FD;
+    --green: #22C55E;
+    --red: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-400: #9CA3AF;
+    --gray-600: #4B5563;
+    --gray-800: #1F2937;
+    --navy: #0F172A;
+    --card-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+    --card-shadow-hover: 0 4px 12px rgba(0,0,0,.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-50); color: var(--gray-800); }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0F172A 0%, #1e3a5f 100%);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-logo { width: 44px; height: 44px; background: #1877F2; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: white; flex-shrink: 0; }
+  .header h1 { font-size: 22px; font-weight: 700; line-height: 1.2; }
+  .header h1 small { font-size: 13px; font-weight: 400; color: rgba(255,255,255,.6); display: block; }
+  .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #4ADE80; border-radius: 20px; padding: 5px 12px; font-size: 12px; font-weight: 600; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.4;} }
+
+  /* ── Controls ── */
+  .controls {
+    background: white;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .controls label { font-size: 12px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: .05em; }
+  select, input[type=date] {
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 14px;
+    color: var(--gray-800);
+    background: white;
+    cursor: pointer;
+    outline: none;
+  }
+  select:focus, input[type=date]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,119,242,.1); }
+  .btn-refresh {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--blue); color: white;
+    border: none; border-radius: 8px; padding: 8px 16px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: background .15s;
+  }
+  .btn-refresh:hover { background: #1560C0; }
+  .btn-refresh:disabled { background: var(--gray-400); cursor: not-allowed; }
+  .date-group { display: flex; align-items: center; gap: 8px; }
+
+  /* ── Main Layout ── */
+  .main { padding: 24px; max-width: 1280px; margin: 0 auto; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .kpi-card {
+    background: white; border-radius: 14px; padding: 20px;
+    box-shadow: var(--card-shadow);
+    display: flex; align-items: flex-start; gap: 14px;
+    transition: box-shadow .2s;
+  }
+  .kpi-card:hover { box-shadow: var(--card-shadow-hover); }
+  .kpi-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .kpi-icon.blue   { background: #EFF6FF; }
+  .kpi-icon.purple { background: #F5F3FF; }
+  .kpi-icon.green  { background: #F0FDF4; }
+  .kpi-label { font-size: 12px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+  .kpi-value { font-size: 26px; font-weight: 800; color: var(--navy); line-height: 1; }
+  .kpi-delta { font-size: 12px; font-weight: 600; margin-top: 6px; display: flex; align-items: center; gap: 3px; }
+  .kpi-delta.up   { color: var(--green); }
+  .kpi-delta.down { color: var(--red); }
+
+  /* ── Secondary Metrics ── */
+  .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .metric-card {
+    background: white; border-radius: 12px; padding: 16px;
+    box-shadow: var(--card-shadow);
+  }
+  .metric-label { font-size: 11px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; display: flex; align-items: center; gap-5px; }
+  .metric-icon { font-size: 14px; margin-right: 4px; }
+  .metric-value { font-size: 20px; font-weight: 700; color: var(--navy); }
+  .metric-delta { font-size: 11px; font-weight: 600; margin-top: 4px; }
+  .metric-delta.up   { color: var(--green); }
+  .metric-delta.down { color: var(--red); }
+
+  /* ── Chart ── */
+  .chart-card { background: white; border-radius: 14px; padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .chart-title { font-size: 16px; font-weight: 700; }
+  .chart-legend { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--gray-600); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .chart-wrap { position: relative; height: 220px; }
+  select.chart-period { font-size: 13px; padding: 5px 10px; }
+
+  /* ── Account Summary ── */
+  .account-summary { background: white; border-radius: 14px; padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+  .account-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .account-logo { width: 40px; height: 40px; border-radius: 50%; background: #1877F2; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 14px; }
+  .account-info { flex: 1; }
+  .account-info strong { font-size: 15px; font-weight: 700; }
+  .account-info small { color: var(--gray-400); font-size: 12px; }
+  .account-stats { display: flex; gap: 32px; }
+  .account-stat { text-align: center; }
+  .account-stat .val { font-size: 16px; font-weight: 700; }
+  .account-stat .lbl { font-size: 11px; color: var(--gray-400); }
+  .account-stat .delta { font-size: 11px; font-weight: 600; }
+  .delta-up   { color: var(--green); }
+  .delta-down { color: var(--red); }
+
+  /* ── Best Ads ── */
+  .best-ads { background: white; border-radius: 14px; padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
+  .best-ads-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .ads-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .ad-card {
+    border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden;
+    transition: box-shadow .2s, transform .15s;
+    cursor: pointer;
+  }
+  .ad-card:hover { box-shadow: var(--card-shadow-hover); transform: translateY(-2px); }
+  .ad-rank { position: absolute; top: 8px; left: 8px; width: 28px; height: 28px; border-radius: 50%; background: var(--navy); color: white; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .ad-thumb { position: relative; height: 160px; background: var(--gray-100); overflow: hidden; }
+  .ad-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .ad-thumb .no-img { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-400); font-size: 36px; }
+  .ad-body { padding: 12px; }
+  .ad-name { font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ad-metric .lbl { font-size: 10px; color: var(--gray-400); font-weight: 600; text-transform: uppercase; }
+  .ad-metric .val { font-size: 14px; font-weight: 700; color: var(--navy); }
+  .ad-metric .delta { font-size: 10px; font-weight: 600; }
+
+  /* ── Quick Insights ── */
+  .insights-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .insight-card { background: white; border-radius: 14px; padding: 20px; box-shadow: var(--card-shadow); }
+  .insight-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+  .insight-row:last-child { border-bottom: none; }
+  .insight-icon { font-size: 22px; }
+  .insight-label { font-size: 12px; color: var(--gray-600); }
+  .insight-value { font-size: 15px; font-weight: 700; color: var(--navy); }
+  .insight-metric { margin-left: auto; font-size: 15px; font-weight: 800; }
+  .insight-metric.green { color: var(--green); }
+  .insight-metric.blue  { color: var(--blue); }
+
+  /* ── Goal Bar ── */
+  .goal-card { background: white; border-radius: 14px; padding: 20px; box-shadow: var(--card-shadow); margin-bottom: 24px; }
+  .goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .goal-title { font-size: 16px; font-weight: 700; }
+  .goal-sub { font-size: 12px; color: var(--gray-400); margin-bottom: 10px; }
+  .goal-bar-track { height: 10px; background: var(--gray-100); border-radius: 99px; overflow: hidden; }
+  .goal-bar-fill { height: 100%; background: linear-gradient(90deg, #1877F2, #60A5FA); border-radius: 99px; transition: width 1s ease; }
+  .goal-stats { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--gray-400); }
+  .goal-pct { font-size: 15px; font-weight: 800; color: var(--blue); }
+
+  /* ── Loading ── */
+  .skeleton { background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 8px; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(4px); }
+  .loading-box { background: white; border-radius: 16px; padding: 32px 48px; text-align: center; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--gray-200); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--gray-600); font-weight: 500; }
+
+  /* ── Empty / Error ── */
+  .empty { text-align: center; padding: 40px; color: var(--gray-400); }
+  .error-banner { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 10px; padding: 12px 16px; color: #B91C1C; font-size: 13px; margin-bottom: 16px; display: none; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .ads-grid { grid-template-columns: repeat(2, 1fr); }
+    .insights-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .ads-grid { grid-template-columns: 1fr; }
+    .account-stats { flex-wrap: wrap; gap: 16px; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">M</div>
+    <div>
+      <h1>Dashboard Meta Ads <small id="accountName">Carregando...</small></h1>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div class="live-badge"><span class="live-dot"></span><span id="lastUpdate">Tempo real</span></div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <label>Conta</label>
+    <select id="accountSelect" onchange="loadData()">
+      <option value="">Carregando contas...</option>
+    </select>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <label>Período</label>
+    <select id="datePreset" onchange="onPresetChange()">
+      <option value="last_7d">Últimos 7 dias</option>
+      <option value="last_14d">Últimos 14 dias</option>
+      <option value="last_30d" selected>Últimos 30 dias</option>
+      <option value="this_month">Este mês</option>
+      <option value="last_month">Mês passado</option>
+      <option value="custom">Personalizado</option>
+    </select>
+  </div>
+  <div class="date-group" id="customDates" style="display:none;">
+    <input type="date" id="dateFrom">
+    <span style="color:var(--gray-400);">—</span>
+    <input type="date" id="dateTo">
+  </div>
+  <button class="btn-refresh" id="refreshBtn" onclick="loadData()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L4 10m16 4-1.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+    Atualizar
+  </button>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Buscando métricas...</div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="error-banner" id="errorBanner"></div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon blue">💰</div>
+      <div>
+        <div class="kpi-label">Investimento</div>
+        <div class="kpi-value" id="kpiSpend">—</div>
+        <div class="kpi-delta up" id="kpiSpendDelta"></div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon purple">👥</div>
+      <div>
+        <div class="kpi-label">Alcance</div>
+        <div class="kpi-value" id="kpiReach">—</div>
+        <div class="kpi-delta up" id="kpiReachDelta"></div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">🛒</div>
+      <div>
+        <div class="kpi-label">Compras</div>
+        <div class="kpi-value" id="kpiPurchases">—</div>
+        <div class="kpi-delta up" id="kpiPurchasesDelta"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Secondary Metrics -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">👁️</span>Impressões</div>
+      <div class="metric-value" id="metImpressions">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">🖱️</span>Cliques no link</div>
+      <div class="metric-value" id="metClicks">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">%</span>CTR</div>
+      <div class="metric-value" id="metCtr">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">💲</span>CPC (link)</div>
+      <div class="metric-value" id="metCpc">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">📈</span>ROAS</div>
+      <div class="metric-value" id="metRoas">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">🛍️</span>Custo por compra</div>
+      <div class="metric-value" id="metCpa">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">❤️</span>Engajamentos</div>
+      <div class="metric-value" id="metEngagements">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label"><span class="metric-icon">🎬</span>ThruPlay</div>
+      <div class="metric-value" id="metThruplay">—</div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Desempenho em tempo real</div>
+        <div class="chart-legend">
+          <span><span class="legend-dot" style="background:#1877F2;"></span>Investimento</span>
+          <span><span class="legend-dot" style="background:#22C55E;"></span>Alcance</span>
+        </div>
+      </div>
+      <select class="chart-period" id="chartMetric" onchange="updateChart()">
+        <option value="spend">Investimento</option>
+        <option value="reach">Alcance</option>
+        <option value="impressions">Impressões</option>
+        <option value="clicks">Cliques</option>
+      </select>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="performanceChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Account Summary -->
+  <div class="account-summary">
+    <div class="section-title">Resumo da conta Meta Ads</div>
+    <div class="account-row" id="accountSummaryRow">
+      <div class="account-logo">M</div>
+      <div class="account-info">
+        <strong id="summaryName">—</strong><br>
+        <small id="summaryId">—</small>
+      </div>
+      <div class="account-stats" id="accountStats">
+        <div class="account-stat"><div class="val" id="sumSpend">—</div><div class="lbl">Investimento</div></div>
+        <div class="account-stat"><div class="val" id="sumReach">—</div><div class="lbl">Alcance</div></div>
+        <div class="account-stat"><div class="val" id="sumPurchases">—</div><div class="lbl">Compras</div></div>
+        <div class="account-stat"><div class="val" id="sumRoas">—</div><div class="lbl">ROAS</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Best Ads -->
+  <div class="best-ads">
+    <div class="best-ads-header">
+      <div class="section-title">Melhores anúncios</div>
+      <button onclick="showAllAds()" style="background:none;border:1px solid var(--gray-200);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-weight:600;">Ver todos</button>
+    </div>
+    <div class="ads-grid" id="adsGrid">
+      <div class="empty">Carregando anúncios...</div>
+    </div>
+  </div>
+
+  <!-- Quick Insights -->
+  <div class="insights-grid">
+    <div class="insight-card">
+      <div class="section-title">Insights rápidos</div>
+      <div class="insight-row">
+        <span class="insight-icon">🏆</span>
+        <div><div class="insight-label">Melhor criativo da semana</div><div class="insight-value" id="insightBestAd">—</div></div>
+        <div class="insight-metric green" id="insightBestRoas">—</div>
+      </div>
+      <div class="insight-row">
+        <span class="insight-icon">📈</span>
+        <div><div class="insight-label">Maior ROAS</div><div class="insight-value" id="insightTopRoasAd">—</div></div>
+        <div class="insight-metric green" id="insightTopRoas">—</div>
+      </div>
+      <div class="insight-row">
+        <span class="insight-icon">🖱️</span>
+        <div><div class="insight-label">Maior volume de cliques</div><div class="insight-value" id="insightClicks">—</div></div>
+        <div class="insight-metric blue" id="insightClicksVal">—</div>
+      </div>
+      <div class="insight-row">
+        <span class="insight-icon">💲</span>
+        <div><div class="insight-label">Custo por resultado (compra)</div><div class="insight-value" id="insightCpaLabel">—</div></div>
+        <div class="insight-metric blue" id="insightCpa">—</div>
+      </div>
+    </div>
+
+    <div class="goal-card" style="margin-bottom:0;">
+      <div class="goal-header">
+        <div class="goal-title">Meta da semana</div>
+        <div class="goal-pct" id="goalPct">—%</div>
+      </div>
+      <div class="goal-sub" id="goalSub">Meta de investimento</div>
+      <div class="goal-bar-track"><div class="goal-bar-fill" id="goalBar" style="width:0%"></div></div>
+      <div class="goal-stats">
+        <span id="goalSpent">Investido: —</span>
+        <span id="goalTarget">Meta: —</span>
+      </div>
+      <div style="margin-top:16px;border-top:1px solid var(--gray-100);padding-top:16px;">
+        <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px;">Definir meta de investimento</div>
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="goalInput" placeholder="Ex: 25000" style="flex:1;border:1px solid var(--gray-200);border-radius:8px;padding:7px 12px;font-size:14px;">
+          <button onclick="saveGoal()" style="background:var(--blue);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let chartInstance = null;
+let dailyData     = [];
+let adsData       = [];
+let summaryInsights = null;
+let goalAmount    = parseFloat(localStorage.getItem('meta_dash_goal') || '0');
+
+// ── Init ──────────────────────────────────────────────────────────────────
+async function init() {
+  showLoading('Buscando contas de anúncios...');
+  try {
+    const res  = await fetch('/api/meta/accounts');
+    const json = await res.json();
+    populateAccounts(json.data || []);
+    await loadData();
+  } catch(e) {
+    hideLoading();
+    showError('Não foi possível carregar as contas. Verifique se META_ACCESS_TOKEN está configurado.');
+  }
+}
+
+function populateAccounts(accounts) {
+  const sel = document.getElementById('accountSelect');
+  sel.innerHTML = '';
+  // Filter active Berry's first, then all others
+  const berryAccounts = accounts.filter(a => a.name && a.name.toUpperCase().includes("BERRY'S"));
+  const others        = accounts.filter(a => !berryAccounts.includes(a));
+  const sorted        = [...berryAccounts, ...others].filter(a => a.account_status === 'ACTIVE' || !a.account_status);
+
+  for (const acc of sorted) {
+    const opt = document.createElement('option');
+    opt.value       = acc.id.replace('act_', '');
+    opt.textContent = acc.name || acc.id;
+    sel.appendChild(opt);
+  }
+
+  if (berryAccounts.length > 0) sel.value = berryAccounts[0].id.replace('act_', '');
+}
+
+// ── Load Data ─────────────────────────────────────────────────────────────
+async function loadData() {
+  const accountId = document.getElementById('accountSelect').value;
+  if (!accountId) return;
+
+  const accountName = document.getElementById('accountSelect').selectedOptions[0]?.text || '';
+  document.getElementById('accountName').textContent = accountName;
+  document.getElementById('summaryName').textContent  = accountName;
+  document.getElementById('summaryId').textContent    = `act_${accountId}`;
+
+  hideError();
+  showLoading('Buscando métricas Meta Ads...');
+  document.getElementById('refreshBtn').disabled = true;
+
+  const params = buildTimeParams();
+
+  try {
+    const [insightsRes, dailyRes, adsRes] = await Promise.all([
+      fetch(`/api/meta/insights/${accountId}?${params}`),
+      fetch(`/api/meta/insights/${accountId}/daily?${params}`),
+      fetch(`/api/meta/insights/${accountId}/ads?${params}&limit=6`),
+    ]);
+
+    const [insJson, dailyJson, adsJson] = await Promise.all([
+      insightsRes.json(), dailyRes.json(), adsRes.json()
+    ]);
+
+    if (insJson.error) throw new Error(insJson.error.message);
+
+    summaryInsights = insJson.data?.[0] || {};
+    dailyData       = dailyJson.data || [];
+    adsData         = adsJson.data || [];
+
+    renderKPIs(summaryInsights);
+    renderChart();
+    renderAds(adsData);
+    renderInsights(summaryInsights, adsData);
+    updateTimestamp();
+  } catch(e) {
+    showError('Erro ao buscar dados: ' + e.message);
+  } finally {
+    hideLoading();
+    document.getElementById('refreshBtn').disabled = false;
+  }
+}
+
+function buildTimeParams() {
+  const preset = document.getElementById('datePreset').value;
+  if (preset !== 'custom') return `date_preset=${preset}`;
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  if (from && to) return `since=${from}&until=${to}`;
+  return `date_preset=last_30d`;
+}
+
+function onPresetChange() {
+  const custom = document.getElementById('datePreset').value === 'custom';
+  document.getElementById('customDates').style.display = custom ? 'flex' : 'none';
+  if (!custom) loadData();
+}
+
+// ── Render KPIs ───────────────────────────────────────────────────────────
+function renderKPIs(d) {
+  const spend     = parseFloat(d.spend || 0);
+  const reach     = parseInt(d.reach  || 0);
+  const purchases = getAction(d, 'purchase');
+  const purchaseVal = getActionValue(d, 'purchase');
+  const roas      = purchaseVal > 0 && spend > 0 ? (purchaseVal / spend) : 0;
+  const cpa       = purchases > 0 ? (spend / purchases) : 0;
+  const thruplay  = getAction(d, 'video_thruplay_watched');
+  const engagements = getAction(d, 'page_engagement') || getAction(d, 'post_engagement');
+
+  setText('kpiSpend',     fmtBRL(spend));
+  setText('kpiReach',     fmtNum(reach));
+  setText('kpiPurchases', fmtNum(purchases));
+  setText('metImpressions', fmtNum(parseInt(d.impressions || 0)));
+  setText('metClicks',    fmtNum(parseInt(d.clicks || 0)));
+  setText('metCtr',       fmtPct(parseFloat(d.ctr || 0)));
+  setText('metCpc',       fmtBRL(parseFloat(d.cpc || 0)));
+  setText('metRoas',      roas > 0 ? roas.toFixed(2) + 'x' : '—');
+  setText('metCpa',       cpa > 0 ? fmtBRL(cpa) : '—');
+  setText('metEngagements', fmtNum(engagements));
+  setText('metThruplay',  fmtNum(thruplay));
+
+  // Summary
+  setText('sumSpend',     fmtBRL(spend));
+  setText('sumReach',     fmtNum(reach));
+  setText('sumPurchases', fmtNum(purchases));
+  setText('sumRoas',      roas > 0 ? roas.toFixed(2) + 'x' : '—');
+
+  // Goal
+  if (goalAmount > 0) {
+    const pct = Math.min((spend / goalAmount) * 100, 100);
+    setText('goalPct',   Math.round(pct) + '% atingido');
+    setText('goalSpent', 'Investido: ' + fmtBRL(spend));
+    setText('goalTarget','Meta: '      + fmtBRL(goalAmount));
+    document.getElementById('goalBar').style.width = pct + '%';
+    document.getElementById('goalInput').value = goalAmount;
+  }
+}
+
+// ── Render Chart ─────────────────────────────────────────────────────────
+function renderChart() {
+  updateChart();
+}
+
+function updateChart() {
+  const metric = document.getElementById('chartMetric').value;
+  const labels = dailyData.map(d => d.date_start ? d.date_start.slice(5) : '');
+  const values = dailyData.map(d => parseFloat(d[metric] || 0));
+
+  const colors = { spend: '#1877F2', reach: '#22C55E', impressions: '#A855F7', clicks: '#F59E0B' };
+  const color  = colors[metric] || '#1877F2';
+
+  if (chartInstance) {
+    chartInstance.data.labels   = labels;
+    chartInstance.data.datasets[0].data  = values;
+    chartInstance.data.datasets[0].borderColor = color;
+    chartInstance.data.datasets[0].backgroundColor = color + '20';
+    chartInstance.update();
+    return;
+  }
+
+  const ctx = document.getElementById('performanceChart').getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: metric,
+        data: values,
+        borderColor: color,
+        backgroundColor: color + '20',
+        borderWidth: 2.5,
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: color,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => {
+          const v = ctx.parsed.y;
+          if (metric === 'spend') return ' R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2});
+          return ' ' + v.toLocaleString('pt-BR');
+        }
+      }}},
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: '#F3F4F6' }, ticks: { font: { size: 11 }, callback: v => metric==='spend' ? 'R$'+v.toLocaleString('pt-BR') : v.toLocaleString('pt-BR') } }
+      }
+    }
+  });
+}
+
+// ── Render Ads ────────────────────────────────────────────────────────────
+function renderAds(ads) {
+  const grid = document.getElementById('adsGrid');
+  if (!ads.length) { grid.innerHTML = '<div class="empty">Nenhum anúncio encontrado no período.</div>'; return; }
+
+  const top3 = ads.slice(0, 3);
+  grid.innerHTML = top3.map((ad, i) => {
+    const spend = parseFloat(ad.spend || 0);
+    const purchases = getAction(ad, 'purchase');
+    const purchaseVal = getActionValue(ad, 'purchase');
+    const roas = purchaseVal > 0 && spend > 0 ? (purchaseVal / spend) : 0;
+
+    return `
+    <div class="ad-card" onclick="openAdPreview('${ad.ad_id}')">
+      <div class="ad-thumb">
+        <div class="no-img" id="thumb_${ad.ad_id}">📸</div>
+        <div class="ad-rank">${i+1}</div>
+      </div>
+      <div class="ad-body">
+        <div class="ad-name" title="${ad.ad_name || ''}">${ad.ad_name || 'Anúncio #' + ad.ad_id}</div>
+        <div class="ad-metrics">
+          <div class="ad-metric"><div class="lbl">Investimento</div><div class="val">${fmtBRL(spend)}</div></div>
+          <div class="ad-metric"><div class="lbl">Compras</div><div class="val">${fmtNum(purchases)}</div></div>
+          <div class="ad-metric"><div class="lbl">ROAS</div><div class="val">${roas>0?roas.toFixed(2)+'x':'—'}</div></div>
+          <div class="ad-metric"><div class="lbl">Cliques</div><div class="val">${fmtNum(parseInt(ad.clicks||0))}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Load thumbnails async
+  top3.forEach(ad => loadAdThumb(ad.ad_id));
+}
+
+async function loadAdThumb(adId) {
+  try {
+    const res  = await fetch(`/api/meta/ad/${adId}/creative`);
+    const json = await res.json();
+    const thumbUrl = json.creative?.thumbnail_url || json.creative?.image_url;
+    if (thumbUrl) {
+      const el = document.getElementById(`thumb_${adId}`);
+      if (el) el.innerHTML = `<img src="${thumbUrl}" alt="thumb" onerror="this.style.display='none'">`;
+    }
+  } catch(_) {}
+}
+
+function showAllAds() {
+  // Show remaining ads in a modal or expand grid
+  const grid = document.getElementById('adsGrid');
+  const all  = adsData;
+  if (!all.length) return;
+  grid.innerHTML = all.map((ad, i) => {
+    const spend = parseFloat(ad.spend || 0);
+    const purchases = getAction(ad, 'purchase');
+    const purchaseVal = getActionValue(ad, 'purchase');
+    const roas = purchaseVal > 0 && spend > 0 ? (purchaseVal / spend) : 0;
+    return `
+    <div class="ad-card">
+      <div class="ad-thumb">
+        <div class="no-img" id="thumb_${ad.ad_id}">📸</div>
+        <div class="ad-rank">${i+1}</div>
+      </div>
+      <div class="ad-body">
+        <div class="ad-name" title="${ad.ad_name||''}">${ad.ad_name||'Anúncio #'+ad.ad_id}</div>
+        <div class="ad-metrics">
+          <div class="ad-metric"><div class="lbl">Investimento</div><div class="val">${fmtBRL(spend)}</div></div>
+          <div class="ad-metric"><div class="lbl">Compras</div><div class="val">${fmtNum(purchases)}</div></div>
+          <div class="ad-metric"><div class="lbl">ROAS</div><div class="val">${roas>0?roas.toFixed(2)+'x':'—'}</div></div>
+          <div class="ad-metric"><div class="lbl">Cliques</div><div class="val">${fmtNum(parseInt(ad.clicks||0))}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  all.forEach(ad => loadAdThumb(ad.ad_id));
+}
+
+// ── Render Insights ───────────────────────────────────────────────────────
+function renderInsights(d, ads) {
+  const spend     = parseFloat(d.spend || 0);
+  const purchases = getAction(d, 'purchase');
+  const cpa       = purchases > 0 ? (spend / purchases) : 0;
+
+  // Best ad by ROAS
+  const ranked = ads.map(ad => {
+    const s = parseFloat(ad.spend || 0);
+    const pv = getActionValue(ad, 'purchase');
+    return { ...ad, roas: (pv > 0 && s > 0) ? pv/s : 0, clicks: parseInt(ad.clicks||0) };
+  });
+  const bestRoas   = ranked.sort((a,b) => b.roas - a.roas)[0];
+  const mostClicks = ranked.sort((a,b) => b.clicks - a.clicks)[0];
+
+  setText('insightBestAd',    bestRoas?.ad_name || '—');
+  setText('insightBestRoas',  bestRoas?.roas > 0 ? bestRoas.roas.toFixed(2)+'x' : '—');
+  setText('insightTopRoasAd', bestRoas?.ad_name || '—');
+  setText('insightTopRoas',   bestRoas?.roas > 0 ? bestRoas.roas.toFixed(2)+'x' : '—');
+  setText('insightClicks',    mostClicks?.ad_name || '—');
+  setText('insightClicksVal', fmtNum(mostClicks?.clicks || 0) + ' cliques');
+  setText('insightCpaLabel',  '');
+  setText('insightCpa',       cpa > 0 ? fmtBRL(cpa) : '—');
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function getAction(d, type) {
+  if (!d.actions) return 0;
+  const a = d.actions.find(x => x.action_type === type || x.action_type === 'omni_'+type);
+  return a ? parseInt(a.value) : 0;
+}
+function getActionValue(d, type) {
+  if (!d.action_values) return 0;
+  const a = d.action_values.find(x => x.action_type === type || x.action_type === 'omni_'+type);
+  return a ? parseFloat(a.value) : 0;
+}
+function fmtBRL(v)  { return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtNum(v)  { return v.toLocaleString('pt-BR'); }
+function fmtPct(v)  { return v.toFixed(2) + '%'; }
+function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
+
+function showLoading(msg) {
+  document.getElementById('loadingText').textContent = msg || 'Carregando...';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideError() { document.getElementById('errorBanner').style.display = 'none'; }
+
+function updateTimestamp() {
+  const now = new Date();
+  document.getElementById('lastUpdate').textContent = 'Atualizado ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+}
+
+function saveGoal() {
+  const v = parseFloat(document.getElementById('goalInput').value);
+  if (v > 0) {
+    goalAmount = v;
+    localStorage.setItem('meta_dash_goal', v);
+    if (summaryInsights) renderKPIs(summaryInsights);
+  }
+}
+
+function openAdPreview(adId) {
+  window.open(`https://www.facebook.com/ads/library/?id=${adId}`, '_blank');
+}
+
+// ── Auto-refresh every 5 min ─────────────────────────────────────────────
+setInterval(() => { if (document.getElementById('accountSelect').value) loadData(); }, 5 * 60 * 1000);
+
+// ── Start ─────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

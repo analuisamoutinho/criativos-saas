@@ -1696,8 +1696,104 @@ app.post('/api/canva/generate-slides', async (req, res) => {
   }
 });
 
+// ── Meta Ads Dashboard API ────────────────────────────────────────────────
+const META_TOKEN = process.env.META_ACCESS_TOKEN;
+const META_API   = 'https://graph.facebook.com/v21.0';
+
+async function metaGet(path, params = {}) {
+  const url = new URL(`${META_API}${path}`);
+  url.searchParams.set('access_token', META_TOKEN);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  const r = await fetch(url.toString());
+  return r.json();
+}
+
+// List all ad accounts available to the token
+app.get('/api/meta/accounts', async (req, res) => {
+  try {
+    const data = await metaGet('/me/adaccounts', {
+      fields: 'id,name,account_status,currency',
+      limit: 100,
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Account-level insights
+app.get('/api/meta/insights/:accountId', async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { since, until, date_preset } = req.query;
+    const params = {
+      fields: 'spend,reach,impressions,clicks,ctr,cpc,actions,action_values,video_thruplay_watched_actions,unique_clicks',
+      level: 'account',
+    };
+    if (date_preset) params.date_preset = date_preset;
+    else if (since && until) params.time_range = JSON.stringify({ since, until });
+    const data = await metaGet(`/act_${accountId}/insights`, params);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Daily breakdown for chart
+app.get('/api/meta/insights/:accountId/daily', async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { since, until, date_preset } = req.query;
+    const params = {
+      fields: 'spend,reach,impressions,clicks,actions',
+      level: 'account',
+      time_increment: '1',
+    };
+    if (date_preset) params.date_preset = date_preset;
+    else if (since && until) params.time_range = JSON.stringify({ since, until });
+    const data = await metaGet(`/act_${accountId}/insights`, params);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Best performing ads
+app.get('/api/meta/insights/:accountId/ads', async (req, res) => {
+  try {
+    const { accountId } = req.params;
+    const { since, until, date_preset, limit = 10 } = req.query;
+    const params = {
+      fields: 'ad_id,ad_name,spend,reach,impressions,clicks,ctr,actions,action_values',
+      level: 'ad',
+      sort: 'spend_descending',
+      limit: String(limit),
+    };
+    if (date_preset) params.date_preset = date_preset;
+    else if (since && until) params.time_range = JSON.stringify({ since, until });
+    const data = await metaGet(`/act_${accountId}/insights`, params);
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Ad creative thumbnail
+app.get('/api/meta/ad/:adId/creative', async (req, res) => {
+  try {
+    const { adId } = req.params;
+    const data = await metaGet(`/${adId}`, {
+      fields: 'creative{thumbnail_url,image_url,title,body,object_story_spec}',
+    });
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.use(express.static('public'));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
+app.get('/dashboard', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'dashboard.html')); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.listen(PORT, () => {
   console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | quality default: ${DEFAULT_QUALITY} | valid: ${VALID_QUALITIES.join(', ')}`);
