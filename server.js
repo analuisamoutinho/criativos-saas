@@ -1380,7 +1380,8 @@ app.post('/api/canva/prepare-texts', (req, res) => {
 // Aceita referenceImageB64 (base64 sem prefixo) para usar a foto real do Google Fotos como base
 app.post('/api/image/carousel-slide', async (req, res) => {
   try {
-    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality, referenceImageB64 } = req.body;
+    const { heading, body, slideNumber, totalSlides, funcao, topic, profile, contentId, imagePromptHint, designStyleHint, quality: rawQuality, referenceImageB64, engine } = req.body;
+    if (engine === 'none') return res.json({ success: true, b64: null, url: null, designMeta: {}, quality: 'none' });
     const quality = resolveQuality(rawQuality);
     const brand = BRAND_IDENTITIES[profile] || BRAND_IDENTITIES.marca;
     const account = getAccount(profile);
@@ -1444,6 +1445,21 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     res.json({ success: true, b64: imageData.b64_json || null, url: imageData.url || null, designMeta, quality });
   } catch (err) { console.error('[image/carousel-slide]', err); res.status(500).json({ error: err.message }); }
 });
+// Salva imagem base64 em disco e devolve URL pública
+app.post('/api/image/save-b64', (req, res) => {
+  try {
+    const { b64, contentId, slideIndex } = req.body;
+    if (!b64) return res.status(400).json({ error: 'b64 obrigatório' });
+    const uploadsDir = path.join(__dirname, 'public', 'uploads');
+    if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+    const filename = `${contentId || 'img'}_slide${slideIndex ?? 0}_${Date.now()}.png`;
+    const filepath = path.join(uploadsDir, filename);
+    fs.writeFileSync(filepath, Buffer.from(b64, 'base64'));
+    const publicUrl = (process.env.PUBLIC_URL || '').replace(/\/$/, '') + '/uploads/' + filename;
+    res.json({ success: true, url: publicUrl, filename });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // ── Base de conteúdos ─────────────────────────────────────────────────────
 app.get('/api/content', async (req, res) => {
   const { profile, type, status } = req.query;
