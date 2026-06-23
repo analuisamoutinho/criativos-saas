@@ -158,6 +158,11 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .carousel-tmpl-chip-thumb img{width:100%;height:100%;object-fit:cover;}
 .carousel-tmpl-chip-name{font-size:.6rem;font-weight:600;color:var(--dark);line-height:1.25;max-width:80px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .carousel-tmpl-selected-info{font-size:.72rem;color:var(--mid);margin-top:5px;padding:5px 10px;background:var(--pale);border-radius:6px;border-left:2px solid var(--magenta);display:none;}
+.ct-suggest-card{flex:1;min-width:0;border:2px solid var(--light);border-radius:8px;cursor:pointer;background:var(--white);transition:all .15s;overflow:hidden;}
+.ct-suggest-card:hover{border-color:var(--magenta);transform:translateY(-2px);box-shadow:0 4px 12px rgba(228,0,124,.1);}
+.ct-suggest-card.selected{border-color:var(--magenta);background:rgba(228,0,124,.04);box-shadow:0 0 0 2px rgba(228,0,124,.15);}
+.ct-suggest-none{border-style:dashed;}
+#carouselTemplatePicker{display:flex;gap:8px;}
 .slide-number{font-size:.65rem;font-weight:700;opacity:.7;margin-bottom:4px;}
 .slide-heading{font-family:var(--font-head);font-size:.85rem;font-weight:700;line-height:1.2;}
 .slide-body{font-size:.7rem;opacity:.8;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
@@ -665,9 +670,9 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           </div>
           <div class="form-group"><label class="form-label">Gerador de imagens</label><select class="select" id="imageEngine"><option value="gpt">GPT Image-1</option><option value="gemini">Gemini Imagen</option><option value="none">Só texto (sem imagens)</option></select></div>
           <div class="form-group" id="designStyleGroup"><label class="form-label">Estilo visual</label><div id="designStyleOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div><div id="designStyleDesc" style="font-size:.73rem;color:var(--mid);margin-top:7px;padding:8px 12px;background:var(--pale);border-radius:8px;border-left:2px solid var(--magenta);display:none;"></div></div>
-          <div class="form-group" id="carouselTemplatePickerGroup">
-            <label class="form-label">Template Canva <span style="font-size:.68rem;color:var(--mid);font-weight:400;">(opcional — aplica estilo do template nas imagens)</span></label>
-            <div class="carousel-tmpl-picker" id="carouselTemplatePicker"><div style="font-size:.75rem;color:var(--mid);padding:8px 0;">A carregar templates...</div></div>
+          <div class="form-group" id="carouselTemplatePickerGroup" style="display:none;">
+            <label class="form-label">Templates sugeridos <span style="font-size:.68rem;color:var(--mid);font-weight:400;">(opcional)</span></label>
+            <div id="carouselTemplatePicker"></div>
             <div class="carousel-tmpl-selected-info" id="carouselTmplSelectedInfo"></div>
           </div>
           <div class="form-group" id="imageQualityGroup">
@@ -1220,28 +1225,47 @@ function updateSlideText(idx, field, value) {
 let currentCarouselTemplate = null;
 
 function renderCarouselTemplatePicker() {
+  const group = document.getElementById('carouselTemplatePickerGroup');
   const picker = document.getElementById('carouselTemplatePicker');
-  if (!picker) return;
-  const templates = canvaTemplates || [];
-  const noneChip = `<div class="carousel-tmpl-chip-none selected" id="ctChip_none" onclick="selectCarouselTemplate(null)">✕<br>Nenhum</div>`;
-  if (!templates.length) {
-    picker.innerHTML = noneChip + `<div style="font-size:.72rem;color:var(--mid);display:flex;align-items:center;padding:0 8px;">Sem templates cadastrados</div>`;
+  if (!picker || !group) return;
+
+  // Only show for personal profile (Ana Moutinho)
+  if (currentProfile !== 'pessoal') {
+    group.style.display = 'none';
+    selectCarouselTemplate(null);
     return;
   }
-  picker.innerHTML = noneChip + templates.map(t => {
+
+  const templates = (canvaTemplates || []).slice(0, 3);
+  if (!templates.length) {
+    group.style.display = 'none';
+    return;
+  }
+
+  group.style.display = 'block';
+  picker.innerHTML = templates.map(t => {
     const thumb = t.thumbnailUrl
-      ? `<img src="${t.thumbnailUrl}"/>`
-      : `<span>🎨</span>`;
-    return `<div class="carousel-tmpl-chip" id="ctChip_${t.id}" onclick="selectCarouselTemplate('${t.id}')">
-      <div class="carousel-tmpl-chip-thumb">${thumb}</div>
-      <div class="carousel-tmpl-chip-name" title="${t.name}">${t.name}</div>
+      ? `<img src="${t.thumbnailUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px 6px 0 0;"/>`
+      : `<div style="height:56px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;background:var(--pale);border-radius:6px 6px 0 0;">🎨</div>`;
+    return `<div class="ct-suggest-card" id="ctChip_${t.id}" onclick="selectCarouselTemplate('${t.id}')">
+      <div style="height:56px;overflow:hidden;border-radius:6px 6px 0 0;">${thumb}</div>
+      <div style="padding:6px 8px;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</div>
+        ${t.aesthetic ? `<div style="font-size:.62rem;color:var(--mid);margin-top:2px;">${t.aesthetic}</div>` : ''}
+      </div>
     </div>`;
   }).join('');
+
+  // Add "None" option at the end
+  picker.innerHTML += `<div class="ct-suggest-card ct-suggest-none selected" id="ctChip_none" onclick="selectCarouselTemplate(null)" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:80px;">
+    <span style="font-size:1.1rem;opacity:.5;">✕</span>
+    <span style="font-size:.65rem;color:var(--mid);">Nenhum</span>
+  </div>`;
 }
 
 function selectCarouselTemplate(templateId) {
   currentCarouselTemplate = templateId;
-  document.querySelectorAll('.carousel-tmpl-chip, .carousel-tmpl-chip-none').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.carousel-tmpl-chip, .carousel-tmpl-chip-none, .ct-suggest-card').forEach(el => el.classList.remove('selected'));
   const target = document.getElementById(templateId ? `ctChip_${templateId}` : 'ctChip_none');
   if (target) target.classList.add('selected');
   const info = document.getElementById('carouselTmplSelectedInfo');
