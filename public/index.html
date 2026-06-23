@@ -669,7 +669,32 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
             <div class="form-group"><label class="form-label">Tema / Tópico</label><textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="4"></textarea></div>
           </div>
           <input type="hidden" id="imageEngine" value="gpt"/>
-          <div class="form-group" id="designStyleGroup"><label class="form-label">Como vão ser as imagens? <span style="font-size:.68rem;color:var(--mid);font-weight:400;">escolhe o estilo visual dos slides</span></label><div id="designStyleOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div><div id="designStyleDesc" style="font-size:.73rem;color:var(--mid);margin-top:7px;padding:8px 12px;background:var(--pale);border-radius:8px;border-left:2px solid var(--magenta);display:none;"></div></div>
+          <div class="form-group">
+            <label class="form-label">Qualidade das imagens</label>
+            <div class="quality-selector">
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="low" id="qLow" onchange="saveImageQuality(this.value)"/>
+                <div>
+                  <div class="quality-option-name">Low — Mais econômico</div>
+                  <div class="quality-option-desc">Ideal para testes e rascunhos</div>
+                </div>
+              </label>
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="medium" id="qMedium" onchange="saveImageQuality(this.value)"/>
+                <div>
+                  <div class="quality-option-name">Medium — Equilibrado</div>
+                  <div class="quality-option-desc">Boa qualidade com custo moderado</div>
+                </div>
+              </label>
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="high" id="qHigh" checked onchange="saveImageQuality(this.value)"/>
+                <div>
+                  <div class="quality-option-name">High — Máxima qualidade <span class="quality-badge-default">Padrão</span></div>
+                  <div class="quality-option-desc">Melhor resultado visual, maior custo por slide</div>
+                </div>
+              </label>
+            </div>
+          </div>
           <div class="form-group" id="carouselTemplatePickerGroup" style="display:none;">
             <label class="form-label">Templates sugeridos <span style="font-size:.68rem;color:var(--mid);font-weight:400;">(opcional)</span></label>
             <div id="carouselTemplatePicker"></div>
