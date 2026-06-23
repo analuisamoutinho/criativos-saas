@@ -277,7 +277,13 @@ REGRAS OBRIGATÓRIAS:
 - NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
 - Máximo 4 hashtags
 - ASSINATURA FIXA no último slide: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
-- Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
+- Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array
+
+REGRA CRÍTICA SOBRE CONTEÚDO DOS SLIDES:
+- Cada slide DEVE ter um "heading" (título curto e direto) E um "body" com 2-3 frases que desenvolvem e explicam o heading com substância real.
+- NUNCA deixar "body" vazio ou com menos de 2 frases. O body é onde está o valor do conteúdo.
+- O body deve conter: dado concreto, explicação do conceito, exemplo ou consequência prática — algo que o leitor possa usar ou compartilhar.
+- Slides de conteúdo sem body são slides inúteis. Cada slide deve poder existir sozinho e fazer sentido completo.`;
 }
 
 function buildSystemPromptContentMachine(profile, tipo, metodologia, isRR) {
@@ -1172,10 +1178,23 @@ app.post('/api/carousel/generate-and-save', async (req, res) => {
     const systemPrompt = buildSystemPromptCarrossel(profile, metodologia, isRR);
     let prompt;
     if (mode === 'blocks') {
-      prompt = 'Perfil: ' + account.name + ' (' + account.handle + ')\nConverte estes blocos em slides:\n' + blocks + '\nJSON: {"title":"...","slideCount":N,"slides":[{"slideNumber":1,"heading":"...","body":"...","imagePrompt":"scene in english"}],"caption":"legenda com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}';
+      prompt = `Perfil: ${account.name} (${account.handle})
+Converte estes blocos em slides de carrossel. Para cada bloco, gera um heading curto e direto + um body com 2-3 frases que desenvolvem o conceito com substância real (dado concreto, explicação, exemplo ou consequência prática). NUNCA deixar body vazio.
+
+BLOCOS:
+${blocks}
+
+JSON: {"title":"título do carrossel","slideCount":N,"slides":[{"slideNumber":1,"funcao":"CAPA","heading":"título curto e impactante","body":"2-3 frases que desenvolvem o conceito com substância real. Inclui dado, explicação ou consequência concreta.","imagePrompt":"visual scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
     } else {
       const slideCount = isRR ? '7-8' : '10';
-      prompt = 'Perfil: ' + account.name + ' (' + account.handle + ')\nTema: "' + topic + '"\nTotal: ' + slideCount + ' slides.\n' + (isRR ? 'ESTRUTURA RR: Slide 1 (gancho que nomeia dor/desejo real) → slides de profundidade → conclusão com tese → CTA íntimo.' : 'ESTRUTURA BRANDSDECODED: Slide 1 (hook 14-18 palavras) → desenvolvimento estratégico → CTA com assinatura.') + '\nJSON: {"title":"...","slideCount":' + (isRR?8:10) + ',"slides":[{"slideNumber":1,"heading":"gancho","body":"","imagePrompt":"scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}';
+      prompt = `Perfil: ${account.name} (${account.handle})
+Tema: "${topic}"
+Total: ${slideCount} slides.
+${isRR ? 'ESTRUTURA RR: Slide 1 (gancho que nomeia dor/desejo real) → slides de profundidade → conclusão com tese → CTA íntimo.' : 'ESTRUTURA BRANDSDECODED: Slide 1 (hook 14-18 palavras) → desenvolvimento estratégico → CTA com assinatura.'}
+
+REGRA CRÍTICA: cada slide DEVE ter body com 2-3 frases de conteúdo real — dado concreto, explicação do conceito, exemplo prático ou consequência. NUNCA body vazio ou com menos de 2 frases.
+
+JSON: {"title":"título do carrossel","slideCount":${isRR?8:10},"slides":[{"slideNumber":1,"funcao":"CAPA","heading":"gancho de 14-18 palavras","body":"2-3 frases que desenvolvem o gancho com substância. Dado concreto, padrão de mercado real ou consequência.","imagePrompt":"visual scene in english"},{"slideNumber":2,"funcao":"DESENVOLVIMENTO","heading":"título do conceito","body":"2-3 frases explicando o conceito com dado ou exemplo concreto. O leitor deve aprender algo real neste slide.","imagePrompt":"visual scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}`;
     }
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
