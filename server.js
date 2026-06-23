@@ -28,74 +28,51 @@ try { fs.mkdirSync('uploads/photos/', { recursive: true }); } catch(e) {}
 // ── Quality helpers ───────────────────────────────────────────────────────
 // CORRIGIDO: adicionado 'high' e 'auto' que a gpt-image-1 aceita
 const VALID_QUALITIES = ['low', 'medium', 'high', 'auto'];
-const DEFAULT_QUALITY = 'medium';
+const DEFAULT_QUALITY = 'high';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
 // ── Prompt builder for carousel slide images ──────────────────────────────
 // Produces quality-differentiated prompts grounded in brand identity.
 function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
-  const aesthetic = aestheticOverride || (brand.aestheticDNA || '').split('\n')[0] || 'premium editorial design';
+  const isFirst = slideNumber === 1 || slideRole === 'CAPA';
+  const isLast  = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
+  const roleStr = isFirst ? 'cover/hero slide (maximum visual impact)' : isLast ? 'closing CTA slide (warm, inviting, action-oriented)' : `content slide ${slideNumber} of ${totalSlides}`;
 
-  // Brand color context
-  const accent   = brand.accent   || '#C8A020';
-  const bgDark   = brand.bgDark   || '#0A0A0A';
-  const bgLight  = brand.bgLight  || '#F5F4F0';
-  const isFirst  = slideNumber === 1 || slideRole === 'CAPA';
-  const isLast   = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
-  const roleStr  = isFirst ? 'cover / hero slide' : isLast ? 'closing CTA slide' : `content slide ${slideNumber} of ${totalSlides}`;
+  // Use full aestheticDNA — this is the brand's complete visual identity
+  const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial design';
 
-  // Slide text context
+  // Slide text
   const textCtx = heading
-    ? `Main headline (render as large, legible typographic element integrated into design): "${heading}"` +
-      (body ? ` Supporting body text (smaller, secondary): "${body}"` : '')
-    : `Slide ${slideNumber} — abstract visual composition, no mandatory text.`;
+    ? `HEADLINE TO RENDER: "${heading}"${body ? ` — SUPPORTING TEXT: "${body}"` : ''}`
+    : `Slide ${slideNumber} — purely visual composition, no text required.`;
 
-  // Quality-specific visual instructions
-  const qualityLayers = {
-    low: [
-      'Flat, clean composition. Simple geometric shapes.',
-      'Solid or very subtle gradient background.',
-      'Basic typographic layout, minimal shadows.',
-      'Muted color palette, low contrast.',
-      'Simple details — no textures, no photography.',
-    ],
-    medium: [
-      'Semi-detailed composition with depth and hierarchy.',
-      'Soft gradients, subtle textures, balanced shadows.',
-      `Brand accent color ${accent} used with intention as highlight.`,
-      'Clear typographic hierarchy, moderate contrast.',
-      'Optional abstract background element (geometric or photographic crop).',
-      'Balanced lighting — not flat, not overly dramatic.',
-    ],
-    high: [
-      'Highly detailed, premium editorial composition.',
-      `Rich, multi-layered background using brand palette: dark ${bgDark}, light ${bgLight}, accent ${accent}.`,
-      'Professional studio-quality lighting — directional, with depth and shadow.',
-      'Sophisticated typographic design: strong weight contrast, precise spacing.',
-      'Textured overlays: subtle grain, material depth (paper, metal, glass depending on brand).',
-      'Vibrant, vivid colors — not flat. Depth, contrast, premium finish.',
-      isFirst ? 'Hero visual: maximum impact, full-bleed dramatic composition.' : '',
-      isLast  ? 'CTA visual: warm, inviting, strong call-to-action energy.' : '',
-    ].filter(Boolean),
-  };
-
-  const qInstructions = qualityLayers[quality] || qualityLayers.medium;
+  // Role-specific composition direction
+  const roleDir = isFirst
+    ? 'COVER: dominant, striking, full composition — this is the hook that stops the scroll. Maximum visual hierarchy.'
+    : isLast
+    ? 'CLOSING: warm, clear, inviting — strong visual closure. Direct call-to-action energy.'
+    : 'CONTENT: clear hierarchy, supporting visuals that reinforce the text. Readable and elegant.';
 
   return [
-    // Core aesthetic from brand
-    `Instagram carousel slide — ${roleStr}.`,
-    `Brand aesthetic: ${aesthetic}`,
-    // Slide text
-    textCtx,
-    // Scene
-    sceneHint ? `Visual concept: ${sceneHint}` : '',
-    // Quality-specific rendering
-    ...qInstructions,
-    // Technical constraints
-    'Aspect ratio portrait 4:5 (vertical), 1024x1536px.',
-    'Text fully integrated into design — no floating labels, no watermarks, no logos.',
-    'Professional social-media design quality.',
-  ].filter(Boolean).join(' ');
+    `You are a world-class Instagram carousel designer. Create slide ${slideNumber} of ${totalSlides} (${roleStr}).`,
+    '',
+    `COMPLETE BRAND IDENTITY AND VISUAL SYSTEM:`,
+    aestheticDNA,
+    '',
+    `SLIDE ROLE: ${roleDir}`,
+    '',
+    `TEXT FOR THIS SLIDE: ${textCtx}`,
+    sceneHint ? `VISUAL CONTEXT: ${sceneHint}` : '',
+    '',
+    `EXECUTION REQUIREMENTS:`,
+    `— Render as a finished, publication-ready Instagram slide. Pixel-perfect composition.`,
+    `— Typography must be large, bold, perfectly legible, deeply integrated into the layout — not floating or pasted on top.`,
+    `— Every color must come strictly from the brand palette above. No improvisation.`,
+    `— Consistency is critical: this slide must feel like it belongs to the same visual system as the other slides.`,
+    `— Depth and dimensionality: use soft shadows, layering, subtle textures — never flat.`,
+    `— Portrait format 4:5, 1024×1536px. No watermarks, no logos, no UI chrome.`,
+    `— Quality standard: this must look like it was designed by a senior art director at a top-tier agency.`,
+  ].filter(Boolean).join('\n');
 }
 
 // ── User Settings ─────────────────────────────────────────────────────────
@@ -575,14 +552,36 @@ function getManualText(profile) {
 // ═══════════════════════════════════════════════════════════════════════════
 const BRAND_IDENTITIES = {
   marca: {
-    accent:'#C8A020',accentAlt:'#FFFFFF',bgDark:'#0A0A0A',bgLight:'#F5F4F0',bgBrand:'#0A0A0A',
-    textOnDark:'#FFFFFF',textOnLight:'#0A0A0A',handle:'@caseaceleradora',name:'CASE',
-    moods:['HERO_DARK','EDITORIAL_LIGHT','TYPE_LIGHT','SPLIT_LIGHT','TABLE_LIGHT','TYPE_DARK','EDITORIAL_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
-    aestheticDNA:`Premium B2B editorial design. Think The Economist meets McKinsey Digital.
-TYPOGRAPHY: Geometric sans-serif, weight 700-900, clean and authoritative.
-NEVER: hype graphics, rockets, cartoonish elements, neon colors.
-ALWAYS: structure, clarity, strategic intelligence, data-driven precision.
-PHOTOGRAPHY: executive boardroom, architectural details, desaturated editorial tones.`,
+    accent:'#B8864B',accentAlt:'#4A2E1F',bgDark:'#1E120D',bgLight:'#F4E6D4',bgBrand:'#F4E6D4',
+    bgMid:'#E9D2B6',bgNude:'#D9B794',bronze:'#B8864B',marrom:'#4A2E1F',
+    textOnDark:'#F4E6D4',textOnLight:'#1E120D',handle:'@caseaceleradora',name:'CASE',
+    moods:['EDITORIAL_LIGHT','TYPE_LIGHT','EDITORIAL_LIGHT','TYPE_LIGHT','SPLIT_LIGHT','EDITORIAL_LIGHT','TYPE_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
+    aestheticDNA:`IDENTIDADE VISUAL: CASE Aceleradora — "Guia de Identidade Visual baseado no Quadro da Marca do Milhão."
+CONCEITO: expansão com propósito. Sofisticada, estratégica, guiada por direção clara, liderança e construção de impérios duradouros. Cada elemento comunica conquista, visão e legado.
+
+PALETA OBRIGATÓRIA:
+- Fundo dominante: areia claro #F4E6D4 e bege atlas #E9D2B6
+- Acento principal: bronze dourado #B8864B — usado com moderação em detalhes, linhas e elementos gráficos
+- Texto e elementos escuros: marrom profundo #4A2E1F e preto café #1E120D
+- NUNCA usar fundos pretos, azuis, verdes ou neon
+
+TIPOGRAFIA: geométrica, peso 700-900, maiúsculas para títulos, hierarquia clara e elegante. Fontes: MONT para títulos, INTER ou MANROPE para texto de apoio.
+
+ELEMENTOS GRÁFICOS CARACTERÍSTICOS: rosa-dos-ventos / bússola como símbolo central, mapa-mundi em manchas suaves de fundo, grid cartográfico sutil, sombras suaves, contornos metálicos dourados, composição simétrica e centralizada.
+
+DIREÇÃO DE ARTE:
+- Fundo claro e dominante (areia/bege) — nunca escuro
+- Alto respiro entre elementos, minimalismo sofisticado
+- Contraste elegante e hierarquia clara
+- Bronze/dourado de forma sutil e estratégica
+- Composição simétrica e centrada
+- Sensação premium, institucional e atemporal
+- Transmitir: direção, conquista, estratégia, expansão, legado
+
+TOM VISUAL: estratégico · sofisticado · monumental · direcional · premium · institucional
+
+NUNCA: fundos escuros dominantes, neon, cores vibrantes, elementos cartoons, estética hype ou motivacional raso, rockets, emojis gráficos.
+SEMPRE: estrutura, clareza, inteligência estratégica, composição centrada, paleta areia/bronze/marrom.`,
   },
   pessoal: {
     accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
