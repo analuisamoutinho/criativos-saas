@@ -668,7 +668,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           <div id="modeTopic" style="display:none;">
             <div class="form-group"><label class="form-label">Tema / Tópico</label><textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="4"></textarea></div>
           </div>
-          <div class="form-group"><label class="form-label">Gerador de imagens</label><select class="select" id="imageEngine"><option value="gpt">GPT Image-1</option><option value="gemini">Gemini Imagen</option><option value="none">Só texto (sem imagens)</option></select></div>
+          <input type="hidden" id="imageEngine" value="gpt"/>
           <div class="form-group" id="designStyleGroup"><label class="form-label">Estilo visual</label><div id="designStyleOptions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"></div><div id="designStyleDesc" style="font-size:.73rem;color:var(--mid);margin-top:7px;padding:8px 12px;background:var(--pale);border-radius:8px;border-left:2px solid var(--magenta);display:none;"></div></div>
           <div class="form-group" id="carouselTemplatePickerGroup" style="display:none;">
             <label class="form-label">Templates sugeridos <span style="font-size:.68rem;color:var(--mid);font-weight:400;">(opcional)</span></label>
@@ -737,7 +737,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
         <div class="form-group"><label class="form-label">Descrição do post</label><textarea class="textarea" id="feedPrompt" placeholder="Descreve o que queres comunicar..." rows="4"></textarea></div>
         <div class="form-group"><label class="form-label">Legenda Instagram</label><textarea class="textarea" id="feedCaption" placeholder="Ou deixa em branco para gerar..." rows="3"></textarea></div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Gerador</label><select class="select" id="feedEngine"><option value="gpt">GPT Image-1</option><option value="gemini">Gemini Imagen</option></select></div>
+          <input type="hidden" id="feedEngine" value="gpt"/>
           <div class="form-group"><label class="form-label">Formato</label><select class="select" id="feedSize"><option value="1024x1024">Quadrado (1:1)</option><option value="1024x1792">Vertical (4:5)</option></select></div>
         </div>
         <button class="btn btn-primary" onclick="generateFeedPost()" style="width:100%">✨ Gerar imagem</button>
