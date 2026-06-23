@@ -669,7 +669,32 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
             <div class="form-group"><label class="form-label">Tema / Tópico</label><textarea class="textarea" id="carouselTopic" placeholder="Ex: 5 erros que matam o negócio digital..." rows="4"></textarea></div>
           </div>
           <input type="hidden" id="imageEngine" value="gpt"/>
-          <input type="hidden" id="imageQuality" value="high"/>
+          <div class="form-group">
+            <label class="form-label">Qualidade das imagens</label>
+            <div class="quality-selector">
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="low" id="qLow" onchange="saveImageQuality(this.value)"/>
+                <div>
+                  <div class="quality-option-name">Low — Mais econômico</div>
+                  <div class="quality-option-desc">Ideal para testes e rascunhos</div>
+                </div>
+              </label>
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="medium" id="qMedium" onchange="saveImageQuality(this.value)"/>
+                <div>
+                  <div class="quality-option-name">Medium — Equilibrado</div>
+                  <div class="quality-option-desc">Boa qualidade com custo moderado</div>
+                </div>
+              </label>
+              <label class="quality-option">
+                <input type="radio" name="imageQuality" value="high" id="qHigh" checked onchange="saveImageQuality(this.value)"/>
+                <div>
+                  <div class="quality-option-name">High — Máxima qualidade <span class="quality-badge-default">Padrão</span></div>
+                  <div class="quality-option-desc">Melhor resultado visual, maior custo por slide</div>
+                </div>
+              </label>
+            </div>
+          </div>
           <div class="form-group" id="carouselTemplatePickerGroup" style="display:none;">
             <label class="form-label">Templates sugeridos <span style="font-size:.68rem;color:var(--mid);font-weight:400;">(opcional)</span></label>
             <div id="carouselTemplatePicker"></div>
@@ -982,9 +1007,30 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 let currentProfile='marca',currentDesignStyle=null,currentCalendarData=null,currentCalendarPost=null,currentCarouselData=null,currentCarouselImages=[],currentCarouselContentId=null,currentFeedImageUrl=null,currentFeedContentId=null,currentModalContent=null,calendarApproved=false;
 
 
-// ── Image Quality — fixo em 'high' ────────────────────────────
-async function loadUserSettings() {}
-function getSelectedQuality() { return 'high'; }
+// ── Image Quality ─────────────────────────────────────────────
+let currentImageQuality = 'high';
+
+async function loadUserSettings() {
+  try {
+    const r = await fetch('/api/user-settings');
+    const d = await r.json();
+    currentImageQuality = d.image_quality || 'high';
+    const el = document.querySelector('input[name="imageQuality"][value="' + currentImageQuality + '"]');
+    if (el) el.checked = true;
+  } catch(e) { console.warn('loadUserSettings:', e.message); }
+}
+
+async function saveImageQuality(quality) {
+  currentImageQuality = quality;
+  try {
+    await fetch('/api/user-settings', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({image_quality:quality}) });
+  } catch(e) { console.warn('saveImageQuality:', e.message); }
+}
+
+function getSelectedQuality() {
+  const el = document.querySelector('input[name="imageQuality"]:checked');
+  return el ? el.value : (currentImageQuality || 'high');
+}
 
 /* ── DESIGN STYLES ── */
 const DESIGN_STYLES={marca:[{id:'premium_editorial',name:'🧭 Composição com Símbolo',sub:'Fundo areia + bússola + título em destaque',desc:'Fundo dominante em areia/bege (#F4E6D4) com composição centralizada. Inclui elementos gráficos da marca — bússola, rosa-dos-ventos, grid cartográfico ou mapa em mancha suave. Título em marrom/preto café com acento bronze. Ideal para slides de abertura e impacto institucional.',promptStyle:'CASE Aceleradora brand visual. Sand beige background (#F4E6D4), centered composition with compass rose or cartographic map element in soft bronze (#B8864B). Dark brown text (#4A2E1F). Sophisticated, minimal, premium institutional. Symmetric layout, high breathing room.',overlayStyle:'EDITORIAL_LIGHT'},{id:'data_visual',name:'📋 Fundo Areia + Texto',sub:'Layout limpo · tipografia grande · sem foto',desc:'Sem foto — fundo areia/bege claro com tipografia grande e hierárquica como elemento principal. Detalhes em bronze dourado para separadores e destaques. Ideal para slides com listas, dados ou pontos objetivos onde a leitura precisa ser rápida e clara.',promptStyle:'CASE Aceleradora typographic layout. Sand beige background (#F4E6D4 to #E9D2B6), large bold typography in dark brown (#1E120D), bronze gold (#B8864B) accent lines and dividers. Clean, structured, premium institutional. No photography, no dark backgrounds.',overlayStyle:'TYPE_LIGHT'}],pessoal:[{id:'lofi_diary',name:'📷 Foto Natural',sub:'Luz suave + tom íntimo + grão de filme',desc:'Gera uma foto com aparência real e íntima — como tirada com iPhone no dia a dia. Luz natural, tons quentes, grão de filme. Ideal para conteúdo pessoal, reflexões e bastidores.',promptStyle:'Lo-fi diary aesthetic. Candid, intimate iPhone-style photo. Natural light, warm tones, slight film grain. Authentic and personal.',overlayStyle:'HERO_LOFI'},{id:'editorial_minimal',name:'✦ Fundo Limpo',sub:'Fundo creme + tipografia elegante + sem foto',desc:'Sem foto — fundo creme ou branco quente com tipografia elegante como elemento central. Visual clean e feminino. Ideal para frases, citações e conteúdo reflexivo onde o texto fala por si.',promptStyle:'Soft editorial minimal. Warm cream or off-white background. Typography as the hero. Clean, feminine, refined.',overlayStyle:'TYPE_CREME'},{id:'colagem_real',name:'🌿 Objetos & Textura',sub:'Detalhes do dia a dia fotografados de perto',desc:'Gera imagens com objetos cotidianos em close — caderno, xícara de café, flores, tecido. Visual aconchegante e autêntico. Ideal para dar contexto visual sem usar foto pessoal.',promptStyle:'Real life collage aesthetic. Everyday objects shot close-up — notebook, coffee, flowers, fabric. Cozy, authentic, warm tones.',overlayStyle:'COLAGEM_REAL'}],virttus:[{id:'tech_precision',name:'⚡ Visual Tech',sub:'Abstração digital + fundo escuro + luzes',desc:'Gera imagens com abstração digital — linhas, luzes azuis e verdes sobre fundo escuro. Visual moderno e tecnológico. Ideal para conteúdo sobre inovação, processos e transformação digital.',promptStyle:'Tech B2B precision. Abstract digital visuals, blue and green light accents on dark background. Forward-looking, sharp, innovative.',overlayStyle:'HERO_DARK'},{id:'corporate_clean',name:'🏢 Corporativo Limpo',sub:'Fundo branco + layout estruturado + profissional',desc:'Sem foto — fundo claro com tipografia organizada e layout estruturado. Visual direto e corporativo. Ideal para apresentar resultados, processos e conteúdo profissional objetivo.',promptStyle:'Clean corporate design. White background, structured typography, professional layout. Trust, clarity and competence.',overlayStyle:'TYPE_LIGHT'}]};
