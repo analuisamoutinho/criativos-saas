@@ -575,14 +575,36 @@ function getManualText(profile) {
 // ═══════════════════════════════════════════════════════════════════════════
 const BRAND_IDENTITIES = {
   marca: {
-    accent:'#C8A020',accentAlt:'#FFFFFF',bgDark:'#0A0A0A',bgLight:'#F5F4F0',bgBrand:'#0A0A0A',
-    textOnDark:'#FFFFFF',textOnLight:'#0A0A0A',handle:'@caseaceleradora',name:'CASE',
-    moods:['HERO_DARK','EDITORIAL_LIGHT','TYPE_LIGHT','SPLIT_LIGHT','TABLE_LIGHT','TYPE_DARK','EDITORIAL_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
-    aestheticDNA:`Premium B2B editorial design. Think The Economist meets McKinsey Digital.
-TYPOGRAPHY: Geometric sans-serif, weight 700-900, clean and authoritative.
-NEVER: hype graphics, rockets, cartoonish elements, neon colors.
-ALWAYS: structure, clarity, strategic intelligence, data-driven precision.
-PHOTOGRAPHY: executive boardroom, architectural details, desaturated editorial tones.`,
+    accent:'#B8864B',accentAlt:'#4A2E1F',bgDark:'#1E120D',bgLight:'#F4E6D4',bgBrand:'#F4E6D4',
+    bgMid:'#E9D2B6',bgNude:'#D9B794',bronze:'#B8864B',marrom:'#4A2E1F',
+    textOnDark:'#F4E6D4',textOnLight:'#1E120D',handle:'@caseaceleradora',name:'CASE',
+    moods:['EDITORIAL_LIGHT','TYPE_LIGHT','EDITORIAL_LIGHT','TYPE_LIGHT','SPLIT_LIGHT','EDITORIAL_LIGHT','TYPE_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
+    aestheticDNA:`IDENTIDADE VISUAL: CASE Aceleradora — "Guia de Identidade Visual baseado no Quadro da Marca do Milhão."
+CONCEITO: expansão com propósito. Sofisticada, estratégica, guiada por direção clara, liderança e construção de impérios duradouros. Cada elemento comunica conquista, visão e legado.
+
+PALETA OBRIGATÓRIA:
+- Fundo dominante: areia claro #F4E6D4 e bege atlas #E9D2B6
+- Acento principal: bronze dourado #B8864B — usado com moderação em detalhes, linhas e elementos gráficos
+- Texto e elementos escuros: marrom profundo #4A2E1F e preto café #1E120D
+- NUNCA usar fundos pretos, azuis, verdes ou neon
+
+TIPOGRAFIA: geométrica, peso 700-900, maiúsculas para títulos, hierarquia clara e elegante. Fontes: MONT para títulos, INTER ou MANROPE para texto de apoio.
+
+ELEMENTOS GRÁFICOS CARACTERÍSTICOS: rosa-dos-ventos / bússola como símbolo central, mapa-mundi em manchas suaves de fundo, grid cartográfico sutil, sombras suaves, contornos metálicos dourados, composição simétrica e centralizada.
+
+DIREÇÃO DE ARTE:
+- Fundo claro e dominante (areia/bege) — nunca escuro
+- Alto respiro entre elementos, minimalismo sofisticado
+- Contraste elegante e hierarquia clara
+- Bronze/dourado de forma sutil e estratégica
+- Composição simétrica e centrada
+- Sensação premium, institucional e atemporal
+- Transmitir: direção, conquista, estratégia, expansão, legado
+
+TOM VISUAL: estratégico · sofisticado · monumental · direcional · premium · institucional
+
+NUNCA: fundos escuros dominantes, neon, cores vibrantes, elementos cartoons, estética hype ou motivacional raso, rockets, emojis gráficos.
+SEMPRE: estrutura, clareza, inteligência estratégica, composição centrada, paleta areia/bronze/marrom.`,
   },
   pessoal: {
     accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
