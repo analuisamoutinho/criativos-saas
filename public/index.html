@@ -1960,48 +1960,15 @@ function downloadCalendarPDF(){if(!currentCalendarData)return toast('Gera um cal
 async function exportCalendarTextsForDesigner(mode){
   if(!currentCalendarData)return toast('Gera um calendário primeiro','error');
   const cal=currentCalendarData.calendar||[];
+  const lines=[];
   const profileLabel=currentProfile==='marca'?'CASE Aceleradora':currentProfile==='pessoal'?'Ana Moutinho':'Virttus';
   const periodLabel=mode==='semanal'&&cal[0]?.date?`Semana de ${cal[0].date}`:(currentCalendarData.month?`${MONTH_NAMES[currentCalendarData.month-1]} ${currentCalendarData.year}`:'Calendário');
-
-  // Count posts that need generation
-  const toGenerate=[];
-  for(const day of cal){
-    for(const post of (day.posts||[])){
-      if(!post.contentId&&post.topic)toGenerate.push({day,post});
-    }
-  }
-
-  // Auto-generate missing content
-  if(toGenerate.length>0){
-    const btn=mode==='semanal'?document.getElementById('btnWeekCalExport'):document.getElementById('btnCalExport');
-    if(btn){btn.disabled=true;btn.textContent='⏳ A gerar conteúdo...';}
-    toast(`A gerar ${toGenerate.length} carrossel(is) em falta — aguarda...`,'info');
-    let done=0;
-    for(const {day,post} of toGenerate){
-      try{
-        const r=await fetch('/api/carousel/generate-and-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topic:post.topic,profile:currentProfile,calendarDay:day.day||null,calendarMonth:currentCalendarData.month||null,calendarYear:currentCalendarData.year||null})});
-        const d=await r.json();
-        if(d.contentId){
-          post.contentId=d.contentId;
-          // cache slides directly to avoid extra fetch
-          post._cachedSlides=d.slides||[];
-          post._cachedTitle=d.title||post.topic;
-        }
-      }catch(e){/* keep going, will show error in export */}
-      done++;
-      toast(`Gerado ${done}/${toGenerate.length}...`,'info');
-    }
-    if(btn){btn.disabled=false;btn.textContent='📄 Exportar para Designer';}
-  }
-
-  // Build export text
-  const lines=[];
   lines.push('════════════════════════════════════════');
   lines.push(`  CALENDÁRIO EDITORIAL — ${profileLabel.toUpperCase()}`);
   lines.push(`  ${periodLabel}`);
   lines.push('════════════════════════════════════════');
   lines.push('');
-
+  toast('A preparar exportação...','info');
   for(const day of cal){
     const posts=day.posts||[];
     if(!posts.length)continue;
@@ -2016,33 +1983,28 @@ async function exportCalendarTextsForDesigner(mode){
       lines.push(`POST ${pi+1} — ${(post.type||'Post').toUpperCase()} · ${post.time||'–'}`);
       lines.push(`Tema: ${post.topic||'–'}`);
       if(post.contentId){
-        let slides=post._cachedSlides||null;
-        let carouselTitle=post._cachedTitle||null;
-        if(!slides){
-          try{
-            const r=await fetch(`/api/content/${post.contentId}`);
-            const d=await r.json();
-            const content=d.content||d;
-            slides=content.carouselData?.slides||content.slides||[];
-            carouselTitle=content.carouselData?.title||content.topic||post.topic;
-          }catch(e){slides=[];}
+        try{
+          const r=await fetch(`/api/content/${post.contentId}`);
+          const d=await r.json();
+          const content=d.content||d;
+          const slides=content.slides||[];
+          if(slides.length){
+            lines.push(`Slides (${slides.length}):`);
+            slides.forEach((s,si)=>{
+              lines.push('');
+              lines.push(`  Slide ${si+1}${s.role?` [${s.role}]`:''}`);
+              if(s.heading||s.title)lines.push(`  Título: ${s.heading||s.title}`);
+              if(s.body)lines.push(`  Texto: ${s.body}`);
+              if(s.cta)lines.push(`  CTA: ${s.cta}`);
+            });
+          } else {
+            lines.push(`  (conteúdo sem slides estruturados)`);
+          }
+        }catch(e){
+          lines.push(`  ⚠ Erro ao carregar slides: ${e.message}`);
         }
-        if(carouselTitle)lines.push(`Título do carrossel: ${carouselTitle}`);
-        if(slides&&slides.length){
-          lines.push(`Slides (${slides.length}):`);
-          slides.forEach((s,si)=>{
-            lines.push('');
-            const funcao=s.funcao||s.role||'';
-            lines.push(`  Slide ${si+1}${funcao?` [${funcao}]`:''}`);
-            if(s.heading||s.title)lines.push(`  Título: ${s.heading||s.title}`);
-            if(s.body)lines.push(`  Texto: ${s.body}`);
-            if(s.cta)lines.push(`  CTA: ${s.cta}`);
-          });
-        }else{
-          lines.push(`  (conteúdo sem slides estruturados)`);
-        }
-      }else{
-        lines.push(`  ⚠ Não foi possível gerar — adicione manualmente`);
+      } else {
+        lines.push(`  📝 Conteúdo não gerado ainda`);
       }
       lines.push('');
     }
