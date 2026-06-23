@@ -813,6 +813,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           <div class="form-group" style="margin:0;width:120px;"><label class="form-label">Posts por dia</label><select class="select" id="calPostsPerDay"><option value="1">1 por dia</option><option value="2" selected>2 por dia</option><option value="3">3 por dia</option></select></div>
           <button class="btn btn-primary" onclick="generateCalendar()" id="btnGenCalendar">✨ Gerar mês</button>
           <button class="btn btn-secondary" onclick="downloadCalendarPDF()" id="btnCalPDF" disabled title="Gera um calendário primeiro">⬇️ Baixar PDF</button>
+          <button class="btn btn-secondary" onclick="exportCalendarTextsForDesigner('mensal')" id="btnCalExport" disabled title="Gera um calendário primeiro">📄 Exportar para Designer</button>
         </div>
       </div>
       <div id="calControlsSemanal" style="display:none;">
@@ -820,6 +821,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
           <div class="form-group" style="margin:0;flex:1;min-width:160px;"><label class="form-label">Semana a partir de</label><input type="date" class="input" id="calWeekStart"/></div>
           <div class="form-group" style="margin:0;width:120px;"><label class="form-label">Posts por dia</label><select class="select" id="calWeekPostsPerDay"><option value="1" selected>1 por dia</option><option value="2">2 por dia</option></select></div>
           <button class="btn btn-primary" onclick="generateWeekCalendar()" id="btnGenWeekCalendar">✨ Gerar semana</button>
+          <button class="btn btn-secondary" onclick="exportCalendarTextsForDesigner('semanal')" id="btnWeekCalExport" disabled title="Gera uma semana primeiro">📄 Exportar para Designer</button>
         </div>
       </div>
     </div>
@@ -1943,19 +1945,82 @@ function initCalendarMonths(){const sel=document.getElementById('calMonth');if(!
 
 function setCalMode(mode){document.getElementById('calModeMensal').classList.toggle('active',mode==='mensal');document.getElementById('calModeSemanal').classList.toggle('active',mode==='semanal');document.getElementById('calControlsMensal').style.display=mode==='mensal'?'block':'none';document.getElementById('calControlsSemanal').style.display=mode==='semanal'?'block':'none';}
 
-async function generateCalendar(){const month=parseInt(document.getElementById('calMonth').value);const year=parseInt(document.getElementById('calYear').value);const postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);const btn=document.getElementById('btnGenCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';try{const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});const d=await r.json();if(d.error)throw new Error(d.error);currentCalendarData={month,year,calendar:d.calendar};calendarApproved=false;renderCalendar(d.calendar,month,year);document.getElementById('calendarPreviewBar').style.display='block';document.getElementById('btnCalPDF').disabled=false;toast('Calendário gerado! Revê e aprova.','success');}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='✨ Gerar mês';document.getElementById('calendarLoading').style.display='none';}}
+async function generateCalendar(){const month=parseInt(document.getElementById('calMonth').value);const year=parseInt(document.getElementById('calYear').value);const postsPerDay=parseInt(document.getElementById('calPostsPerDay').value);const btn=document.getElementById('btnGenCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';try{const r=await fetch('/api/calendar/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({month,year,profile:currentProfile,postsPerDay})});const d=await r.json();if(d.error)throw new Error(d.error);currentCalendarData={month,year,calendar:d.calendar};calendarApproved=false;renderCalendar(d.calendar,month,year);document.getElementById('calendarPreviewBar').style.display='block';document.getElementById('btnCalPDF').disabled=false;document.getElementById('btnCalExport').disabled=false;toast('Calendário gerado! Revê e aprova.','success');}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='✨ Gerar mês';document.getElementById('calendarLoading').style.display='none';}}
 
 function renderCalendar(calendar,month,year){document.getElementById('calendarTitle').textContent=MONTH_NAMES[month-1]+' '+year;const grid=document.getElementById('calendarGrid');grid.innerHTML=calendar.map(day=>{const posts=day.posts||[];return`<div class="calendar-day"><div class="calendar-day-num">${day.day}</div>${posts.map((post,pi)=>`<div onclick="openCalPostModal(${day.day},${pi})" style="cursor:pointer;margin:3px 0;padding:4px 6px;border-radius:6px;font-size:.7rem;background:var(--pale);border-left:3px solid var(--magenta);"><div style="font-weight:700;font-size:.65rem;color:var(--mid);">${post.time||''} · ${post.type||''}</div><div style="font-size:.72rem;line-height:1.3;">${(post.topic||'').slice(0,60)}${(post.topic||'').length>60?'...':''}</div>${post.contentId?'<div style="font-size:.6rem;color:#10B981;">✓ Gerado</div>':''}</div>`).join('')}</div>`;}).join('');document.getElementById('calendarContainer').style.display='block';}
 
-async function loadSavedCalendar(){const month=parseInt(document.getElementById('calMonth')?.value||new Date().getMonth()+1);const year=parseInt(document.getElementById('calYear')?.value||new Date().getFullYear());try{const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);const d=await r.json();if(d.found&&d.calendar?.length){currentCalendarData={month,year,calendar:d.calendar};calendarApproved=true;renderCalendar(d.calendar,month,year);document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('btnCalPDF').disabled=false;}}catch(e){/* silent */}}
+async function loadSavedCalendar(){const month=parseInt(document.getElementById('calMonth')?.value||new Date().getMonth()+1);const year=parseInt(document.getElementById('calYear')?.value||new Date().getFullYear());try{const r=await fetch(`/api/calendar/saved?profile=${currentProfile}&month=${month}&year=${year}`);const d=await r.json();if(d.found&&d.calendar?.length){currentCalendarData={month,year,calendar:d.calendar};calendarApproved=true;renderCalendar(d.calendar,month,year);document.getElementById('calApprovedBadge').style.display='inline-block';document.getElementById('btnCalPDF').disabled=false;document.getElementById('btnCalExport').disabled=false;}}catch(e){/* silent */}}
 
 async function approveCalendar(){if(!currentCalendarData)return;try{const r=await fetch('/api/calendar/saved',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({profile:currentProfile,month:currentCalendarData.month,year:currentCalendarData.year,calendar:currentCalendarData.calendar})});const d=await r.json();if(d.success){calendarApproved=true;document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='inline-block';toast('Calendário aprovado e salvo! ✅','success');}}catch(e){toast('Erro ao salvar: '+e.message,'error');}}
 
-function rejectCalendar(){currentCalendarData=null;calendarApproved=false;document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='none';document.getElementById('btnCalPDF').disabled=true;toast('Calendário rejeitado. Gera um novo.','info');}
+function rejectCalendar(){currentCalendarData=null;calendarApproved=false;document.getElementById('calendarContainer').style.display='none';document.getElementById('calendarPreviewBar').style.display='none';document.getElementById('calApprovedBadge').style.display='none';document.getElementById('btnCalPDF').disabled=true;document.getElementById('btnCalExport').disabled=true;toast('Calendário rejeitado. Gera um novo.','info');}
 
 function downloadCalendarPDF(){if(!currentCalendarData)return toast('Gera um calendário primeiro','error');window.print();}
 
-async function generateWeekCalendar(){const weekStart=document.getElementById('calWeekStart').value;if(!weekStart)return toast('Escolhe a data de início da semana','error');const postsPerDay=parseInt(document.getElementById('calWeekPostsPerDay').value);const btn=document.getElementById('btnGenWeekCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';try{const r=await fetch('/api/calendar/generate-week',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({weekStart,profile:currentProfile,postsPerDay})});const d=await r.json();if(d.error)throw new Error(d.error);currentCalendarData={month:null,year:null,calendar:d.week};renderWeekCalendar(d.week,weekStart);document.getElementById('btnCalPDF').disabled=false;toast('Semana gerada!','success');}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='✨ Gerar semana';document.getElementById('calendarLoading').style.display='none';}}
+async function exportCalendarTextsForDesigner(mode){
+  if(!currentCalendarData)return toast('Gera um calendário primeiro','error');
+  const cal=currentCalendarData.calendar||[];
+  const lines=[];
+  const profileLabel=currentProfile==='marca'?'CASE Aceleradora':currentProfile==='pessoal'?'Ana Moutinho':'Virttus';
+  const periodLabel=mode==='semanal'&&cal[0]?.date?`Semana de ${cal[0].date}`:(currentCalendarData.month?`${MONTH_NAMES[currentCalendarData.month-1]} ${currentCalendarData.year}`:'Calendário');
+  lines.push('════════════════════════════════════════');
+  lines.push(`  CALENDÁRIO EDITORIAL — ${profileLabel.toUpperCase()}`);
+  lines.push(`  ${periodLabel}`);
+  lines.push('════════════════════════════════════════');
+  lines.push('');
+  toast('A preparar exportação...','info');
+  for(const day of cal){
+    const posts=day.posts||[];
+    if(!posts.length)continue;
+    const dateLabel=day.date||(currentCalendarData.month?`${day.day}/${String(currentCalendarData.month).padStart(2,'0')}/${currentCalendarData.year}`:`Dia ${day.day}`);
+    const dowLabel=day.dayOfWeek?` (${day.dayOfWeek})`:'';
+    lines.push(`────────────────────────────────────────`);
+    lines.push(`  ${dateLabel}${dowLabel}`);
+    lines.push(`────────────────────────────────────────`);
+    for(let pi=0;pi<posts.length;pi++){
+      const post=posts[pi];
+      lines.push('');
+      lines.push(`POST ${pi+1} — ${(post.type||'Post').toUpperCase()} · ${post.time||'–'}`);
+      lines.push(`Tema: ${post.topic||'–'}`);
+      if(post.contentId){
+        try{
+          const r=await fetch(`/api/content/${post.contentId}`);
+          const d=await r.json();
+          const content=d.content||d;
+          const slides=content.slides||[];
+          if(slides.length){
+            lines.push(`Slides (${slides.length}):`);
+            slides.forEach((s,si)=>{
+              lines.push('');
+              lines.push(`  Slide ${si+1}${s.role?` [${s.role}]`:''}`);
+              if(s.heading||s.title)lines.push(`  Título: ${s.heading||s.title}`);
+              if(s.body)lines.push(`  Texto: ${s.body}`);
+              if(s.cta)lines.push(`  CTA: ${s.cta}`);
+            });
+          } else {
+            lines.push(`  (conteúdo sem slides estruturados)`);
+          }
+        }catch(e){
+          lines.push(`  ⚠ Erro ao carregar slides: ${e.message}`);
+        }
+      } else {
+        lines.push(`  📝 Conteúdo não gerado ainda`);
+      }
+      lines.push('');
+    }
+  }
+  lines.push('════════════════════════════════════════');
+  lines.push(`  Exportado em ${new Date().toLocaleDateString('pt-BR')} — Criativos SaaS`);
+  lines.push('════════════════════════════════════════');
+  const blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`calendario_${profileLabel.toLowerCase().replace(/\s+/g,'_')}_${periodLabel.toLowerCase().replace(/[^a-z0-9]+/g,'_')}.txt`;
+  a.click();
+  toast('Exportação concluída! ✅','success');
+}
+
+async function generateWeekCalendar(){const weekStart=document.getElementById('calWeekStart').value;if(!weekStart)return toast('Escolhe a data de início da semana','error');const postsPerDay=parseInt(document.getElementById('calWeekPostsPerDay').value);const btn=document.getElementById('btnGenWeekCalendar');btn.disabled=true;btn.textContent='⏳ A gerar...';document.getElementById('calendarLoading').style.display='flex';document.getElementById('calendarContainer').style.display='none';try{const r=await fetch('/api/calendar/generate-week',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({weekStart,profile:currentProfile,postsPerDay})});const d=await r.json();if(d.error)throw new Error(d.error);currentCalendarData={month:null,year:null,calendar:d.week};renderWeekCalendar(d.week,weekStart);document.getElementById('btnCalPDF').disabled=false;document.getElementById('btnWeekCalExport').disabled=false;toast('Semana gerada!','success');}catch(e){toast('Erro: '+e.message,'error');}finally{btn.disabled=false;btn.textContent='✨ Gerar semana';document.getElementById('calendarLoading').style.display='none';}}
 
 function renderWeekCalendar(week,weekStart){document.getElementById('calendarTitle').textContent='Semana de '+weekStart;const grid=document.getElementById('calendarGrid');grid.innerHTML=week.map(day=>{const posts=day.posts||[];return`<div class="calendar-day"><div class="calendar-day-num" style="font-size:.72rem;">${day.dayOfWeek||day.date}<br><span style="font-size:.6rem;color:var(--mid);">${day.date||''}</span></div>${posts.map((post,pi)=>`<div onclick="openCalPostModal('${day.date||day.day}',${pi})" style="cursor:pointer;margin:3px 0;padding:4px 6px;border-radius:6px;font-size:.7rem;background:var(--pale);border-left:3px solid var(--magenta);"><div style="font-weight:700;font-size:.65rem;color:var(--mid);">${post.time||''} · ${post.type||''}</div><div style="font-size:.72rem;line-height:1.3;">${(post.topic||'').slice(0,60)}</div></div>`).join('')}</div>`;}).join('');document.getElementById('calendarContainer').style.display='block';}
 
