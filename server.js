@@ -1069,6 +1069,20 @@ app.post('/api/calendar/generate', async (req, res) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const tiposDisponiveis = Object.values(tipos).map(t => t.id).join(' | ');
     const tiposLabels = Object.values(tipos).map(t => t.id + ' (' + t.label + ')').join(', ');
+
+    // Busca tendências em tempo real para perfis BrandsDecoded
+    let trendTopics = [];
+    if (!isRR) {
+      trendTopics = await getTrendsForCalendar(profile);
+    }
+    const trendBlock = trendTopics.length
+      ? '\nTENDÊNCIAS EM ALTA AGORA (use como tópicos do tipo "tendencia" distribuídos ao longo do mês):\n' + trendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+      : '';
+
+    const proporcaoBD = !isRR
+      ? '\nPROPORÇÃO RECOMENDADA BrandsDecoded (distribuir ao longo do mês):\n- 35% educativo (conteúdo de autoridade, ensina algo prático)\n- 20% tendencia (use os tópicos de tendência listados acima quando disponíveis)\n- 15% case (resultado real de cliente ou negócio)\n- 15% lista (conteúdo de alcance, shareável)\n- 10% comparacao (antes/depois, certo/errado)\n- 5% prova_social ou oferta\n'
+      : '';
+
     const BLOCK = 10;
     const allDays = [];
     for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
@@ -1078,9 +1092,9 @@ app.post('/api/calendar/generate', async (req, res) => {
         ? 'PERFIL: ' + account.name + ' (' + account.handle + ') — MARCA PESSOAL, Metodologia RR.'
         : 'PERFIL: ' + account.name + ' (' + account.handle + ') — MARCA CORPORATIVA, BrandsDecoded.\nTIPOS: ' + tiposLabels;
       const examplePosts = postsPerDay === 1
-        ? (isRR ? '[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding de clientes"}]')
-        : (isRR ? '[{"time":"09:00","type":"carrossel","topic":"A mentira que o Instagram vende sobre consistência"},{"time":"18:00","type":"frase","topic":"Você não precisa de motivação, precisa de estrutura"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding"},{"time":"18:00","type":"tendencia","topic":"O novo comportamento do consumidor pós-IA em 2026"}]');
-      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos com ângulo único.\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
+        ? (isRR ? '[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas param de crescer quando o dono para de aparecer"}]')
+        : (isRR ? '[{"time":"09:00","type":"carrossel","topic":"A mentira que o Instagram vende sobre consistência"},{"time":"18:00","type":"frase","topic":"Você não precisa de motivação, precisa de estrutura"}]' : '[{"time":"09:00","type":"educativo","topic":"O erro que faz donos de negócio trabalharem mais e faturarem menos"},{"time":"18:00","type":"tendencia","topic":"O que está mudando no comportamento do consumidor brasileiro em 2026"}]');
+      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + trendBlock + proporcaoBD + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos, com ângulo concreto e linguagem de dono de negócio real (sem jargão técnico).\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
@@ -1135,8 +1149,21 @@ app.post('/api/calendar/generate-week', async (req, res) => {
       weekDays.push({ date: d.toISOString().slice(0,10), dayOfWeek: ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i] });
     }
     const daysText = weekDays.map(d => d.dayOfWeek + ' ' + d.date).join(', ');
+
+    // Busca tendências para perfis BrandsDecoded
+    let weekTrendTopics = [];
+    if (!isRR) {
+      weekTrendTopics = await getTrendsForCalendar(profile);
+    }
+    const weekTrendBlock = weekTrendTopics.length
+      ? '\nTENDÊNCIAS EM ALTA AGORA (use 1-2 como tópico do tipo "tendencia" na semana):\n' + weekTrendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+      : '';
+    const weekProporcaoBD = !isRR
+      ? '\nPROPORÇÃO SEMANAL BrandsDecoded: priorize educativo (autoridade) + 1 tendencia (usando os tópicos acima se disponíveis) + 1 lista ou case. Evite mais de 1 oferta por semana.\n'
+      : '';
+
     const examplePost = isRR ? '{"time":"09:00","type":"lofi","topic":"Tema específico aqui"}' : '{"time":"09:00","type":"educativo","topic":"Tema específico aqui"}';
-    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + weekTrendBlock + weekProporcaoBD + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia. Topics devem ser específicos com linguagem de dono de negócio real.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
@@ -1298,7 +1325,7 @@ app.post('/api/content-machine/generate', async (req, res) => {
 // TENDÊNCIAS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const NICHE_CONFIG = { marca: 'negócios, empresas, marketing digital, growth hacking, empreendedorismo, vendas B2B, liderança empresarial', pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida', virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança' };
+const NICHE_CONFIG = { marca: 'empreendedorismo, gestão de negócios, faturamento, operação, equipe, expansão, delivery, e-commerce, negócio local, franquia, pequenas e médias empresas, liderança empresarial, fluxo de caixa, precificação, atendimento ao cliente', pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida', virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança' };
 const trendsCache = {};
 const TRENDS_TTL  = 60 * 60 * 1000;
 
@@ -1346,6 +1373,26 @@ app.get('/api/trends', async (req, res) => {
     res.json(result);
   } catch(err) { console.error('[Trends]', err); res.status(500).json({ error: err.message }); }
 });
+
+// Busca e filtra tendências para uso no calendário (sem cache, chamada interna)
+async function getTrendsForCalendar(profile) {
+  try {
+    const account  = getAccount(profile);
+    const nicho    = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
+    const manualNote = getManualText(profile);
+    const googleTrends = await getGoogleTrends();
+    if (!googleTrends.length) return [];
+    const termosList = googleTrends.map((t, i) => (i + 1) + '. ' + t.termo + (t.volume ? ' (' + t.volume + ')' : '')).join('\n');
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + '.\nNicho: ' + nicho + '.\n' + (manualNote ? 'Contexto:\n' + manualNote + '\n' : '') + 'Termos em alta agora no Brasil:\n\n' + termosList + '\n\nSelecione os 4 termos mais relevantes para o nicho e gere ganchos prontos. JSON APENAS:\n{"trends":[{"termo":"...","gancho":"headline de 12-16 palavras pronta para usar como tópico no calendário","tipo":"tendencia"}]}';
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }) });
+    const aiData = await aiRes.json();
+    if (aiData.content?.[0]) {
+      const parsed = extractJSON(aiData.content[0].text.trim());
+      return (parsed.trends || []).slice(0, 4);
+    }
+  } catch(e) { console.warn('[TrendsForCalendar]', e.message); }
+  return [];
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CANVA TEMPLATES
