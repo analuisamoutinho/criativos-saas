@@ -207,20 +207,22 @@ const TIPOS_RR = {
 const METODOLOGIA_BRANDSDECODED = {
   nome: 'BrandsDecoded — Padrão Premium de Copy Corporativa',
   filosofia: `
-FILOSOFIA BASE (BrandsDecoded):
-- Autoridade por profundidade, não por hype. Dados, frameworks, análises concretas.
-- Hook de 14-18 palavras que nomeia um comportamento ou padrão real de mercado.
-- Cada slide precisa ser tão bom que o leitor manda para alguém.
-- Nunca inventar fatos. Nunca usar buzzwords sem substância.
+FILOSOFIA BASE (BrandsDecoded — Case Aceleradora):
+- Autoridade por profundidade, não por hype. Dados reais, exemplos concretos de negócios reais.
+- Hook de 14-18 palavras que nomeia um comportamento ou padrão real que o empresário vive no dia a dia.
+- Cada slide precisa ser tão bom que o leitor manda para o sócio ou para o grupo do WhatsApp da empresa.
+- Nunca inventar fatos. Nunca usar jargão técnico sem explicar em linguagem de negócio.
+- O público é o empresário que fatura 80k+/mês — dono de delivery, e-commerce, negócio local, franquia. Ele não conhece termos de SaaS, growth hacking ou métricas de startup. Ele conhece: faturamento, margem, equipe, cliente, operação, fluxo de caixa, fornecedor, concorrente, expansão.
+- NUNCA usar: SaaS, MRR, churn, growth hacking, onboarding, KPI, ROI, escalabilidade, user, B2B, lead qualificado, funil de vendas, jornada do cliente, upsell, cross-sell, framework, mindset, pivot, tração, runway. Substitua por: recorrência, perda de clientes, crescimento, integração de novos funcionários, resultado, retorno, crescimento com estrutura, cliente, empresa/negócio, venda extra, indicação, método, mentalidade, mudar de direção, crescimento inicial, caixa.
 `,
   estrutura: `
 ESTRUTURA BRANDSDECODED:
-- Slide 1: hook como afirmação provocativa que nomeia fenômeno real (14-18 palavras)
-- Slides 2-N: dados, frameworks, exemplos verificáveis — profundidade estratégica
+- Slide 1: hook como afirmação provocativa que nomeia fenômeno real que o empresário reconhece (14-18 palavras)
+- Slides 2-N: exemplos reais de negócios, números concretos, situações do dia a dia — profundidade sem jargão
 - Slide final: CTA direto com assinatura da marca
 `,
-  tonsProibidos: ['descubra', 'saiba como', 'conheça', 'transforme', 'incrível', 'revolucionário', 'disruptivo', 'mudando o jogo', 'next-level', 'fórmula', 'segredo'],
-  tonsPermitidos: ['estratégico', 'analítico', 'direto', 'premium', 'autoridade', 'preciso', 'fundamentado', 'b2b'],
+  tonsProibidos: ['descubra', 'saiba como', 'conheça', 'transforme', 'incrível', 'revolucionário', 'disruptivo', 'mudando o jogo', 'next-level', 'fórmula', 'segredo', 'SaaS', 'growth hacking', 'MRR', 'churn', 'KPI', 'ROI', 'escalabilidade', 'onboarding', 'framework', 'mindset', 'tração', 'pivot', 'runway', 'lead qualificado'],
+  tonsPermitidos: ['direto', 'estratégico', 'autoridade', 'real', 'fundamentado', 'prático', 'empresarial', 'concreto'],
   tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
 };
 
@@ -265,16 +267,19 @@ REGRAS OBRIGATÓRIAS:
 - Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}`;
   }
 
-  return `Você é o gerador de carrosseis da BrandsDecoded — padrão mais alto de copy corporativa para Instagram.
+  return `Você é o gerador de carrosseis da Case Aceleradora — conteúdo premium para empresários reais no Instagram.
 
 ${METODOLOGIA_BRANDSDECODED.filosofia}
 ${METODOLOGIA_BRANDSDECODED.estrutura}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
+PÚBLICO QUE VOCÊ ESTÁ FALANDO: Empresários que faturam 80k a 500k/mês. Donos de delivery, e-commerce, negócio local, franquia, prestação de serviço. Eles entendem de operação, equipe, cliente, fornecedor e caixa. Não entendem de jargão técnico de startup ou SaaS.
+
 REGRAS OBRIGATÓRIAS:
-- Slide 1: hook de 14-18 palavras
+- Slide 1: hook de 14-18 palavras — deve soar como algo que o dono de negócio pensa no dia a dia
 - NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- NUNCA usar termos técnicos de startup/SaaS: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- Use exemplos de negócios reais (delivery, loja, serviço) em vez de exemplos abstratos
 - Máximo 4 hashtags
 - ASSINATURA FIXA no último slide: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
 - Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array
@@ -282,7 +287,7 @@ REGRAS OBRIGATÓRIAS:
 REGRA CRÍTICA SOBRE CONTEÚDO DOS SLIDES:
 - Cada slide DEVE ter um "heading" (título curto e direto) E um "body" com 2-3 frases que desenvolvem e explicam o heading com substância real.
 - NUNCA deixar "body" vazio ou com menos de 2 frases. O body é onde está o valor do conteúdo.
-- O body deve conter: dado concreto, explicação do conceito, exemplo ou consequência prática — algo que o leitor possa usar ou compartilhar.
+- O body deve conter: situação real de negócio, número concreto, exemplo prático — algo que o dono de delivery ou e-commerce reconheça como verdade da própria vida.
 - Slides de conteúdo sem body são slides inúteis. Cada slide deve poder existir sozinho e fazer sentido completo.`;
 }
 
@@ -309,11 +314,13 @@ REGRAS:
 - Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
   }
 
-  return `Você é o gerador oficial de conteúdo de alta performance da BrandsDecoded para ${account.name}.
+  return `Você é o gerador oficial de conteúdo da Case Aceleradora para Instagram.
 
 ${METODOLOGIA_BRANDSDECODED.filosofia}
 ${METODOLOGIA_BRANDSDECODED.estrutura}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
+
+PÚBLICO: Empresários que faturam 80k a 500k/mês — donos de delivery, e-commerce, negócio local, franquia, prestação de serviço. Linguagem de quem entende de operação, equipe, cliente e caixa. Nunca linguagem de startup ou tech.
 
 TIPO ATUAL: ${tipoInfo.emoji} ${tipoInfo.label} (${tipoInfo.categoria})
 INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
@@ -321,7 +328,8 @@ INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
 REGRAS:
 - Nunca inventar fatos
 - NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- NUNCA usar termos de startup/SaaS: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- Use sempre exemplos de negócios reais (delivery, loja física, e-commerce, prestação de serviço)
 - Máximo 4 hashtags
 - ASSINATURA FIXA: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
 - Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
@@ -334,16 +342,24 @@ REGRAS:
 const DEFAULT_PROFILES = {
   marca: {
     profileId: 'marca', tipo: 'corporativa', nome: 'Case Aceleradora',
-    handle: '@caseaceleradora', niche: 'Aceleração de negócios digitais, B2B, growth hacking',
-    bio: 'Aceleramos negócios digitais com estratégia, dados e criatividade.',
-    tom: 'Autoritário, estratégico, direto. Premium B2B. Sem hype.',
-    proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como', 'Riqueza', 'Fórmula secreta'],
-    pilares: ['Estratégia de negócio', 'Cases de sucesso', 'Tendências de mercado', 'Frameworks de growth'],
-    publicoAlvo: 'Fundadores, CEOs e diretores de empresas digitais em fase de escala',
+    handle: '@caseaceleradora', niche: 'Aceleração de negócios reais: faturamento, operação, equipe e expansão — para empresários que já faturam e querem crescer com estrutura',
+    bio: 'Aceleramos negócios reais com estratégia, estrutura e execução. Delivery, e-commerce, negócio local — a Case acompanha quem já fatura e quer escalar de verdade.',
+    tom: 'Direto, confiante, com autoridade de quem já viu muitos negócios crescerem. Fala de igual para igual com o dono de negócio. Sem jargão técnico, sem papo de startup. Linguagem de quem entende de operação, equipe, caixa, cliente e resultado real.',
+    proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como', 'Riqueza', 'Fórmula secreta', 'SaaS', 'MRR', 'Churn', 'Growth hacking', 'KPI', 'ROI', 'Escalabilidade', 'Onboarding', 'Framework', 'Mindset', 'Tração', 'Pivot', 'Runway', 'Lead qualificado', 'Funil de vendas', 'Jornada do cliente', 'Upsell', 'B2B', 'B2C', 'Stakeholder', 'Disruptivo', 'Inovação disruptiva', 'Next-level'],
+    pilares: [
+      'Gestão de equipe e liderança real (como contratar, treinar, cobrar e reter)',
+      'Operação e processos (como parar de depender só de você)',
+      'Faturamento e margem (o que está comendo seu lucro e como resolver)',
+      'Expansão e escala (como abrir nova unidade, novo canal ou novo produto sem quebrar)',
+      'Cases reais de clientes Case (resultado concreto, antes e depois)',
+      'Erros comuns de quem fatura entre 80k e 500k/mês (e como evitar)',
+    ],
+    publicoAlvo: 'Empresários que faturam entre 80k e 500k/mês — donos de delivery, restaurante, e-commerce, negócio local, franquia, loja física ou prestação de serviço. Pessoas que entendem de negócio real: dia a dia de operação, equipe, fornecedor, cliente difícil, fluxo de caixa. Não conhecem jargão de startup ou SaaS.',
     cta: 'Comente "CASE" que nossa equipe te chama.',
-    referencias: ['Monocle', 'FT Weekend', 'McKinsey Digital', 'The Economist'],
+    referencias: ['Negócios reais brasileiros', 'Empreendedores de sucesso sem jargão', 'Linguagem de Exame/Pequenas Empresas Grandes Negócios', 'Exemplos práticos de delivery, e-commerce e franquia'],
     tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
-    observacoes: '', pdfUploadedAt: null, updatedAt: null,
+    observacoes: 'A Case Aceleradora fala com donos de negócio que já faturam e querem crescer com estrutura. O público não é de tech, não é de startup. É o dono de delivery que abre às 10h e fecha à meia-noite, o dono de e-commerce que vende 500 pedidos por mês, o prestador de serviço que tem 10 funcionários e não sabe como crescer sem perder o controle. Todo conteúdo precisa soar como conselho de quem já viu isso funcionar — não como teoria de consultor. Use exemplos de negócios reais: "a padaria que triplicou o ticket médio", "o delivery que parou de perder funcionários", "a loja que abriu a segunda unidade sem se endividar". Evite qualquer termo técnico sem explicação imediata em linguagem do dia a dia de empresa.',
+    pdfUploadedAt: null, updatedAt: null,
   },
   pessoal: {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
