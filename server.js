@@ -207,20 +207,22 @@ const TIPOS_RR = {
 const METODOLOGIA_BRANDSDECODED = {
   nome: 'BrandsDecoded — Padrão Premium de Copy Corporativa',
   filosofia: `
-FILOSOFIA BASE (BrandsDecoded):
-- Autoridade por profundidade, não por hype. Dados, frameworks, análises concretas.
-- Hook de 14-18 palavras que nomeia um comportamento ou padrão real de mercado.
-- Cada slide precisa ser tão bom que o leitor manda para alguém.
-- Nunca inventar fatos. Nunca usar buzzwords sem substância.
+FILOSOFIA BASE (BrandsDecoded — Case Aceleradora):
+- Autoridade por profundidade, não por hype. Dados reais, exemplos concretos de negócios reais.
+- Hook de 14-18 palavras que nomeia um comportamento ou padrão real que o empresário vive no dia a dia.
+- Cada slide precisa ser tão bom que o leitor manda para o sócio ou para o grupo do WhatsApp da empresa.
+- Nunca inventar fatos. Nunca usar jargão técnico sem explicar em linguagem de negócio.
+- O público é o empresário que fatura 80k+/mês — dono de delivery, e-commerce, negócio local, franquia. Ele não conhece termos de SaaS, growth hacking ou métricas de startup. Ele conhece: faturamento, margem, equipe, cliente, operação, fluxo de caixa, fornecedor, concorrente, expansão.
+- NUNCA usar: SaaS, MRR, churn, growth hacking, onboarding, KPI, ROI, escalabilidade, user, B2B, lead qualificado, funil de vendas, jornada do cliente, upsell, cross-sell, framework, mindset, pivot, tração, runway. Substitua por: recorrência, perda de clientes, crescimento, integração de novos funcionários, resultado, retorno, crescimento com estrutura, cliente, empresa/negócio, venda extra, indicação, método, mentalidade, mudar de direção, crescimento inicial, caixa.
 `,
   estrutura: `
 ESTRUTURA BRANDSDECODED:
-- Slide 1: hook como afirmação provocativa que nomeia fenômeno real (14-18 palavras)
-- Slides 2-N: dados, frameworks, exemplos verificáveis — profundidade estratégica
+- Slide 1: hook como afirmação provocativa que nomeia fenômeno real que o empresário reconhece (14-18 palavras)
+- Slides 2-N: exemplos reais de negócios, números concretos, situações do dia a dia — profundidade sem jargão
 - Slide final: CTA direto com assinatura da marca
 `,
-  tonsProibidos: ['descubra', 'saiba como', 'conheça', 'transforme', 'incrível', 'revolucionário', 'disruptivo', 'mudando o jogo', 'next-level', 'fórmula', 'segredo'],
-  tonsPermitidos: ['estratégico', 'analítico', 'direto', 'premium', 'autoridade', 'preciso', 'fundamentado', 'b2b'],
+  tonsProibidos: ['descubra', 'saiba como', 'conheça', 'transforme', 'incrível', 'revolucionário', 'disruptivo', 'mudando o jogo', 'next-level', 'fórmula', 'segredo', 'SaaS', 'growth hacking', 'MRR', 'churn', 'KPI', 'ROI', 'escalabilidade', 'onboarding', 'framework', 'mindset', 'tração', 'pivot', 'runway', 'lead qualificado'],
+  tonsPermitidos: ['direto', 'estratégico', 'autoridade', 'real', 'fundamentado', 'prático', 'empresarial', 'concreto'],
   tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
 };
 
@@ -265,16 +267,19 @@ REGRAS OBRIGATÓRIAS:
 - Tom: ${METODOLOGIA_RR.tonsPermitidos.join(', ')}`;
   }
 
-  return `Você é o gerador de carrosseis da BrandsDecoded — padrão mais alto de copy corporativa para Instagram.
+  return `Você é o gerador de carrosseis da Case Aceleradora — conteúdo premium para empresários reais no Instagram.
 
 ${METODOLOGIA_BRANDSDECODED.filosofia}
 ${METODOLOGIA_BRANDSDECODED.estrutura}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
 
+PÚBLICO QUE VOCÊ ESTÁ FALANDO: Empresários que faturam 80k a 500k/mês. Donos de delivery, e-commerce, negócio local, franquia, prestação de serviço. Eles entendem de operação, equipe, cliente, fornecedor e caixa. Não entendem de jargão técnico de startup ou SaaS.
+
 REGRAS OBRIGATÓRIAS:
-- Slide 1: hook de 14-18 palavras
+- Slide 1: hook de 14-18 palavras — deve soar como algo que o dono de negócio pensa no dia a dia
 - NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- NUNCA usar termos técnicos de startup/SaaS: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- Use exemplos de negócios reais (delivery, loja, serviço) em vez de exemplos abstratos
 - Máximo 4 hashtags
 - ASSINATURA FIXA no último slide: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
 - Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array
@@ -282,7 +287,7 @@ REGRAS OBRIGATÓRIAS:
 REGRA CRÍTICA SOBRE CONTEÚDO DOS SLIDES:
 - Cada slide DEVE ter um "heading" (título curto e direto) E um "body" com 2-3 frases que desenvolvem e explicam o heading com substância real.
 - NUNCA deixar "body" vazio ou com menos de 2 frases. O body é onde está o valor do conteúdo.
-- O body deve conter: dado concreto, explicação do conceito, exemplo ou consequência prática — algo que o leitor possa usar ou compartilhar.
+- O body deve conter: situação real de negócio, número concreto, exemplo prático — algo que o dono de delivery ou e-commerce reconheça como verdade da própria vida.
 - Slides de conteúdo sem body são slides inúteis. Cada slide deve poder existir sozinho e fazer sentido completo.`;
 }
 
@@ -309,11 +314,13 @@ REGRAS:
 - Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
   }
 
-  return `Você é o gerador oficial de conteúdo de alta performance da BrandsDecoded para ${account.name}.
+  return `Você é o gerador oficial de conteúdo da Case Aceleradora para Instagram.
 
 ${METODOLOGIA_BRANDSDECODED.filosofia}
 ${METODOLOGIA_BRANDSDECODED.estrutura}
 ${manualNote ? `\nDIRETRIZES DO PERFIL:\n${manualNote}` : ''}
+
+PÚBLICO: Empresários que faturam 80k a 500k/mês — donos de delivery, e-commerce, negócio local, franquia, prestação de serviço. Linguagem de quem entende de operação, equipe, cliente e caixa. Nunca linguagem de startup ou tech.
 
 TIPO ATUAL: ${tipoInfo.emoji} ${tipoInfo.label} (${tipoInfo.categoria})
 INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
@@ -321,7 +328,8 @@ INSTRUÇÃO ESPECÍFICA: ${tipoInfo.instrucao}
 REGRAS:
 - Nunca inventar fatos
 - NUNCA usar travessão (—) nem hífen no meio de frases
-- NUNCA usar: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- NUNCA usar termos de startup/SaaS: ${METODOLOGIA_BRANDSDECODED.tonsProibidos.join(', ')}
+- Use sempre exemplos de negócios reais (delivery, loja física, e-commerce, prestação de serviço)
 - Máximo 4 hashtags
 - ASSINATURA FIXA: "Gostou desse conteúdo? Aproveite para seguir nosso perfil. E caso queira saber sobre o nosso acompanhamento, comente 'CASE' que nossa equipe te chama."
 - Retornar APENAS JSON valido, sem markdown. O array "slides" DEVE ter entre 7 e 10 objetos. Cada slide DEVE ter "textos" como array`;
@@ -334,30 +342,45 @@ REGRAS:
 const DEFAULT_PROFILES = {
   marca: {
     profileId: 'marca', tipo: 'corporativa', nome: 'Case Aceleradora',
-    handle: '@caseaceleradora', niche: 'Aceleração de negócios digitais, B2B, growth hacking',
-    bio: 'Aceleramos negócios digitais com estratégia, dados e criatividade.',
-    tom: 'Autoritário, estratégico, direto. Premium B2B. Sem hype.',
-    proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como', 'Riqueza', 'Fórmula secreta'],
-    pilares: ['Estratégia de negócio', 'Cases de sucesso', 'Tendências de mercado', 'Frameworks de growth'],
-    publicoAlvo: 'Fundadores, CEOs e diretores de empresas digitais em fase de escala',
+    handle: '@caseaceleradora', niche: 'Aceleração de negócios reais: faturamento, operação, equipe e expansão — para empresários que já faturam e querem crescer com estrutura',
+    bio: 'Aceleramos negócios reais com estratégia, estrutura e execução. Delivery, e-commerce, negócio local — a Case acompanha quem já fatura e quer escalar de verdade.',
+    tom: 'Direto, confiante, com autoridade de quem já viu muitos negócios crescerem. Fala de igual para igual com o dono de negócio. Sem jargão técnico, sem papo de startup. Linguagem de quem entende de operação, equipe, caixa, cliente e resultado real.',
+    proibidos: ['Descubra', 'Transforme sua vida', 'Saiba como', 'Riqueza', 'Fórmula secreta', 'SaaS', 'MRR', 'Churn', 'Growth hacking', 'KPI', 'ROI', 'Escalabilidade', 'Onboarding', 'Framework', 'Mindset', 'Tração', 'Pivot', 'Runway', 'Lead qualificado', 'Funil de vendas', 'Jornada do cliente', 'Upsell', 'B2B', 'B2C', 'Stakeholder', 'Disruptivo', 'Inovação disruptiva', 'Next-level'],
+    pilares: [
+      'Gestão de equipe e liderança real (como contratar, treinar, cobrar e reter)',
+      'Operação e processos (como parar de depender só de você)',
+      'Faturamento e margem (o que está comendo seu lucro e como resolver)',
+      'Expansão e escala (como abrir nova unidade, novo canal ou novo produto sem quebrar)',
+      'Cases reais de clientes Case (resultado concreto, antes e depois)',
+      'Erros comuns de quem fatura entre 80k e 500k/mês (e como evitar)',
+    ],
+    publicoAlvo: 'Empresários que faturam entre 80k e 500k/mês — donos de delivery, restaurante, e-commerce, negócio local, franquia, loja física ou prestação de serviço. Pessoas que entendem de negócio real: dia a dia de operação, equipe, fornecedor, cliente difícil, fluxo de caixa. Não conhecem jargão de startup ou SaaS.',
     cta: 'Comente "CASE" que nossa equipe te chama.',
-    referencias: ['Monocle', 'FT Weekend', 'McKinsey Digital', 'The Economist'],
+    referencias: ['Negócios reais brasileiros', 'Empreendedores de sucesso sem jargão', 'Linguagem de Exame/Pequenas Empresas Grandes Negócios', 'Exemplos práticos de delivery, e-commerce e franquia'],
     tiposConteudo: ['tendencia', 'case', 'educativo', 'comparacao', 'lista', 'prova_social', 'oferta'],
-    observacoes: '', pdfUploadedAt: null, updatedAt: null,
+    observacoes: 'A Case Aceleradora fala com donos de negócio que já faturam e querem crescer com estrutura. O público não é de tech, não é de startup. É o dono de delivery que abre às 10h e fecha à meia-noite, o dono de e-commerce que vende 500 pedidos por mês, o prestador de serviço que tem 10 funcionários e não sabe como crescer sem perder o controle. Todo conteúdo precisa soar como conselho de quem já viu isso funcionar — não como teoria de consultor. Use exemplos de negócios reais: "a padaria que triplicou o ticket médio", "o delivery que parou de perder funcionários", "a loja que abriu a segunda unidade sem se endividar". Evite qualquer termo técnico sem explicação imediata em linguagem do dia a dia de empresa.',
+    pdfUploadedAt: null, updatedAt: null,
   },
   pessoal: {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
     handle: '@analuisa.moutinho',
-    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo',
-    bio: 'Construindo uma vida mais ordenada, virtuosa e significativa — enquanto constrói negócios que crescem de forma sólida e sustentável.',
-    tom: 'Reflexivo, íntimo, direto, levemente provocativo. Mistura estratégia (como fazer), reflexão (por que fazer) e significado (vale a pena fazer?). Nunca motivacional raso, nunca guru, nunca coach.',
-    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo'],
-    pilares: ['Vida ordenada e sistemas pessoais', 'Virtudes e formação de caráter (prudência, coragem, temperança, disciplina)', 'Corrida e autoaperfeiçoamento físico', 'Leitura e filosofia prática', 'Bastidores do negócio e da vida intencional', 'Falhas, correções e aprendizados reais'],
-    publicoAlvo: 'Homens e mulheres 25-38 anos que buscam construir uma vida com ordem e intenção, não apenas performance. Interessados em desenvolvimento real de caráter, virtudes e autoaperfeiçoamento, não em fórmulas motivacionais.',
-    cta: 'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido pra você.',
+    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo — contada por quem ainda está aprendendo, não por quem já chegou',
+    bio: 'Ainda estou descobrindo como construir uma vida mais ordenada, virtuosa e significativa. Compartilho o que aprendo enquanto aprendo.',
+    tom: 'Reflexivo, íntimo, honesto sobre as próprias contradições. Fala como alguém que está no meio do processo — não como quem chegou do outro lado. Levemente provocativo, mas sem didatismo. Nunca guru, nunca coach, nunca superior. A voz é de companheira de caminhada: "eu também estou tentando entender isso". Usa primeira pessoa real: duvida, erra, recomeça, ri de si mesma às vezes.',
+    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Aprendi que', 'A verdade é que', 'O segredo é simples', 'Você precisa', 'Faça assim', 'É simples assim'],
+    pilares: [
+      'Vida ordenada e sistemas pessoais (o que estou tentando montar e o que ainda não funciona)',
+      'Virtudes e formação de caráter (prudência, coragem, temperança, disciplina — o que li, o que tentei, onde falho)',
+      'Corrida e autoaperfeiçoamento físico (o processo real, não o resultado polido)',
+      'Leitura e filosofia prática (o que faz sentido pra mim, o que ainda não entendo)',
+      'Bastidores do negócio e da vida intencional (as dúvidas reais, não só as vitórias)',
+      'Falhas, correções e recomeços — contados com honestidade, não com moralismo',
+    ],
+    publicoAlvo: 'Homens e mulheres 25-38 anos que também estão tentando construir uma vida com mais ordem e intenção — e se sentem sozinhos nisso. Não buscam guru nem fórmula. Buscam alguém que também está no meio do processo e fala sobre isso com honestidade.',
+    cta: 'Me conta nos comentários se você também sente isso. Salva pra quando precisar lembrar.',
     referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial', 'Estética minimalista clara — off-white, creme, marrom café, tons quentes neutros'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Ana é empreendedora e estrategista de marketing, mas o conteúdo pessoal não gira em torno de negócios. O marketing é apenas uma expressão da pessoa. Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, checklist, leitura de livros sobre virtudes/liderança/filosofia, corrida de rua, autoaperfeiçoamento. Conflitos internos reais: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância. Sucesso para ela = liberdade + impacto + evolução pessoal + coerência entre o que acredita e o que vive. Estética: elegança, minimalismo, sofisticação, tons profundos. Sem pasteis.',
+    observacoes: 'Ana está no processo de construir a vida que quer — não chegou lá. Esse é o ponto central. O conteúdo deve soar como diário aberto de alguém que está tentando, errando e aprendendo em tempo real — não como lição de quem já resolveu. Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, leitura, corrida de rua, autoaperfeiçoamento. Conflitos internos REAIS que aparecem no conteúdo: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância, cansaço, recomeço. A IA deve usar linguagem de quem ainda está aprendendo: "estou tentando", "não sei ainda", "errei nisso", "percebi que", "ainda não consigo", "voltei a fazer". NUNCA posicionar a Ana como referência acabada. Ela é referência pelo processo honesto, não pela chegada. Estética: elegância, minimalismo, sofisticação, tons profundos. Sem pasteis.',
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -1053,6 +1076,20 @@ app.post('/api/calendar/generate', async (req, res) => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const tiposDisponiveis = Object.values(tipos).map(t => t.id).join(' | ');
     const tiposLabels = Object.values(tipos).map(t => t.id + ' (' + t.label + ')').join(', ');
+
+    // Busca tendências em tempo real para perfis BrandsDecoded
+    let trendTopics = [];
+    if (!isRR) {
+      trendTopics = await getTrendsForCalendar(profile);
+    }
+    const trendBlock = trendTopics.length
+      ? '\nTENDÊNCIAS EM ALTA AGORA (use como tópicos do tipo "tendencia" distribuídos ao longo do mês):\n' + trendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+      : '';
+
+    const proporcaoBD = !isRR
+      ? '\nPROPORÇÃO RECOMENDADA BrandsDecoded (distribuir ao longo do mês):\n- 35% educativo (conteúdo de autoridade, ensina algo prático)\n- 20% tendencia (use os tópicos de tendência listados acima quando disponíveis)\n- 15% case (resultado real de cliente ou negócio)\n- 15% lista (conteúdo de alcance, shareável)\n- 10% comparacao (antes/depois, certo/errado)\n- 5% prova_social ou oferta\n'
+      : '';
+
     const BLOCK = 10;
     const allDays = [];
     for (let blockStart = 1; blockStart <= daysInMonth; blockStart += BLOCK) {
@@ -1062,9 +1099,9 @@ app.post('/api/calendar/generate', async (req, res) => {
         ? 'PERFIL: ' + account.name + ' (' + account.handle + ') — MARCA PESSOAL, Metodologia RR.'
         : 'PERFIL: ' + account.name + ' (' + account.handle + ') — MARCA CORPORATIVA, BrandsDecoded.\nTIPOS: ' + tiposLabels;
       const examplePosts = postsPerDay === 1
-        ? (isRR ? '[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding de clientes"}]')
-        : (isRR ? '[{"time":"09:00","type":"carrossel","topic":"A mentira que o Instagram vende sobre consistência"},{"time":"18:00","type":"frase","topic":"Você não precisa de motivação, precisa de estrutura"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas falham no onboarding"},{"time":"18:00","type":"tendencia","topic":"O novo comportamento do consumidor pós-IA em 2026"}]');
-      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos com ângulo único.\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
+        ? (isRR ? '[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas param de crescer quando o dono para de aparecer"}]')
+        : (isRR ? '[{"time":"09:00","type":"carrossel","topic":"A mentira que o Instagram vende sobre consistência"},{"time":"18:00","type":"frase","topic":"Você não precisa de motivação, precisa de estrutura"}]' : '[{"time":"09:00","type":"educativo","topic":"O erro que faz donos de negócio trabalharem mais e faturarem menos"},{"time":"18:00","type":"tendencia","topic":"O que está mudando no comportamento do consumidor brasileiro em 2026"}]');
+      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + trendBlock + proporcaoBD + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos, com ângulo concreto e linguagem de dono de negócio real (sem jargão técnico).\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
@@ -1119,8 +1156,21 @@ app.post('/api/calendar/generate-week', async (req, res) => {
       weekDays.push({ date: d.toISOString().slice(0,10), dayOfWeek: ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i] });
     }
     const daysText = weekDays.map(d => d.dayOfWeek + ' ' + d.date).join(', ');
+
+    // Busca tendências para perfis BrandsDecoded
+    let weekTrendTopics = [];
+    if (!isRR) {
+      weekTrendTopics = await getTrendsForCalendar(profile);
+    }
+    const weekTrendBlock = weekTrendTopics.length
+      ? '\nTENDÊNCIAS EM ALTA AGORA (use 1-2 como tópico do tipo "tendencia" na semana):\n' + weekTrendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+      : '';
+    const weekProporcaoBD = !isRR
+      ? '\nPROPORÇÃO SEMANAL BrandsDecoded: priorize educativo (autoridade) + 1 tendencia (usando os tópicos acima se disponíveis) + 1 lista ou case. Evite mais de 1 oferta por semana.\n'
+      : '';
+
     const examplePost = isRR ? '{"time":"09:00","type":"lofi","topic":"Tema específico aqui"}' : '{"time":"09:00","type":"educativo","topic":"Tema específico aqui"}';
-    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + weekTrendBlock + weekProporcaoBD + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia. Topics devem ser específicos com linguagem de dono de negócio real.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
@@ -1282,7 +1332,7 @@ app.post('/api/content-machine/generate', async (req, res) => {
 // TENDÊNCIAS
 // ═══════════════════════════════════════════════════════════════════════════
 
-const NICHE_CONFIG = { marca: 'negócios, empresas, marketing digital, growth hacking, empreendedorismo, vendas B2B, liderança empresarial', pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida', virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança' };
+const NICHE_CONFIG = { marca: 'empreendedorismo, gestão de negócios, faturamento, operação, equipe, expansão, delivery, e-commerce, negócio local, franquia, pequenas e médias empresas, liderança empresarial, fluxo de caixa, precificação, atendimento ao cliente', pessoal: 'marca pessoal, carreira, comportamento humano, produtividade, mulheres empreendedoras, estilo de vida', virttus: 'tecnologia, inteligência artificial, transformação digital, software B2B, dados, cibersegurança' };
 const trendsCache = {};
 const TRENDS_TTL  = 60 * 60 * 1000;
 
@@ -1330,6 +1380,26 @@ app.get('/api/trends', async (req, res) => {
     res.json(result);
   } catch(err) { console.error('[Trends]', err); res.status(500).json({ error: err.message }); }
 });
+
+// Busca e filtra tendências para uso no calendário (sem cache, chamada interna)
+async function getTrendsForCalendar(profile) {
+  try {
+    const account  = getAccount(profile);
+    const nicho    = NICHE_CONFIG[profile] || NICHE_CONFIG.marca;
+    const manualNote = getManualText(profile);
+    const googleTrends = await getGoogleTrends();
+    if (!googleTrends.length) return [];
+    const termosList = googleTrends.map((t, i) => (i + 1) + '. ' + t.termo + (t.volume ? ' (' + t.volume + ')' : '')).join('\n');
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + '.\nNicho: ' + nicho + '.\n' + (manualNote ? 'Contexto:\n' + manualNote + '\n' : '') + 'Termos em alta agora no Brasil:\n\n' + termosList + '\n\nSelecione os 4 termos mais relevantes para o nicho e gere ganchos prontos. JSON APENAS:\n{"trends":[{"termo":"...","gancho":"headline de 12-16 palavras pronta para usar como tópico no calendário","tipo":"tendencia"}]}';
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] }) });
+    const aiData = await aiRes.json();
+    if (aiData.content?.[0]) {
+      const parsed = extractJSON(aiData.content[0].text.trim());
+      return (parsed.trends || []).slice(0, 4);
+    }
+  } catch(e) { console.warn('[TrendsForCalendar]', e.message); }
+  return [];
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CANVA TEMPLATES
