@@ -60,8 +60,6 @@ function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QU
 function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
   const isFirst = slideNumber === 1 || slideRole === 'CAPA';
   const isLast  = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
-  const slideNumStr = String(slideNumber).padStart(2, '0');
-
   const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial minimalist design';
   const brandName    = brand.name    || 'MARCA';
   const brandHandle  = brand.handle  || '';
@@ -69,10 +67,9 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
   // ── Layout structure per slide role ──────────────────────────────────────
   let layoutStructure;
   if (isFirst) {
-    layoutStructure = `LAYOUT DA CAPA (slide 01):
+    layoutStructure = `LAYOUT DA CAPA:
 — Fundo limpo com textura sutil (papel de algodão, linho ou micro-granulação) nas cores da paleta da marca
-— Canto superior esquerdo: numeração "${slideNumStr}" em fonte geométrica pequena, peso 300, cor de acento
-— Linha fina horizontal em cor de acento logo abaixo da numeração, largura ~80px
+— Linha fina horizontal em cor de acento no topo, largura ~80px, alinhada à esquerda
 — Zona central (ocupa 55% da altura): TÍTULO principal em tipografia geométrica bold, peso 800-900, caixa alta, muito grande (equivalente a 72-90pt) — texto "${heading || 'TÍTULO'}"
 — Abaixo do título: subtítulo menor em peso 400-500 com letter-spacing aberto — texto "${body || ''}"
 — Elemento gráfico decorativo da marca (ex: rosa-dos-ventos, bússola, ícone tech) renderizado com qualidade 3D ou ilustrativo premium, posicionado à direita ou como elemento de fundo translúcido
@@ -80,9 +77,8 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
 — Linha fina de rodapé em cor de acento separando o nome da borda
 — Margens internas generosas (~8% em cada lado), muito respiro entre elementos`;
   } else if (isLast) {
-    layoutStructure = `LAYOUT DE ENCERRAMENTO / CTA (slide ${slideNumStr}):
+    layoutStructure = `LAYOUT DE ENCERRAMENTO / CTA:
 — Fundo limpo da marca com textura sutil, mesmo sistema cromático dos outros slides
-— Canto superior esquerdo: numeração "${slideNumStr}" em fonte geométrica pequena, peso 300
 — Zona central com CTA ou mensagem de encerramento: texto "${heading || 'PRÓXIMO PASSO'}" em tipografia grande e bold
 — Texto secundário de apoio ou instrução de ação: "${body || ''}" em peso regular, abaixo do CTA
 — Elemento gráfico da marca posicionado com elegância (ícone, símbolo, forma geométrica)
@@ -90,10 +86,9 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
 — Rodapé com nome da marca e linha fina de acento
 — Composição centrada e convidativa — sensação de fechamento caloroso e profissional`;
   } else {
-    layoutStructure = `LAYOUT DE CONTEÚDO (slide ${slideNumStr} de ${totalSlides}):
+    layoutStructure = `LAYOUT DE CONTEÚDO (slide ${slideNumber} de ${totalSlides}):
 — Fundo limpo nas cores da paleta, consistente com os outros slides do carrossel
-— Canto superior esquerdo: numeração "${slideNumStr}" em fonte geométrica pequena, peso 300, cor de acento
-— Linha fina horizontal em cor de acento logo abaixo da numeração
+— Linha fina horizontal em cor de acento no topo, alinhada à esquerda
 — Zona de título: "${heading || ''}" em tipografia geométrica bold, peso 700-800, caixa alta ou mista — grande e imediatamente legível
 — Zona de conteúdo abaixo: "${body || ''}" em fonte complementar, peso 400, espaçamento de linha generoso (1.6-1.8x), totalmente legível
 — Elemento gráfico ou decorativo sutil da marca para respiração visual (forma, linha, ícone reduzido) sem competir com o texto
@@ -110,7 +105,7 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
     `Textura de fundo: micro-textura de papel, linho ou granulação sutil — nunca fundo completamente liso e plástico.`,
     `Profundidade: sombras suaves e difusas, elementos com leve sobreposição de camadas — nunca completamente flat.`,
     `Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros slides.`,
-    `Formato de geração: 1024×1536px. A imagem será cortada para 4:5 (Instagram feed). ZONA SEGURA OBRIGATÓRIA: mantenha TODO conteúdo (numeração, títulos, textos, rodapé) a pelo menos 130px de distância do topo e do rodapé da imagem. Essa faixa de 130px em cima e em baixo é margem de corte — nunca coloque elementos críticos nela. Sem watermarks, logotipos externos ou elementos de UI.`,
+    `Formato de geração: 1024×1536px. A imagem será cortada para 4:5 (Instagram feed). ZONA SEGURA OBRIGATÓRIA: mantenha TODO conteúdo (títulos, textos, rodapé, elementos gráficos) a pelo menos 130px de distância do topo e do rodapé da imagem. Essa faixa de 130px em cima e em baixo é margem de corte — nunca coloque elementos críticos nela. Sem watermarks, logotipos externos ou elementos de UI.`,
     `Padrão mínimo: equivalente ao trabalho de um designer sênior de uma top agência de branding europeia.`,
   ].map(l => `— ${l}`).join('\n');
 
