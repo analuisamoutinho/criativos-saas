@@ -32,63 +32,78 @@ const DEFAULT_QUALITY = 'high';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
 // ── Prompt builder for carousel slide images ──────────────────────────────
-// Produces highly detailed, art-directed prompts grounded in brand identity.
+// Layout-first approach: prompts describe GRAPHIC DESIGN structures, not art.
+// This matches the quality standard of professional brand identity carousel mockups.
 function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
   const isFirst = slideNumber === 1 || slideRole === 'CAPA';
   const isLast  = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
+  const slideNumStr = String(slideNumber).padStart(2, '0');
 
   const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial minimalist design';
+  const brandName    = brand.name    || 'MARCA';
+  const brandHandle  = brand.handle  || '';
 
-  // Role-specific art direction
-  let roleDir, compositionDir, typographyDir;
+  // ── Layout structure per slide role ──────────────────────────────────────
+  let layoutStructure;
   if (isFirst) {
-    roleDir = 'CAPA — slide de abertura. Máximo impacto visual. Para o scroll imediatamente. Esta é a primeira impressão da marca.';
-    compositionDir = 'Composição centralizada ou regra dos terços com elemento hero dominante. Hierarquia visual absoluta: título ocupa pelo menos 40% da área. Amplo espaço respiro ao redor. Fundo com textura sutil mas rico — papel de algodão, linho, mármore ou gradiente suave com ruído fotográfico. Sombra suave e difusa sob o título para profundidade.';
-    typographyDir = 'Título em tipografia display, peso 800-900, corpo de fonte grande (70-90pt equivalente). Letras com tracking controlado (ligeiramente espaçadas para ar). Contraste total com o fundo. Texto integrado ao layout — não colado por cima, mas parte da composição.';
+    layoutStructure = `LAYOUT DA CAPA (slide 01):
+— Fundo limpo com textura sutil (papel de algodão, linho ou micro-granulação) nas cores da paleta da marca
+— Canto superior esquerdo: numeração "${slideNumStr}" em fonte geométrica pequena, peso 300, cor de acento
+— Linha fina horizontal em cor de acento logo abaixo da numeração, largura ~80px
+— Zona central (ocupa 55% da altura): TÍTULO principal em tipografia geométrica bold, peso 800-900, caixa alta, muito grande (equivalente a 72-90pt) — texto "${heading || 'TÍTULO'}"
+— Abaixo do título: subtítulo menor em peso 400-500 com letter-spacing aberto — texto "${body || ''}"
+— Elemento gráfico decorativo da marca (ex: rosa-dos-ventos, bússola, ícone tech) renderizado com qualidade 3D ou ilustrativo premium, posicionado à direita ou como elemento de fundo translúcido
+— Rodapé: nome da marca "${brandName}" em fonte pequena, maiúscula, peso 600, alinhado à esquerda — "${brandHandle}" se relevante
+— Linha fina de rodapé em cor de acento separando o nome da borda
+— Margens internas generosas (~8% em cada lado), muito respiro entre elementos`;
   } else if (isLast) {
-    roleDir = 'ENCERRAMENTO — slide de CTA ou assinatura. Quente, convidativo, com energia de fechamento poderoso e ação clara.';
-    compositionDir = 'Composição mais serena e centralizada. Espaço generoso. Elemento visual suave de fundo (textura, forma geométrica ou padrão da marca). CTA ou handle centralizado com destaque.';
-    typographyDir = 'Texto de CTA em fonte grande e bold. Handle/assinatura em peso menor mas elegante. Hierarquia clara entre chamada à ação e informação de contato.';
+    layoutStructure = `LAYOUT DE ENCERRAMENTO / CTA (slide ${slideNumStr}):
+— Fundo limpo da marca com textura sutil, mesmo sistema cromático dos outros slides
+— Canto superior esquerdo: numeração "${slideNumStr}" em fonte geométrica pequena, peso 300
+— Zona central com CTA ou mensagem de encerramento: texto "${heading || 'PRÓXIMO PASSO'}" em tipografia grande e bold
+— Texto secundário de apoio ou instrução de ação: "${body || ''}" em peso regular, abaixo do CTA
+— Elemento gráfico da marca posicionado com elegância (ícone, símbolo, forma geométrica)
+— Handle ou nome da marca em destaque como assinatura: "${brandHandle || brandName}"
+— Rodapé com nome da marca e linha fina de acento
+— Composição centrada e convidativa — sensação de fechamento caloroso e profissional`;
   } else {
-    roleDir = `CONTEÚDO — slide ${slideNumber} de ${totalSlides}. Hierarquia clara, visual que reforça o texto. Legível e elegante.`;
-    compositionDir = 'Layout limpo com área de texto bem definida. Elemento gráfico ou de fundo que complementa sem competir com o texto. Uso inteligente do espaço negativo. Consistência visual com os outros slides do carrossel.';
-    typographyDir = 'Título em peso 700-800, legível de imediato. Corpo de texto em peso regular com espaçamento generoso. Hierarquia clara entre título e texto de suporte.';
+    layoutStructure = `LAYOUT DE CONTEÚDO (slide ${slideNumStr} de ${totalSlides}):
+— Fundo limpo nas cores da paleta, consistente com os outros slides do carrossel
+— Canto superior esquerdo: numeração "${slideNumStr}" em fonte geométrica pequena, peso 300, cor de acento
+— Linha fina horizontal em cor de acento logo abaixo da numeração
+— Zona de título: "${heading || ''}" em tipografia geométrica bold, peso 700-800, caixa alta ou mista — grande e imediatamente legível
+— Zona de conteúdo abaixo: "${body || ''}" em fonte complementar, peso 400, espaçamento de linha generoso (1.6-1.8x), totalmente legível
+— Elemento gráfico ou decorativo sutil da marca para respiração visual (forma, linha, ícone reduzido) sem competir com o texto
+— Rodapé: nome "${brandName}" em fonte pequena com linha fina de acento
+— Grid interno consistente: margens simétricas (~8%), alinhamentos perfeitos, espaçamento sistemático`;
   }
 
-  const textBlock = heading
-    ? `TÍTULO PARA RENDERIZAR: "${heading}"${body ? `\nTEXTO DE SUPORTE: "${body}"` : ''}`
-    : `Slide ${slideNumber} — composição puramente visual, sem texto obrigatório.`;
+  // ── Execution requirements ────────────────────────────────────────────────
+  const execution = [
+    `ESTE É UM SLIDE DE DESIGN GRÁFICO PROFISSIONAL — não uma ilustração artística. Aplique rigor de design editorial de agência premium.`,
+    `Qualidade de output: apresentação de identidade de marca publicável sem retoques. Pixel-perfect.`,
+    `Tipografia: renderize o texto EXATAMENTE como especificado no layout. Nunca invente texto, nunca use placeholder. Letras nítidas, sem borrão.`,
+    `Cores: estritamente da paleta da marca. Zero improvisação cromática. Nenhuma cor não listada.`,
+    `Textura de fundo: micro-textura de papel, linho ou granulação sutil — nunca fundo completamente liso e plástico.`,
+    `Profundidade: sombras suaves e difusas, elementos com leve sobreposição de camadas — nunca completamente flat.`,
+    `Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros slides.`,
+    `Formato retrato 4:5, 1024×1536px. Sem watermarks, sem logotipos externos, sem elementos de UI.`,
+    `Padrão mínimo: equivalente ao trabalho de um designer sênior de uma top agência de branding europeia.`,
+  ].map(l => `— ${l}`).join('\n');
 
   return [
-    `Você é um diretor de arte sênior especializado em Instagram editorial de alto padrão. Crie o slide ${slideNumber} de ${totalSlides} de um carrossel premium.`,
+    `Crie um slide de carrossel de Instagram de design gráfico premium — slide ${slideNumber} de ${totalSlides}.`,
+    `Este é um LAYOUT DE DESIGN GRÁFICO ESTRUTURADO, não uma composição artística livre.`,
     '',
-    `════ IDENTIDADE VISUAL E SISTEMA DE DESIGN ════`,
+    `════ SISTEMA DE DESIGN E IDENTIDADE VISUAL DA MARCA ════`,
     aestheticDNA,
     '',
-    `════ FUNÇÃO DESTE SLIDE ════`,
-    roleDir,
-    '',
-    `════ DIREÇÃO DE COMPOSIÇÃO ════`,
-    compositionDir,
-    '',
-    `════ DIREÇÃO TIPOGRÁFICA ════`,
-    typographyDir,
-    '',
-    `════ TEXTO DESTE SLIDE ════`,
-    textBlock,
-    sceneHint ? `CONTEXTO VISUAL ADICIONAL: ${sceneHint}` : '',
+    `════ ESTRUTURA E LAYOUT DESTE SLIDE ════`,
+    layoutStructure,
+    sceneHint ? `\nCONTEXTO TEMÁTICO ADICIONAL: ${sceneHint}` : '',
     '',
     `════ REQUISITOS DE EXECUÇÃO ════`,
-    `— Resultado final: slide de Instagram publicável, pixel-perfect, sem retoques necessários.`,
-    `— A tipografia deve ser grande, bold, totalmente legível e integrada organicamente ao layout — nunca parecer colada por cima.`,
-    `— Todas as cores devem vir estritamente da paleta da marca acima. Zero improvisação cromática.`,
-    `— Profundidade e dimensionalidade: use sombras suaves, sobreposição de camadas, texturas sutis — nunca flat e estéril.`,
-    `— Iluminação: luz suave e direcional, sombras difusas que criam volume sem dramatismo excessivo.`,
-    `— Textura de fundo: papel de algodão, linho texturizado, granulado fotográfico sutil ou superfície com micro-textura — nunca fundo liso e plástico.`,
-    `— Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros slides.`,
-    `— Formato retrato 4:5, 1024×1536px. Sem marcas d'água, logotipos, ícones de UI ou elementos não solicitados.`,
-    `— Padrão de qualidade: obra de diretor de arte sênior de agência de topo internacional.`,
-    `— NUNCA gere texto aleatório, palavras inventadas ou placeholders — renderize EXATAMENTE o texto fornecido acima ou deixe a área sem texto.`,
+    execution,
   ].filter(Boolean).join('\n');
 }
 
@@ -711,49 +726,51 @@ IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
     textOnDark:'#FFFFFF',textOnLight:'#050B18',handle:'@virttus',name:'Virttus',
     moods:['HERO_DARK','TYPE_DARK','EDITORIAL_LIGHT','HERO_DARK','TABLE_LIGHT','TYPE_DARK','EDITORIAL_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
-    aestheticDNA:`IDENTIDADE VISUAL: Virttus — tecnologia B2B de precisão. Sharp, visionária, data-driven.
+    aestheticDNA:`IDENTIDADE VISUAL: Virttus — tecnologia premium com foco em desenvolvimento humano, performance e liderança consciente.
 
-CONCEITO: A linguagem visual de uma empresa que resolve problemas complexos com elegância técnica. Não é startup de consumo. É inteligência aplicada para empresas sérias.
+CONCEITO: A linguagem visual de uma empresa de tecnologia que transforma potencial humano em resultado real. Sofisticada, clara e confiável — como as melhores marcas SaaS do mercado.
 
 PALETA CROMÁTICA OBRIGATÓRIA:
-— Fundo primário escuro: azul noturno profundo #0A1628 (ocupa 60-70% nos slides escuros)
-— Fundo claro alternativo: azul-branco frio #F0F4FF (para slides de conteúdo legível)
-— Acento primário: ciano-turquesa elétrico #00D4AA — para elementos de destaque, bordas ativas, CTAs
-— Acento secundário: roxo vibrante #7B2FFF — para destaques secundários, gráficos, gradientes
-— Texto sobre fundo escuro: branco puro #FFFFFF com hierarquia clara
-— Texto sobre fundo claro: azul noturno #050B18
-— Gradiente assinatura: de #7B2FFF para #00D4AA — usado em bordas, linhas e elementos de destaque
-— NUNCA: marrom, bege, quente, dourado, verde natural, laranja
+— Fundo primário dominante: branco-azulado sofisticado #F0F4FF ou branco #FFFFFF (ocupa 65-75% da composição — SIM, fundos claros dominam os slides de conteúdo)
+— Fundo alternativo profundo: azul noturno #001B3A para slides de capa ou de impacto máximo
+— Acento primário vivo: azul-roxo elétrico #2563EB ou roxo Virttus #7C3AED — para títulos em fundos claros, bordas e destaques
+— Acento secundário: ciano-turquesa #00D4AA — apenas em elementos de destaque pontual, ícones, CTAs
+— Gradiente assinatura da marca: roxo #7C3AED → azul #2563EB (horizontal ou diagonal em 45°) — usado em barras, bordas, títulos de destaque e elementos gráficos
+— Texto sobre fundo claro: azul profundo #001B3A (peso 700+) e cinza médio #647488 (peso 400)
+— Texto sobre fundo escuro: branco #FFFFFF
+— NUNCA: marrom, bege, laranja, dourado, verde natural
 
 TIPOGRAFIA — REGRAS ABSOLUTAS:
-— Títulos: sans-serif geométrica tecnológica (Inter, Space Grotesk ou similar), peso 700-900, caixa alta ou mista
-— Dados e métricas: mono espaçada ou sans-serif de alta legibilidade, grande, destacado
-— Corpo: sans-serif clean peso 400, espaçamento preciso
-— Números e dados sempre em tamanho grande e destaque — eles são os heróis
+— Títulos principais: sans-serif geométrica clean (Inter, SORA, Space Grotesk), peso 700-900, caixa alta ou mista
+— O NOME "Virttus" quando aparecer: logo ou texto em azul-roxo #2563EB, bold, com ícone/símbolo da marca ao lado
+— Subtítulos e labels: peso 500-600, espaçamento levemente aberto, hierarquia clara
+— Corpo e listas: peso 400, muito legível, espaçamento 1.6x
+— Métricas e números de destaque: peso 800, tamanho grande, cor de acento
 
-ELEMENTOS VISUAIS CARACTERÍSTICOS:
-— Visualizações de dados abstratas: gráficos de linha, barras minimalistas, dashboards parciais
-— Grades e malhas digitais finíssimas em ciano a 10-20% de opacidade como textura de fundo
-— Linhas de código ou fragmentos de interface renderizados com elegância
-— Bordas em gradiente roxo→ciano
-— Pontos de dados e nós de rede conectados por linhas finas brilhantes
-— Profundidade com glow suave em ciano e roxo sobre fundo escuro
+ELEMENTOS GRÁFICOS CARACTERÍSTICOS (usar com inteligência, não acumular):
+— Ícone/logo da Virttus: forma em "V" geométrica estilizada ou símbolo próprio em roxo/azul gradiente
+— Cards com cantos arredondados (border-radius generoso) em fundo branco com sombra suave — SaaS premium
+— Ícones de linha fina (outline icons) para ilustrar bullets e features — clean, moderno
+— Gradiente roxo→azul em barras horizontais, separadores ou acentos de destaque
+— Curvas/ondas suaves em azul claro a 15% de opacidade como elemento de fundo
+— Glow suave roxo ou ciano em elementos gráficos centrais (não exagerar)
+— Mockups de dispositivos (smartphone, tablet) em slides de aplicação prática
 
 DIREÇÃO DE COMPOSIÇÃO:
-— Fundo escuro com elementos luminosos — profissional, imersivo, focado
-— Composição assimétrica e dinâmica, com dados e visuais técnicos como elementos decorativos
-— Tipografia grande e hierárquica — dados principais em destaque absoluto
-— Luz artificial fria e direcional — como iluminação de servidor room ou lab de dados
-— Profundidade: elementos em camadas com glow difuso e sombras frias
+— Layout limpo, muito respiro visual, grid rigoroso — como Notion, Linear ou Figma redesigned
+— Fundo claro e sofisticado com elementos que respiram — nunca saturado ou cheio
+— Hierarquia rigorosa: identidade da marca → título da seção → conteúdo → apoio
+— Elementos de profundidade: sombras suaves de card (box-shadow elegante), não sombras duras
+— Sensação premium de produto SaaS B2B de excelência
 
 SENSAÇÃO E ATMOSFERA:
-— Como o dashboard de uma empresa Fortune 500 bem-desenhado
-— Precisão cirúrgica. Sem desperdício. Sem decoração vazia.
-— Transmite: competência técnica, inteligência analítica, confiança, precisão, inovação real
+— Como a página de um produto SaaS premiado por design
+— Confiança sem frieza. Tecnologia com humanidade.
+— Transmite: liderança, performance, evolução, clareza e sofisticação limpa
 
-TOM VISUAL: técnico · preciso · dark · neon-sutil · data-driven · corporativo-futurista · confiável
+TOM VISUAL: clean · claro · premium · SaaS · gradiente roxo-azul · confiável · humano · estratégico
 
-PROIBIDO ABSOLUTAMENTE: clipart, ícones de banco de imagens genéricos, elementos cartoon, cores quentes (marrom/laranja/dourado/bege), gradientes arco-íris, estética de startup jovem descontraída, robôs humanoides clichê.`,
+PROIBIDO ABSOLUTAMENTE: fundos escuros dominantes (exceto slide de capa), clipart, ícones genéricos pixelados, elementos cartoon, cores quentes (marrom/laranja/dourado/bege), gradientes arco-íris kitsch, robôs humanoides clichê, estoque fotográfico genérico.`,
   
   },
 };
