@@ -32,46 +32,63 @@ const DEFAULT_QUALITY = 'high';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
 // ── Prompt builder for carousel slide images ──────────────────────────────
-// Produces quality-differentiated prompts grounded in brand identity.
+// Produces highly detailed, art-directed prompts grounded in brand identity.
 function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
   const isFirst = slideNumber === 1 || slideRole === 'CAPA';
   const isLast  = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
-  const roleStr = isFirst ? 'cover/hero slide (maximum visual impact)' : isLast ? 'closing CTA slide (warm, inviting, action-oriented)' : `content slide ${slideNumber} of ${totalSlides}`;
 
-  // Use full aestheticDNA — this is the brand's complete visual identity
-  const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial design';
+  const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial minimalist design';
 
-  // Slide text
-  const textCtx = heading
-    ? `HEADLINE TO RENDER: "${heading}"${body ? ` — SUPPORTING TEXT: "${body}"` : ''}`
-    : `Slide ${slideNumber} — purely visual composition, no text required.`;
+  // Role-specific art direction
+  let roleDir, compositionDir, typographyDir;
+  if (isFirst) {
+    roleDir = 'CAPA — slide de abertura. Máximo impacto visual. Para o scroll imediatamente. Esta é a primeira impressão da marca.';
+    compositionDir = 'Composição centralizada ou regra dos terços com elemento hero dominante. Hierarquia visual absoluta: título ocupa pelo menos 40% da área. Amplo espaço respiro ao redor. Fundo com textura sutil mas rico — papel de algodão, linho, mármore ou gradiente suave com ruído fotográfico. Sombra suave e difusa sob o título para profundidade.';
+    typographyDir = 'Título em tipografia display, peso 800-900, corpo de fonte grande (70-90pt equivalente). Letras com tracking controlado (ligeiramente espaçadas para ar). Contraste total com o fundo. Texto integrado ao layout — não colado por cima, mas parte da composição.';
+  } else if (isLast) {
+    roleDir = 'ENCERRAMENTO — slide de CTA ou assinatura. Quente, convidativo, com energia de fechamento poderoso e ação clara.';
+    compositionDir = 'Composição mais serena e centralizada. Espaço generoso. Elemento visual suave de fundo (textura, forma geométrica ou padrão da marca). CTA ou handle centralizado com destaque.';
+    typographyDir = 'Texto de CTA em fonte grande e bold. Handle/assinatura em peso menor mas elegante. Hierarquia clara entre chamada à ação e informação de contato.';
+  } else {
+    roleDir = `CONTEÚDO — slide ${slideNumber} de ${totalSlides}. Hierarquia clara, visual que reforça o texto. Legível e elegante.`;
+    compositionDir = 'Layout limpo com área de texto bem definida. Elemento gráfico ou de fundo que complementa sem competir com o texto. Uso inteligente do espaço negativo. Consistência visual com os outros slides do carrossel.';
+    typographyDir = 'Título em peso 700-800, legível de imediato. Corpo de texto em peso regular com espaçamento generoso. Hierarquia clara entre título e texto de suporte.';
+  }
 
-  // Role-specific composition direction
-  const roleDir = isFirst
-    ? 'COVER: dominant, striking, full composition — this is the hook that stops the scroll. Maximum visual hierarchy.'
-    : isLast
-    ? 'CLOSING: warm, clear, inviting — strong visual closure. Direct call-to-action energy.'
-    : 'CONTENT: clear hierarchy, supporting visuals that reinforce the text. Readable and elegant.';
+  const textBlock = heading
+    ? `TÍTULO PARA RENDERIZAR: "${heading}"${body ? `\nTEXTO DE SUPORTE: "${body}"` : ''}`
+    : `Slide ${slideNumber} — composição puramente visual, sem texto obrigatório.`;
 
   return [
-    `You are a world-class Instagram carousel designer. Create slide ${slideNumber} of ${totalSlides} (${roleStr}).`,
+    `Você é um diretor de arte sênior especializado em Instagram editorial de alto padrão. Crie o slide ${slideNumber} de ${totalSlides} de um carrossel premium.`,
     '',
-    `COMPLETE BRAND IDENTITY AND VISUAL SYSTEM:`,
+    `════ IDENTIDADE VISUAL E SISTEMA DE DESIGN ════`,
     aestheticDNA,
     '',
-    `SLIDE ROLE: ${roleDir}`,
+    `════ FUNÇÃO DESTE SLIDE ════`,
+    roleDir,
     '',
-    `TEXT FOR THIS SLIDE: ${textCtx}`,
-    sceneHint ? `VISUAL CONTEXT: ${sceneHint}` : '',
+    `════ DIREÇÃO DE COMPOSIÇÃO ════`,
+    compositionDir,
     '',
-    `EXECUTION REQUIREMENTS:`,
-    `— Render as a finished, publication-ready Instagram slide. Pixel-perfect composition.`,
-    `— Typography must be large, bold, perfectly legible, deeply integrated into the layout — not floating or pasted on top.`,
-    `— Every color must come strictly from the brand palette above. No improvisation.`,
-    `— Consistency is critical: this slide must feel like it belongs to the same visual system as the other slides.`,
-    `— Depth and dimensionality: use soft shadows, layering, subtle textures — never flat.`,
-    `— Portrait format 4:5, 1024×1536px. No watermarks, no logos, no UI chrome.`,
-    `— Quality standard: this must look like it was designed by a senior art director at a top-tier agency.`,
+    `════ DIREÇÃO TIPOGRÁFICA ════`,
+    typographyDir,
+    '',
+    `════ TEXTO DESTE SLIDE ════`,
+    textBlock,
+    sceneHint ? `CONTEXTO VISUAL ADICIONAL: ${sceneHint}` : '',
+    '',
+    `════ REQUISITOS DE EXECUÇÃO ════`,
+    `— Resultado final: slide de Instagram publicável, pixel-perfect, sem retoques necessários.`,
+    `— A tipografia deve ser grande, bold, totalmente legível e integrada organicamente ao layout — nunca parecer colada por cima.`,
+    `— Todas as cores devem vir estritamente da paleta da marca acima. Zero improvisação cromática.`,
+    `— Profundidade e dimensionalidade: use sombras suaves, sobreposição de camadas, texturas sutis — nunca flat e estéril.`,
+    `— Iluminação: luz suave e direcional, sombras difusas que criam volume sem dramatismo excessivo.`,
+    `— Textura de fundo: papel de algodão, linho texturizado, granulado fotográfico sutil ou superfície com micro-textura — nunca fundo liso e plástico.`,
+    `— Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros slides.`,
+    `— Formato retrato 4:5, 1024×1536px. Sem marcas d'água, logotipos, ícones de UI ou elementos não solicitados.`,
+    `— Padrão de qualidade: obra de diretor de arte sênior de agência de topo internacional.`,
+    `— NUNCA gere texto aleatório, palavras inventadas ou placeholders — renderize EXATAMENTE o texto fornecido acima ou deixe a área sem texto.`,
   ].filter(Boolean).join('\n');
 }
 
@@ -586,42 +603,101 @@ const BRAND_IDENTITIES = {
     textOnDark:'#F4E6D4',textOnLight:'#1E120D',handle:'@caseaceleradora',name:'CASE',
     moods:['EDITORIAL_LIGHT','TYPE_LIGHT','EDITORIAL_LIGHT','TYPE_LIGHT','SPLIT_LIGHT','EDITORIAL_LIGHT','TYPE_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
     aestheticDNA:`IDENTIDADE VISUAL: CASE Aceleradora — "Guia de Identidade Visual baseado no Quadro da Marca do Milhão."
-CONCEITO: expansão com propósito. Sofisticada, estratégica, guiada por direção clara, liderança e construção de impérios duradouros. Cada elemento comunica conquista, visão e legado.
 
-PALETA OBRIGATÓRIA:
-- Fundo dominante: areia claro #F4E6D4 e bege atlas #E9D2B6
-- Acento principal: bronze dourado #B8864B — usado com moderação em detalhes, linhas e elementos gráficos
-- Texto e elementos escuros: marrom profundo #4A2E1F e preto café #1E120D
-- NUNCA usar fundos pretos, azuis, verdes ou neon
+CONCEITO CENTRAL: expansão com propósito. Sofisticada, estratégica, guiada por direção clara, liderança e construção de impérios duradouros. Cada elemento comunica conquista, visão e legado.
 
-TIPOGRAFIA: geométrica, peso 700-900, maiúsculas para títulos, hierarquia clara e elegante. Fontes: MONT para títulos, INTER ou MANROPE para texto de apoio.
+PALETA CROMÁTICA OBRIGATÓRIA:
+— Fundo primário dominante: areia claro #F4E6D4 (ocupa 60-70% da composição)
+— Fundo secundário: bege atlas #E9D2B6 (usado em blocos, divisórias e segundos planos)
+— Acento nobre: bronze dourado #B8864B — usado com moderação máxima, apenas em detalhes, linhas finas, bordas e elementos gráficos pontuais. Nunca como fundo.
+— Texto principal e elementos de autoridade: marrom profundo #4A2E1F
+— Texto secundário e sombras: preto café #1E120D com 60-80% de opacidade
+— Cor de contraste para destaques: bege nude #D9B794
+— PROIBIDO: preto puro, azul, verde, roxo, neon, cinza frio, branco puro como fundo principal
 
-ELEMENTOS GRÁFICOS CARACTERÍSTICOS: rosa-dos-ventos / bússola como símbolo central, mapa-mundi em manchas suaves de fundo, grid cartográfico sutil, sombras suaves, contornos metálicos dourados, composição simétrica e centralizada.
+TIPOGRAFIA — REGRAS ABSOLUTAS:
+— Títulos: fonte geométrica sans-serif, peso 800-900, caixa alta (ALL CAPS) ou small caps elegante
+— Subtítulos: mesmo typeface, peso 500-600, caixa baixa
+— Corpo de texto: fonte complementar humanista, peso 400, generosamente espaçado
+— Letter-spacing para títulos: levemente aberto (+0.05em a +0.1em) — sensação monumental
+— Sem serifas, sem scripts, sem fontes decorativas
 
-DIREÇÃO DE ARTE:
-- Fundo claro e dominante (areia/bege) — nunca escuro
-- Alto respiro entre elementos, minimalismo sofisticado
-- Contraste elegante e hierarquia clara
-- Bronze/dourado de forma sutil e estratégica
-- Composição simétrica e centrada
-- Sensação premium, institucional e atemporal
-- Transmitir: direção, conquista, estratégia, expansão, legado
+ELEMENTOS GRÁFICOS CARACTERÍSTICOS (usar com moderação e elegância):
+— Rosa-dos-ventos ou bússola como símbolo central — representando direção e estratégia
+— Fragmentos de mapa-mundi ou mapas cartográficos em manchas suaves e transparentes no fundo
+— Grid cartográfico com linhas finíssimas em bronze #B8864B a 15-25% de opacidade
+— Bordas finas em bronze — retângulos, enquadramentos, separadores
+— Sombras suaves e difusas que criam profundidade sem dramatismo
+— Micro-textura de papel de algodão ou linho no fundo
 
-TOM VISUAL: estratégico · sofisticado · monumental · direcional · premium · institucional
+DIREÇÃO DE COMPOSIÇÃO:
+— Composição simétrica e centralizada como regra principal
+— Amplo espaço respiro (breathing room) em torno dos elementos
+— Hierarquia visual absolutamente clara: título > subtítulo > elemento gráfico > corpo
+— Luz suave direcional de cima, criando sutis gradientes de claro para ligeiramente mais escuro
+— Fundo com textura sutil de papel ou pergaminho — nunca completamente liso
 
-NUNCA: fundos escuros dominantes, neon, cores vibrantes, elementos cartoons, estética hype ou motivacional raso, rockets, emojis gráficos.
-SEMPRE: estrutura, clareza, inteligência estratégica, composição centrada, paleta areia/bronze/marrom.`,
+SENSAÇÃO E ATMOSFERA:
+— Premium, institucional, atemporal, monumental
+— Como a capa de um livro de estratégia de um empresário visionário
+— Como o material de comunicação de uma empresa de private equity sofisticada
+— Transmite: direção clara, conquista calculada, estratégia refinada, expansão com propósito, legado
+
+TOM VISUAL: estratégico · sofisticado · monumental · direcional · premium · institucional · cartográfico
+
+PROIBIDO ABSOLUTAMENTE: fundos escuros dominantes, neon, cores saturadas ou vibrantes, elementos cartoon ou ilustrativo amador, estética motivacional raso, foguetes, emojis gráficos, gradientes coloridos, confete, estrelas decorativas.`,
   },
   pessoal: {
     accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
     bgMid:'#EDEAE4',bgBrand:'#F5F2EE',textOnDark:'#F5F2EE',textOnLight:'#2C2420',
     handle:'@analuisa.moutinho',name:'Ana Moutinho',
     moods:['DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','VIRADA','CTA_INTIMO'],
-    aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de alguém construindo a própria vida com intenção.
-ESTÉTICA: real, íntima, sofisticada, arejada, levemente granulada. Luz natural, fotos espontâneas. Predominantemente claro.
-PALETA: off-white/creme (#FAF8F5) como base dominante, bege claro (#EDEAE4), marrom café (#8B7355) como acento, rosa queimado (#C17B6F) com uso pontual. EVITAR fundos escuros ou pretos — preferir sempre versões claras dos layouts.
-TOM: reflexivo, direto, levemente provocativo, íntimo, inteligente.
-NUNCA: motivacional raso, tom de guru, coach, LinkedIn, fundos pretos ou muito escuros.`,
+    aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de alguém construindo a própria vida com intenção, disciplina e profundidade. Não é influencer. É pensadora.
+
+CONCEITO VISUAL: editorial minimalista intimista. Como as páginas de um livro bonito encontradas com a estética de um feed de fotógrafo documental europeu. Sofisticação sem ostentação. Profundidade sem heaviness.
+
+PALETA CROMÁTICA OBRIGATÓRIA:
+— Fundo primário dominante: off-white creme #FAF8F5 (ocupa 65-75% da composição) — nunca branco puro, nunca cinza frio
+— Fundo secundário: bege claro aconchegante #EDEAE4
+— Acento principal: marrom café aquecido #8B7355 — para bordas finas, linhas divisórias, detalhes pontuais
+— Acento feminino pontual: rosa queimado terracota #C17B6F — apenas em detalhes muito sutis, como sublinhados ou pequenos elementos gráficos
+— Texto principal: marrom escuro quente #2C2420
+— Texto secundário: marrom médio #8B7355
+— NUNCA: preto puro, fundos escuros, azul, verde, cinza frio, branco clínico
+
+TIPOGRAFIA — REGRAS ABSOLUTAS:
+— Títulos: serifada editorial ou sans-serif geométrica leve, peso 300-400 para frases longas ou 700-800 para statements de impacto curtos
+— Frases de impacto: letra grande, ocupando boa parte da composição, quase sem margens — editorial, não de blog
+— Subtítulos e legendas: sans-serif clean em peso 400, espaçamento generoso
+— Nunca fontes decorativas, scripts cursivos exagerados ou tipografias de coach/LinkedIn
+
+ATMOSFERA E LUZ:
+— Luz natural difusa, como entrada de janela em dia nublado ou manhã tranquila
+— Granulação fotográfica sutil sobre qualquer elemento fotográfico (grain de filme analógico leve)
+— Profundidade com sombras muito suaves e translúcidas — nunca sombra dura
+— Textura de fundo: papel aquarela, linho fine art, ou papel de algodão — nunca digital liso
+
+ELEMENTOS GRÁFICOS (usar com extrema contenção):
+— Linhas finíssimas horizontais em marrom #8B7355 como separadores
+— Formas geométricas simples — retângulos de borda fina como enquadramentos
+— Manchas de cor muito suaves e translúcidas como elementos de fundo
+— NUNCA: ícones decorativos, florinhas, estrelas, ornamentos, stickers, clip art
+
+DIREÇÃO DE COMPOSIÇÃO:
+— Layout editorial com respiração ampla — muito espaço vazio intencional
+— Regra dos terços para posicionamento do texto principal
+— Assimetria elegante — não tudo centralizado (exceto frases de impacto)
+— Como a página de um livro do Penguin Classics ou editorial da Vogue Portugal
+— Sensação: você está lendo algo que vale a pena ler
+
+SENSAÇÃO E ATMOSFERA:
+— Real sem ser crua. Sofisticada sem ser fria. Íntima sem ser vulgar.
+— Como um ensaio fotográfico de alguém muito bem-resolvida sendo vista em seu habitat natural
+— Transmite: inteligência, intencionalidade, disciplina, profundidade, vida real construída com propósito
+
+TOM VISUAL: editorial · intimista · arejado · granulado · creme · terracota suave · pensativo · direto
+
+PROIBIDO ABSOLUTAMENTE: fundos escuros, preto, neon, gradientes coloridos, elementos decorativos infantis, estética de coach, LinkedIn, motivacional, citações com fontes script floreadas, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
 IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel.
 1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia.
@@ -635,10 +711,49 @@ IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
     textOnDark:'#FFFFFF',textOnLight:'#050B18',handle:'@virttus',name:'Virttus',
     moods:['HERO_DARK','TYPE_DARK','EDITORIAL_LIGHT','HERO_DARK','TABLE_LIGHT','TYPE_DARK','EDITORIAL_LIGHT','BRAND_PUNCH','CTA_LIGHT'],
-    aestheticDNA:`Tech B2B precision design. Sharp, forward-looking, data-driven.
-TYPOGRAPHY: Geometric tech sans-serif, precise and clean, weight 700-900.
-VISUALS: Abstract data visualizations, digital interfaces, circuit patterns.
-NEVER: clipart, generic tech stock, cartoonish elements.`,
+    aestheticDNA:`IDENTIDADE VISUAL: Virttus — tecnologia B2B de precisão. Sharp, visionária, data-driven.
+
+CONCEITO: A linguagem visual de uma empresa que resolve problemas complexos com elegância técnica. Não é startup de consumo. É inteligência aplicada para empresas sérias.
+
+PALETA CROMÁTICA OBRIGATÓRIA:
+— Fundo primário escuro: azul noturno profundo #0A1628 (ocupa 60-70% nos slides escuros)
+— Fundo claro alternativo: azul-branco frio #F0F4FF (para slides de conteúdo legível)
+— Acento primário: ciano-turquesa elétrico #00D4AA — para elementos de destaque, bordas ativas, CTAs
+— Acento secundário: roxo vibrante #7B2FFF — para destaques secundários, gráficos, gradientes
+— Texto sobre fundo escuro: branco puro #FFFFFF com hierarquia clara
+— Texto sobre fundo claro: azul noturno #050B18
+— Gradiente assinatura: de #7B2FFF para #00D4AA — usado em bordas, linhas e elementos de destaque
+— NUNCA: marrom, bege, quente, dourado, verde natural, laranja
+
+TIPOGRAFIA — REGRAS ABSOLUTAS:
+— Títulos: sans-serif geométrica tecnológica (Inter, Space Grotesk ou similar), peso 700-900, caixa alta ou mista
+— Dados e métricas: mono espaçada ou sans-serif de alta legibilidade, grande, destacado
+— Corpo: sans-serif clean peso 400, espaçamento preciso
+— Números e dados sempre em tamanho grande e destaque — eles são os heróis
+
+ELEMENTOS VISUAIS CARACTERÍSTICOS:
+— Visualizações de dados abstratas: gráficos de linha, barras minimalistas, dashboards parciais
+— Grades e malhas digitais finíssimas em ciano a 10-20% de opacidade como textura de fundo
+— Linhas de código ou fragmentos de interface renderizados com elegância
+— Bordas em gradiente roxo→ciano
+— Pontos de dados e nós de rede conectados por linhas finas brilhantes
+— Profundidade com glow suave em ciano e roxo sobre fundo escuro
+
+DIREÇÃO DE COMPOSIÇÃO:
+— Fundo escuro com elementos luminosos — profissional, imersivo, focado
+— Composição assimétrica e dinâmica, com dados e visuais técnicos como elementos decorativos
+— Tipografia grande e hierárquica — dados principais em destaque absoluto
+— Luz artificial fria e direcional — como iluminação de servidor room ou lab de dados
+— Profundidade: elementos em camadas com glow difuso e sombras frias
+
+SENSAÇÃO E ATMOSFERA:
+— Como o dashboard de uma empresa Fortune 500 bem-desenhado
+— Precisão cirúrgica. Sem desperdício. Sem decoração vazia.
+— Transmite: competência técnica, inteligência analítica, confiança, precisão, inovação real
+
+TOM VISUAL: técnico · preciso · dark · neon-sutil · data-driven · corporativo-futurista · confiável
+
+PROIBIDO ABSOLUTAMENTE: clipart, ícones de banco de imagens genéricos, elementos cartoon, cores quentes (marrom/laranja/dourado/bege), gradientes arco-íris, estética de startup jovem descontraída, robôs humanoides clichê.`,
   
   },
 };
