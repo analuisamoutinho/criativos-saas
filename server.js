@@ -25,6 +25,29 @@ try { fs.mkdirSync(MANUALS_DIR,       { recursive: true }); } catch(e) {}
 try { fs.mkdirSync(IMAGES_DIR,        { recursive: true }); } catch(e) {}
 try { fs.mkdirSync('uploads/photos/', { recursive: true }); } catch(e) {}
 
+// ── Image crop: 2:3 → 4:5 for Instagram feed ─────────────────────────────
+// GPT-Image-1 only generates 1024×1536 (2:3). Instagram feed is 4:5 (1080×1350).
+// Center-crop removes 128px from top and bottom (8.3% each side) — safe because
+// all prompts instruct the model to keep content within the inner 80% safe zone.
+async function cropTo45(b64png) {
+  try {
+    const sharp = require('sharp');
+    const inputBuf = Buffer.from(b64png, 'base64');
+    // 1024×1536 → center crop to 1024×1280 (4:5) → resize to 1080×1350
+    const cropHeight = Math.round(1024 * 5 / 4); // 1280
+    const topOffset  = Math.round((1536 - cropHeight) / 2); // 128
+    const outputBuf = await sharp(inputBuf)
+      .extract({ left: 0, top: topOffset, width: 1024, height: cropHeight })
+      .resize(1080, 1350, { fit: 'fill', kernel: 'lanczos3' })
+      .png({ compressionLevel: 8 })
+      .toBuffer();
+    return outputBuf.toString('base64');
+  } catch (e) {
+    console.warn('[cropTo45] sharp não disponível, retornando original:', e.message);
+    return b64png;
+  }
+}
+
 // ── Quality helpers ───────────────────────────────────────────────────────
 // CORRIGIDO: adicionado 'high' e 'auto' que a gpt-image-1 aceita
 const VALID_QUALITIES = ['low', 'medium', 'high', 'auto'];
@@ -87,7 +110,7 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
     `Textura de fundo: micro-textura de papel, linho ou granulação sutil — nunca fundo completamente liso e plástico.`,
     `Profundidade: sombras suaves e difusas, elementos com leve sobreposição de camadas — nunca completamente flat.`,
     `Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros slides.`,
-    `Formato retrato 4:5, 1024×1536px. Sem watermarks, sem logotipos externos, sem elementos de UI.`,
+    `Formato de geração: 1024×1536px. A imagem será cortada para 4:5 (Instagram feed). ZONA SEGURA OBRIGATÓRIA: mantenha TODO conteúdo (numeração, títulos, textos, rodapé) a pelo menos 130px de distância do topo e do rodapé da imagem. Essa faixa de 130px em cima e em baixo é margem de corte — nunca coloque elementos críticos nela. Sem watermarks, logotipos externos ou elementos de UI.`,
     `Padrão mínimo: equivalente ao trabalho de um designer sênior de uma top agência de branding europeia.`,
   ].map(l => `— ${l}`).join('\n');
 
@@ -1662,7 +1685,14 @@ app.post('/api/image/carousel-slide', async (req, res) => {
     }
 
     if (!imageData) return res.status(500).json({ error: 'Nenhuma imagem retornada' });
-    res.json({ success: true, b64: imageData.b64_json || null, url: imageData.url || null, designMeta, quality });
+
+    // Crop center 2:3 → 4:5 for Instagram feed (1080×1350)
+    let finalB64 = imageData.b64_json || null;
+    if (finalB64) {
+      finalB64 = await cropTo45(finalB64);
+    }
+
+    res.json({ success: true, b64: finalB64, url: imageData.url || null, designMeta, quality });
   } catch (err) { console.error('[image/carousel-slide]', err); res.status(500).json({ error: err.message }); }
 });
 // Salva imagem base64 em disco e devolve URL pública
