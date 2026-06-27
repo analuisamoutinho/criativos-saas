@@ -668,7 +668,31 @@ SENSAÇÃO E ATMOSFERA:
 
 TOM VISUAL: estratégico · sofisticado · monumental · direcional · premium · institucional · cartográfico
 
-PROIBIDO ABSOLUTAMENTE: fundos escuros dominantes, neon, cores saturadas ou vibrantes, elementos cartoon ou ilustrativo amador, estética motivacional raso, foguetes, emojis gráficos, gradientes coloridos, confete, estrelas decorativas.`,
+PROIBIDO ABSOLUTAMENTE: fundos escuros dominantes, neon, cores saturadas ou vibrantes, elementos cartoon ou ilustrativo amador, estética motivacional raso, foguetes, emojis gráficos, gradientes coloridos, confete, estrelas decorativas.
+
+════ DIREÇÃO FOTOGRÁFICA / VISUAL DE FUNDO ════
+Quando a imagem gerada for um BACKGROUND FOTOGRÁFICO ou visual de fundo, seguir obrigatoriamente:
+
+PALETA VISUAL DA FOTOGRAFIA:
+— Tom geral: quente, dourado, âmbar — como luz de fim de tarde entrando por janelas altas
+— Superfícies: madeira clara, couro natural, papel envelhecido, linho, pedra clara, mármore bege
+— Iluminação: natural, difusa, lateral — sombras suaves, nenhuma luz dramática fria ou azulada
+— Cores proibidas na fotografia: azul, roxo, verde, cinza frio, preto como dominante
+
+OBJETOS E AMBIENTES PERMITIDOS:
+— Mesas de trabalho com materiais premium (couro, papel kraft, caneta dourada, cadernos abertos)
+— Espaços arquitetônicos com luz natural: escritórios com janelas grandes, varandas, salas de reunião com madeira
+— Detalhes de negócio: contratos, gráficos impressos, calculadoras analógicas, relógios
+— Elementos cartográficos físicos: atlas aberto, bússola de latão, mapas em papel envelhecido
+— Café em xícara branca/nude, reuniões focadas (sem rostos dominantes), aperto de mão elegante
+
+ESTILO FOTOGRÁFICO:
+— Editorial de negócios high-end — como revista Forbes ou Harvard Business Review
+— Profundidade de campo suave (fundo levemente desfocado) com objeto principal nítido
+— Grão sutil de filme — nunca digital hiper-saturado
+— NUNCA: stock photo genérico, suits escuros com fundo cinza, estúdio artificial, iluminação de flash
+
+ATMOSFERA: como a sala de um empresário visionário — conquista silenciosa, estratégia e legado`,
   },
   pessoal: {
     accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
