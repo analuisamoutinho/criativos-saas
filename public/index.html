@@ -138,10 +138,10 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 #carouselGrid.preview-mode #carouselConfigCol{display:none;}
 .slide-card{flex-shrink:0;width:180px;height:200px;border-radius:var(--radius);background:var(--gradient);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;color:var(--white);scroll-snap-align:start;position:relative;overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;}
 .slide-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 28px rgba(0,0,0,.22);}
-.slide-card::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3);z-index:1;pointer-events:none;}
+.slide-card::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.72) 0%,rgba(0,0,0,.2) 55%,rgba(0,0,0,.05) 100%);z-index:1;pointer-events:none;}
 .slide-card .slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--radius);z-index:0;}
 .slide-card-content{position:relative;z-index:2;}
-.slide-heading-ro{font-family:var(--font-head);font-size:.75rem;font-weight:700;color:#fff;line-height:1.2;margin-top:4px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
+.slide-heading-ro{font-family:var(--font-head);font-size:.78rem;font-weight:700;color:#fff;line-height:1.25;margin-top:4px;text-shadow:0 2px 6px rgba(0,0,0,.7);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
 .slide-edit-heading{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.18);color:#fff;font-size:.82rem;font-weight:700;font-family:var(--font-head);padding:2px 0;outline:none;margin-bottom:4px;line-height:1.25;}
 .slide-edit-heading:focus{border-bottom-color:var(--magenta);}
 .slide-edit-heading::placeholder{color:rgba(255,255,255,.35);font-weight:400;}
@@ -1211,7 +1211,7 @@ function renderSlidesPreview(slides){
       ${comments.length?`<div class="slide-comment-dot">${comments.length}</div>`:''}
       ${img?`<div class="slide-card-content">
         <div class="slide-number">Slide ${i+1}/${slides.length}</div>
-        <div class="slide-heading-ro">${s.heading||''}</div>
+        <div class="slide-heading-ro">${(s.heading||'').replace(/</g,'&lt;')}</div>
       </div>`:`<div class="slide-card-content">
         <div class="slide-number">Slide ${i+1}/${slides.length}</div>
         <input class="slide-edit-heading" value="${h}" placeholder="Título..."
@@ -1293,7 +1293,7 @@ function selectCarouselTemplate(templateId) {
 /* ── LIGHTBOX ── */
 function openLightbox(index){lbCurrentIndex=index;document.getElementById('slideLightbox').classList.add('visible');lbRenderSlide();lbBuildStrip();}
 function closeLightbox(){document.getElementById('slideLightbox').classList.remove('visible');if(lbSlides.length)renderSlidesPreview(lbSlides);}
-function lbRenderSlide(){const i=lbCurrentIndex,slide=lbSlides[i],img=currentCarouselImages[i],total=lbSlides.length;document.getElementById('lbSlideNum').textContent=`Slide ${i+1} / ${total}`;document.getElementById('lbSlideHeading').textContent=slide?.heading||'–';document.getElementById('lbSlideBody').textContent=slide?.body||'';const wrap=document.getElementById('lbImageWrap');if(img){wrap.innerHTML=`<img src="${img}" style="max-width:100%;max-height:90vh;object-fit:contain;display:block;"/>`;}else{wrap.innerHTML=`<div class="lb-image-placeholder"><div class="ph-icon">🖼️</div><div>Slide ${i+1} — imagem não gerada</div></div>`;}document.getElementById('lbPrevBtn').disabled=(i===0);document.getElementById('lbNextBtn').disabled=(i===total-1);const status=lbStatusStore[i]||'pendente';document.getElementById('lbBtnApprove').classList.toggle('active',status==='aprovado');document.getElementById('lbBtnChange').classList.toggle('active',status==='alteracao');lbRenderComments(i);lbUpdateStrip();}
+function lbRenderSlide(){const i=lbCurrentIndex,slide=lbSlides[i],img=currentCarouselImages[i],total=lbSlides.length;document.getElementById('lbSlideNum').textContent=`Slide ${i+1} / ${total}`;document.getElementById('lbSlideHeading').textContent=slide?.heading||'–';document.getElementById('lbSlideBody').textContent=slide?.body||'';const wrap=document.getElementById('lbImageWrap');const h=(slide?.heading||'').replace(/</g,'&lt;');const b=(slide?.body||'').replace(/</g,'&lt;');if(img){wrap.innerHTML=`<div style="position:relative;width:100%;height:100%;display:flex;align-items:stretch;"><img src="${img}" style="width:100%;height:100%;object-fit:cover;display:block;"/><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.75) 0%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.1) 100%);display:flex;flex-direction:column;justify-content:flex-end;padding:28px 24px;"><div style="font-size:1.05rem;font-weight:700;color:#fff;line-height:1.3;text-shadow:0 2px 8px rgba(0,0,0,.5);">${h}</div>${b?`<div style="font-size:.8rem;color:rgba(255,255,255,.88);line-height:1.6;margin-top:8px;text-shadow:0 1px 4px rgba(0,0,0,.5);">${b}</div>`:''}</div></div>`;}else{wrap.innerHTML=`<div class="lb-image-placeholder"><div class="ph-icon">🖼️</div><div>Slide ${i+1} — imagem não gerada</div></div>`;}document.getElementById('lbPrevBtn').disabled=(i===0);document.getElementById('lbNextBtn').disabled=(i===total-1);const status=lbStatusStore[i]||'pendente';document.getElementById('lbBtnApprove').classList.toggle('active',status==='aprovado');document.getElementById('lbBtnChange').classList.toggle('active',status==='alteracao');lbRenderComments(i);lbUpdateStrip();}
 function lbNavigate(dir){const next=lbCurrentIndex+dir;if(next<0||next>=lbSlides.length)return;lbCurrentIndex=next;lbRenderSlide();}
 function lbGoto(i){lbCurrentIndex=i;lbRenderSlide();}
 function lbSetStatus(status){const i=lbCurrentIndex,prev=lbStatusStore[i];lbStatusStore[i]=(prev===status)?'pendente':status;if(lbStatusStore[i]==='aprovado'){const c=lbCommentStore[i]||[];if(!c.some(x=>x.type==='aprovacao'))lbAddComment(i,'Slide aprovado ✓','aprovacao');}lbRenderSlide();lbUpdateStrip();}
@@ -1403,7 +1403,8 @@ async function generateCarouselImages(autoPublishConfig=null){
     const fu=(funcao||'').toUpperCase();
     const isFirst=i===0,isLast=i===slides.length-1;
     const isSelf=isFirst||isLast||fu.includes('CAPA')||fu.includes('CTA')||fu.includes('ASSINATURA')||fu.includes('FRASE')||fu.includes('QUOTE');
-    statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span> <span style="font-size:.75rem;color:var(--mid);">${isSelf?'👤 Foto sua':'🌿 Respiro'}</span>`;
+    const fotoLabel=currentProfile==='pessoal'?(isSelf?'👤 Foto sua':'🌿 Respiro'):'';
+    statusEl.innerHTML=`<span style="font-weight:600;color:var(--magenta);">Slide ${i+1}/${slides.length}</span>`+(fotoLabel?` <span style="font-size:.75rem;color:var(--mid);">${fotoLabel}</span>`:'');
  
     try{
       let finalUrl=null;
