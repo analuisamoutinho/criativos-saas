@@ -630,6 +630,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
             </div>
             <button class="btn btn-outline btn-sm" onclick="copyCriarSlides()" style="width:100%;margin-top:10px;">📋 Copiar todos os slides</button>
             <div id="criarCopyConfirm" style="text-align:center;font-size:.78rem;color:#065F46;margin-top:6px;display:none;">✅ Copiado!</div>
+            <button class="btn btn-primary btn-sm" onclick="enviarCriarParaCarrossel()" style="width:100%;margin-top:8px;">🎨 Gerar imagens para estes slides</button>
           </div>
         </div>
         <div>
@@ -1654,6 +1655,37 @@ function goToCriarSlide(idx) {
 
 function navCriarSlide(dir) { goToCriarSlide(criarCurrentSlideIdx + dir); }
 
+function enviarCriarParaCarrossel() {
+  if (!criarCurrentSlides.length) return toast('Nenhum slide gerado', 'error');
+  // Normaliza para o formato do carrossel
+  const slides = criarCurrentSlides.map((s, i) => ({
+    slideNumber: s.slideNumber || i + 1,
+    funcao: s.funcao || 'DESENVOLVIMENTO',
+    heading: s.textos?.[0]?.texto || s.heading || '',
+    body: s.textos?.[1]?.texto || s.body || '',
+    imagePrompt: ''
+  }));
+  // Prepara o estado do carrossel
+  currentCarouselImages = [];
+  lbCommentStore = {};
+  lbStatusStore = {};
+  currentCarouselData = { slides, caption: '', hashtags: '' };
+  currentCarouselContentId = null;
+  // Navega para o carrossel e mostra preview
+  resetCarouselToConfig();
+  showSection('carousel', null);
+  setTimeout(() => {
+    renderSlidesPreview(slides);
+    document.getElementById('carouselSlideCount').textContent = slides.length + ' slides carregados do Criar';
+    document.getElementById('carouselPreviewTitle').textContent = document.getElementById('criarResultTitle').textContent || 'Carrossel';
+    document.getElementById('carouselGeneratedCaption').value = '';
+    document.getElementById('carouselPreviewCard').style.display = 'block';
+    document.getElementById('publishPanel').classList.add('visible');
+    enterCarouselPreviewMode();
+    toast('Slides carregados! Clica em "Gerar imagens" para criar as artes.', 'success');
+  }, 200);
+}
+
 function copyCriarSlides() {
   const text = criarCurrentSlides.map((s,i) => {
     const txs = s.textos || [];
@@ -1792,6 +1824,7 @@ function usarTrendComoTema(tJson) {
       if (el) { el.value = t.gancho || t.termo; el.focus(); }
     }, 300);
   } else {
+    resetCarouselToConfig();
     showSection('carousel', null);
     setTimeout(() => {
       setCarouselMode('topic');
@@ -1799,16 +1832,21 @@ function usarTrendComoTema(tJson) {
       if (el) { el.value = t.gancho || t.termo; el.focus(); }
     }, 300);
   }
-  toast(`Pauta carregada: ${t.tipo_ideal}`, 'success');
+  toast(`Pauta carregada — tema preenchido!`, 'success');
 }
 
+function copiarTexto(texto, btn, label) {
+  const done = () => { if(!btn)return; const orig=btn.textContent; btn.textContent='✅ Copiado!'; setTimeout(()=>btn.textContent=orig,2000); };
+  if (navigator.clipboard?.writeText) { navigator.clipboard.writeText(texto).then(done).catch(()=>copiarFallback(texto,done)); }
+  else { copiarFallback(texto, done); }
+}
+function copiarFallback(texto, cb) {
+  const ta=document.createElement('textarea'); ta.value=texto; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');if(cb)cb();}catch(e){toast('Não foi possível copiar','error');}document.body.removeChild(ta);
+}
 function copiarGancho(btn, ganchoJson) {
   const gancho = JSON.parse(ganchoJson);
-  navigator.clipboard?.writeText(gancho).then(() => {
-    const orig = btn.textContent;
-    btn.textContent = '✅ Copiado!';
-    setTimeout(() => { btn.textContent = orig; }, 2000);
-  });
+  copiarTexto(gancho, btn, 'Gancho copiado!');
 }
 
 async function generateRoteiro(){
