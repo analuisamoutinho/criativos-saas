@@ -406,6 +406,20 @@ const DEFAULT_PROFILES = {
     handle: '@analuisa.moutinho',
     niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo — contada por quem ainda está aprendendo, não por quem já chegou',
     bio: 'Ainda estou descobrindo como construir uma vida mais ordenada, virtuosa e significativa. Compartilho o que aprendo enquanto aprendo.',
+    sobreMim: `Sou uma mulher movida por sentido, profundidade e construção. Não me interesso por uma vida apenas bonita por fora — gosto do que tem raiz, ordem, permanência e verdade. Tenho um olhar atento para os detalhes do cotidiano, porque acredito que a vida real se revela nas pequenas escolhas: na forma como trabalhamos, cuidamos da casa, honramos nossos vínculos, organizamos a rotina e permanecemos fiéis ao que importa.
+
+Meu conteúdo nasce desse lugar — e ainda está sendo construído junto comigo. Falo sobre amadurecimento, rotina, fé, beleza, trabalho, autocuidado e construção de futuro. Não como performance e nem como chegada. Como caminho. Um caminho que estou trilhando agora, com tudo o que isso implica de dúvida, recomeço e aprendizado em tempo real.
+
+Tenho sensibilidade para perceber o invisível por trás das situações comuns. Gosto de transformar experiências em reflexão, caos em linguagem, desejo em direção. Minha comunicação une firmeza e delicadeza: acolhe, mas não acomoda; inspira, mas não ilude.
+
+Acredito que uma vida bonita não é uma vida perfeita. É uma vida com alicerce. E é isso que estou aprendendo a construir.
+
+ESSÊNCIA DA MARCA:
+Construção com profundidade — de rotina, de casa interior, de fé, de saúde, de trabalho, de presença, de relações, de beleza e de futuro. Sem pressa vazia, sem superficialidade.
+
+MENSAGEM CENTRAL: A vida que você deseja precisa de alicerce, não apenas de desejo.
+
+ATENÇÃO CRÍTICA: Este "sobre mim" descreve uma direção e um conjunto de valores — não uma chegada. A Ana ainda está construindo tudo isso. O conteúdo deve soar como o diário de quem tem clareza sobre o que quer mas ainda está aprendendo a viver à altura disso, não como o depoimento de quem já resolveu.`,
     tom: 'Reflexivo, íntimo, honesto sobre as próprias contradições. Fala como alguém que está no meio do processo — não como quem chegou do outro lado. Levemente provocativo, mas sem didatismo. Nunca guru, nunca coach, nunca superior. A voz é de companheira de caminhada: "eu também estou tentando entender isso". Usa primeira pessoa real: duvida, erra, recomeça, ri de si mesma às vezes.',
     proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Aprendi que', 'A verdade é que', 'O segredo é simples', 'Você precisa', 'Faça assim', 'É simples assim'],
     pilares: [
@@ -476,6 +490,7 @@ function getProfileManualContext(profileId) {
     p.pilares?.length    ? `PILARES DE CONTEÚDOM: ${p.pilares.join(', ')}` : '',
     p.proibidos?.length  ? `TERMOS PROIBIDOS: ${p.proibidos.join(', ')}` : '',
     p.cta          ? `CTA PADRÃO DO PERFIL: ${p.cta}`         : '',
+    p.sobreMim     ? `IDENTIDADE PESSOAL (quem é Ana, como ela se descreve):\n${p.sobreMim}` : '',
     p.observacoes  ? `CONTEXTO ADICIONAL: ${p.observacoes}`   : '',
   ].filter(Boolean).join('\n');
 }
