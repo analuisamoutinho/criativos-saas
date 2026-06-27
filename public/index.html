@@ -138,9 +138,10 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 #carouselGrid.preview-mode #carouselConfigCol{display:none;}
 .slide-card{flex-shrink:0;width:180px;height:200px;border-radius:var(--radius);background:var(--gradient);display:flex;flex-direction:column;justify-content:flex-end;padding:14px;color:var(--white);scroll-snap-align:start;position:relative;overflow:hidden;cursor:pointer;transition:transform .18s,box-shadow .18s;}
 .slide-card:hover{transform:translateY(-3px) scale(1.02);box-shadow:0 8px 28px rgba(0,0,0,.22);}
-.slide-card::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3);z-index:1;}
+.slide-card::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.3);z-index:1;pointer-events:none;}
 .slide-card .slide-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--radius);z-index:0;}
 .slide-card-content{position:relative;z-index:2;}
+.slide-heading-ro{font-family:var(--font-head);font-size:.75rem;font-weight:700;color:#fff;line-height:1.2;margin-top:4px;text-shadow:0 1px 4px rgba(0,0,0,.5);}
 .slide-edit-heading{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.18);color:#fff;font-size:.82rem;font-weight:700;font-family:var(--font-head);padding:2px 0;outline:none;margin-bottom:4px;line-height:1.25;}
 .slide-edit-heading:focus{border-bottom-color:var(--magenta);}
 .slide-edit-heading::placeholder{color:rgba(255,255,255,.35);font-weight:400;}
@@ -1093,7 +1094,7 @@ function setProfile(profile,btn){
   document.getElementById('activeProfileBadge').textContent=names[profile];
   toast(`Perfil: ${names[profile]}`,'info');
   initDesignStyles();
-  renderCarouselTemplatePicker();
+  loadCanvaTemplates().then(renderCarouselTemplatePicker);
   loadDashboard();
   if(document.getElementById('section-manual')?.classList.contains('active')){loadManualProfile(profile);}
 }
@@ -1203,12 +1204,14 @@ function renderSlidesPreview(slides){
     const img=imgs[i];
     const h=(s.heading||'').replace(/"/g,'&quot;');
     const b=(s.body||'').replace(/</g,'&lt;');
-    return`<div class="slide-card" id="slideCard_${i}">
-      <div style="position:absolute;inset:0;z-index:0;" onclick="openLightbox(${i})" title="Clica para ver em detalhe"></div>
+    return`<div class="slide-card" id="slideCard_${i}" onclick="openLightbox(${i})" title="Clica para ver em detalhe">
       ${img?`<img class="slide-img" src="${img}" />`:''}
       ${status!=='pendente'?`<div class="slide-status-badge ${status}">${status==='aprovado'?'✓ OK':'✎ Alterar'}</div>`:''}
       ${comments.length?`<div class="slide-comment-dot">${comments.length}</div>`:''}
-      <div class="slide-card-content">
+      ${img?`<div class="slide-card-content">
+        <div class="slide-number">Slide ${i+1}/${slides.length}</div>
+        <div class="slide-heading-ro">${s.heading||''}</div>
+      </div>`:`<div class="slide-card-content">
         <div class="slide-number">Slide ${i+1}/${slides.length}</div>
         <input class="slide-edit-heading" value="${h}" placeholder="Título..."
                oninput="updateSlideText(${i},'heading',this.value)"
@@ -1216,7 +1219,7 @@ function renderSlidesPreview(slides){
         <textarea class="slide-edit-body" rows="2" placeholder="Corpo..."
                   oninput="updateSlideText(${i},'body',this.value)"
                   onclick="event.stopPropagation()">${b}</textarea>
-      </div>
+      </div>`}
     </div>`;
   }).join('');
 }

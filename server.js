@@ -67,51 +67,41 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
   // ── Layout structure per slide role ──────────────────────────────────────
   let layoutStructure;
   if (isFirst) {
-    layoutStructure = `LAYOUT DA CAPA:
-— Fundo limpo com textura sutil (papel de algodão, linho ou micro-granulação) nas cores da paleta da marca
-— Linha fina horizontal em cor de acento no topo, largura ~80px, alinhada à esquerda
-— Zona central (ocupa 55% da altura): TÍTULO principal em tipografia geométrica bold, peso 800-900, caixa alta, muito grande (equivalente a 72-90pt) — texto "${heading || 'TÍTULO'}"
-— Abaixo do título: subtítulo menor em peso 400-500 com letter-spacing aberto — texto "${body || ''}"
-— Elemento gráfico decorativo da marca (ex: rosa-dos-ventos, bússola, ícone tech) renderizado com qualidade 3D ou ilustrativo premium, posicionado à direita ou como elemento de fundo translúcido
-— Rodapé: nome da marca "${brandName}" em fonte pequena, maiúscula, peso 600, alinhado à esquerda — "${brandHandle}" se relevante
-— Linha fina de rodapé em cor de acento separando o nome da borda
-— Margens internas generosas (~8% em cada lado), muito respiro entre elementos`;
+    layoutStructure = `VISUAL DA CAPA (FUNDO/BACKGROUND APENAS — SEM TEXTO):
+— Composição fotográfica ou ilustrativa que evoca o tema: "${sceneHint || heading || ''}"
+— Fundo rico com textura, profundidade e luz dramática nas cores da paleta da marca
+— Elemento gráfico ou forma geométrica da marca como detalhe sutil no canto ou fundo
+— Atmosfera premium, editorial, cinematográfica — como capa de revista de negócios
+— IMPORTANTE: ZERO texto, zero tipografia, zero letras na imagem`;
   } else if (isLast) {
-    layoutStructure = `LAYOUT DE ENCERRAMENTO / CTA:
-— Fundo limpo da marca com textura sutil, mesmo sistema cromático dos outros slides
-— Zona central com CTA ou mensagem de encerramento: texto "${heading || 'PRÓXIMO PASSO'}" em tipografia grande e bold
-— Texto secundário de apoio ou instrução de ação: "${body || ''}" em peso regular, abaixo do CTA
-— Elemento gráfico da marca posicionado com elegância (ícone, símbolo, forma geométrica)
-— Handle ou nome da marca em destaque como assinatura: "${brandHandle || brandName}"
-— Rodapé com nome da marca e linha fina de acento
-— Composição centrada e convidativa — sensação de fechamento caloroso e profissional`;
+    layoutStructure = `VISUAL DE ENCERRAMENTO (FUNDO/BACKGROUND APENAS — SEM TEXTO):
+— Composição clean e elegante nas cores da marca, sensação de fechamento e ação
+— Fundo com gradiente suave ou textura sutil — pode ter uma forma geométrica ou símbolo da marca
+— Tom convidativo, caloroso, profissional
+— IMPORTANTE: ZERO texto, zero tipografia, zero letras na imagem`;
   } else {
-    layoutStructure = `LAYOUT DE CONTEÚDO (slide ${slideNumber} de ${totalSlides}):
-— Fundo limpo nas cores da paleta, consistente com os outros slides do carrossel
-— Linha fina horizontal em cor de acento no topo, alinhada à esquerda
-— Zona de título: "${heading || ''}" em tipografia geométrica bold, peso 700-800, caixa alta ou mista — grande e imediatamente legível
-— Zona de conteúdo abaixo: "${body || ''}" em fonte complementar, peso 400, espaçamento de linha generoso (1.6-1.8x), totalmente legível
-— Elemento gráfico ou decorativo sutil da marca para respiração visual (forma, linha, ícone reduzido) sem competir com o texto
-— Rodapé: nome "${brandName}" em fonte pequena com linha fina de acento
-— Grid interno consistente: margens simétricas (~8%), alinhamentos perfeitos, espaçamento sistemático`;
+    layoutStructure = `VISUAL DE CONTEÚDO — slide ${slideNumber} de ${totalSlides} (FUNDO/BACKGROUND APENAS — SEM TEXTO):
+— Imagem temática que ilustra visualmente o conceito: "${sceneHint || heading || ''}"
+— Fundo consistente com os outros slides em paleta de cores e mood
+— Pode ser fotografia editorial, textura, forma abstrata ou composição geométrica
+— Elemento sutil da identidade visual da marca (cor de acento, forma, detalhe)
+— IMPORTANTE: ZERO texto, zero tipografia, zero letras na imagem`;
   }
 
   // ── Execution requirements ────────────────────────────────────────────────
   const execution = [
-    `ESTE É UM SLIDE DE DESIGN GRÁFICO PROFISSIONAL — não uma ilustração artística. Aplique rigor de design editorial de agência premium.`,
-    `Qualidade de output: apresentação de identidade de marca publicável sem retoques. Pixel-perfect.`,
-    `Tipografia: renderize o texto EXATAMENTE como especificado no layout. Nunca invente texto, nunca use placeholder. Letras nítidas, sem borrão.`,
-    `Cores: estritamente da paleta da marca. Zero improvisação cromática. Nenhuma cor não listada.`,
-    `Textura de fundo: micro-textura de papel, linho ou granulação sutil — nunca fundo completamente liso e plástico.`,
-    `Profundidade: sombras suaves e difusas, elementos com leve sobreposição de camadas — nunca completamente flat.`,
-    `Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros slides.`,
-    `Formato de geração: 1024×1536px. A imagem será cortada para 4:5 (Instagram feed). ZONA SEGURA OBRIGATÓRIA: mantenha TODO conteúdo (títulos, textos, rodapé, elementos gráficos) a pelo menos 130px de distância do topo e do rodapé da imagem. Essa faixa de 130px em cima e em baixo é margem de corte — nunca coloque elementos críticos nela. Sem watermarks, logotipos externos ou elementos de UI.`,
-    `Padrão mínimo: equivalente ao trabalho de um designer sênior de uma top agência de branding europeia.`,
+    `ESTE É UM VISUAL DE FUNDO (BACKGROUND) para um slide de carrossel Instagram. NÃO É uma peça gráfica com texto. O texto será adicionado por cima via CSS/HTML — NÃO inclua texto, título, legenda, hashtag, handle ou qualquer tipografia na imagem.`,
+    `Qualidade visual: fotografia editorial premium ou ilustração de marca publicável. Atmosfera coerente com a identidade da marca.`,
+    `Cores: estritamente da paleta da marca. Zero improvisação cromática.`,
+    `Textura e profundidade: iluminação cinematográfica, sombras difusas, profundidade de campo — nunca fundo completamente liso.`,
+    `Consistência de série: este background deve pertencer visivelmente ao mesmo universo visual dos outros slides.`,
+    `Formato: 1024×1536px. Composição centralizada e equilibrada, funciona bem cortado para 4:5. Sem watermarks, logotipos externos ou elementos de UI.`,
+    `REGRA ABSOLUTA: ZERO texto visível na imagem. Nenhuma letra, número, palavra, símbolo tipográfico. Só visual puro.`,
   ].map(l => `— ${l}`).join('\n');
 
   return [
-    `Crie um slide de carrossel de Instagram de design gráfico premium — slide ${slideNumber} de ${totalSlides}.`,
-    `Este é um LAYOUT DE DESIGN GRÁFICO ESTRUTURADO, não uma composição artística livre.`,
+    `Crie um VISUAL DE FUNDO (background image) para o slide ${slideNumber} de ${totalSlides} de um carrossel Instagram.`,
+    `É uma imagem de fundo pura — sem texto, sem tipografia, sem legendas. O texto será sobreposto por CSS.`,
     '',
     `════ SISTEMA DE DESIGN E IDENTIDADE VISUAL DA MARCA ════`,
     aestheticDNA,
