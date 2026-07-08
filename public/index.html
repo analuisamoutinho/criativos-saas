@@ -409,7 +409,7 @@ body{font-family:var(--font-body);background:var(--pale);color:var(--dark);min-h
 .trend-relevancia{font-size:.82rem;color:var(--mid);line-height:1.5;}
 .trend-gancho{background:linear-gradient(135deg,rgba(59,15,76,.04),rgba(228,0,124,.04));border:1.5px solid rgba(228,0,124,.15);border-radius:var(--radius);padding:10px 14px;font-size:.88rem;font-weight:600;color:var(--dark);line-height:1.4;font-style:italic;}
 .trend-angulo{font-size:.8rem;color:var(--dark);line-height:1.55;}
-.trend-actions{display:flex;gap:8px;margin-top:2px;}
+.trend-actions{display:flex;gap:8px;margin-top:2px;flex-wrap:wrap;}
 .trends-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;}
 .trends-meta{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
 .trends-fonte-pill{display:flex;align-items:center;gap:5px;font-size:.73rem;font-weight:600;padding:4px 10px;border-radius:99px;}
@@ -1730,6 +1730,7 @@ function toggleCriarBloco(i) {
 
 // ── Tendências ──────────────────────────────────────────────────────────
 let trendsLastProfile = null;
+let trendsData = [];
 
 async function loadTrends(forceRefresh = false) {
   const grid    = document.getElementById('trendsGrid');
@@ -1769,8 +1770,9 @@ async function loadTrends(forceRefresh = false) {
     if (!d.trends || d.trends.length === 0) { empty.style.display = 'block'; return; }
 
     trendsLastProfile = currentProfile;
-    d.trends.forEach(t => {
-      const card = renderTrendCard(t);
+    trendsData = d.trends;
+    d.trends.forEach((t, i) => {
+      const card = renderTrendCard(t, i);
       grid.appendChild(card);
     });
   } catch(e) {
@@ -1780,7 +1782,7 @@ async function loadTrends(forceRefresh = false) {
   }
 }
 
-function renderTrendCard(t) {
+function renderTrendCard(t, i) {
   const urgClass = { alta: 'urgencia-alta', media: 'urgencia-media', baixa: 'urgencia-baixa' }[t.urgencia] || '';
   const urgLabel = { alta: '🔥 Alta', media: '⚡ Média', baixa: '🌱 Baixa' }[t.urgencia] || t.urgencia;
   const tipoIcon = { carrossel: '🎠', post: '🖼️', reels: '🎬' }[t.tipo_ideal] || '📄';
@@ -1804,14 +1806,17 @@ function renderTrendCard(t) {
     <div class="trend-gancho">"${t.gancho || ''}"</div>
     <div class="trend-angulo">${t.angulo || ''}</div>
     <div class="trend-actions">
-      <button class="btn btn-primary btn-sm" onclick="usarTrendComoTema(${JSON.stringify(JSON.stringify(t))})">✏️ Usar como pauta</button>
-      <button class="btn btn-secondary btn-sm" onclick="copiarGancho(this, ${JSON.stringify(JSON.stringify(t.gancho))})">📋 Copiar gancho</button>
-    </div>`;
+      <button class="btn btn-primary btn-sm" onclick="gerarCopyTrend(${i}, this)">⚡ Gerar copy</button>
+      <button class="btn btn-secondary btn-sm" onclick="usarTrendComoTema(${i})">✏️ Usar como pauta</button>
+      <button class="btn btn-secondary btn-sm" onclick="copiarGancho(${i}, this)">📋 Copiar gancho</button>
+    </div>
+    <div class="trend-copy-result" id="trendCopyResult_${i}" style="display:none;"></div>`;
   return div;
 }
 
-function usarTrendComoTema(tJson) {
-  const t = JSON.parse(tJson);
+function usarTrendComoTema(i) {
+  const t = trendsData[i];
+  if (!t) return;
   if (t.tipo_ideal === 'reels') {
     showSection('roteiro', null);
     setTimeout(() => {
@@ -1836,6 +1841,175 @@ function usarTrendComoTema(tJson) {
   toast(`Pauta carregada — tema preenchido!`, 'success');
 }
 
+// Mapeia a tendência para um tipo de conteúdo válido conforme a metodologia do perfil.
+// Marca pessoal (RR) não tem o tipo "tendencia" — usa carrossel (ou roteiro para reels).
+function tipoCopyParaTrend(t) {
+  if (isPerfilRR(currentProfile)) {
+    return t.tipo_ideal === 'reels' ? 'video_medio' : 'carrossel';
+  }
+  return 'tendencia';
+}
+
+async function gerarCopyTrend(i, btn) {
+  const t = trendsData[i];
+  if (!t) return;
+  await ensureProfilesLoaded();
+  const tipo = tipoCopyParaTrend(t);
+  const tema = t.gancho || t.termo;
+  const resultEl = document.getElementById('trendCopyResult_' + i);
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ A escrever...';
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="font-size:.8rem;color:var(--mid);padding:12px 0;border-top:1px dashed var(--light);margin-top:10px;">✍️ A escrever a copy a partir desta tendência...</div>';
+  try {
+    const r = await fetch('/api/content-machine/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo, tema, profile: currentProfile }) });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    trendsData[i]._copy = { data: d, tipo };
+    renderTrendCopy(i);
+    toast('Copy gerada! Já podes copiar ou exportar para o designer.', 'success');
+  } catch (e) {
+    resultEl.innerHTML = '<div style="font-size:.8rem;color:#991B1B;padding:12px 0;border-top:1px dashed var(--light);margin-top:10px;">Erro ao gerar copy: ' + e.message + '</div>';
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+function renderTrendCopy(i) {
+  const c = trendsData[i] && trendsData[i]._copy;
+  const resultEl = document.getElementById('trendCopyResult_' + i);
+  if (!c || !resultEl) return;
+  const d = c.data;
+  const label = (CM_TYPES_ALL[c.tipo] || {}).label || c.tipo;
+  let bodyHtml;
+  if (d.isRoteiro) {
+    const blocos = (d.blocos || []).map(b => `<div style="margin-bottom:8px;"><div style="font-size:.66rem;font-weight:700;color:var(--magenta);">${b.label || ''}${b.tempo ? ' · ' + b.tempo : ''}</div><div style="font-size:.84rem;color:var(--dark);line-height:1.55;">${b.texto || ''}</div>${b.nota_direcao ? `<div style="font-size:.72rem;color:var(--mid);">→ ${b.nota_direcao}</div>` : ''}</div>`).join('');
+    bodyHtml = `<div style="font-weight:700;font-style:italic;color:var(--dark);margin-bottom:8px;">🎯 "${d.gancho || ''}"</div>${blocos}`;
+  } else {
+    const slides = d.slidesNormalizados || d.slides || [];
+    bodyHtml = slides.map((s, si) => {
+      const txs = s.textos || [];
+      const txt = txs.length ? txs.map(tx => tx.texto || '').filter(Boolean).join(' — ') : (s.heading || s.texto || '');
+      return `<div style="background:var(--pale);border-radius:8px;padding:8px 10px;margin-bottom:6px;"><div style="font-size:.58rem;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.05em;">Slide ${s.slide || si + 1} · ${s.funcao || ''}</div><div style="font-size:.82rem;color:var(--dark);line-height:1.5;">${txt}</div></div>`;
+    }).join('');
+  }
+  const abrirBtn = d.isRoteiro ? '' : `<button class="btn btn-primary btn-sm" onclick="enviarTrendCopyParaCarrossel(${i})">🎨 Abrir no Carrossel</button>`;
+  resultEl.innerHTML = `
+    <div style="border-top:1px dashed var(--light);margin-top:10px;padding-top:12px;">
+      <div style="font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--magenta);margin-bottom:8px;">✨ Copy gerada · ${label}</div>
+      ${bodyHtml}
+      <div class="trend-actions" style="margin-top:10px;">
+        <button class="btn btn-secondary btn-sm" onclick="copiarTrendCopy(${i}, this)">📋 Copiar copy</button>
+        <button class="btn btn-secondary btn-sm" onclick="exportTrendCopyForDesigner(${i})">📄 Exportar para Designer</button>
+        ${abrirBtn}
+      </div>
+    </div>`;
+}
+
+function buildTrendCopyText(i) {
+  const c = trendsData[i] && trendsData[i]._copy;
+  if (!c) return '';
+  const d = c.data;
+  const t = trendsData[i];
+  const label = (CM_TYPES_ALL[c.tipo] || {}).label || c.tipo;
+  const lines = [];
+  lines.push('════════════════════════════════════════');
+  lines.push('  ' + (t.termo || 'TENDÊNCIA').toUpperCase());
+  lines.push('  ' + label + ' · ' + new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }));
+  lines.push('════════════════════════════════════════');
+  lines.push('');
+  if (d.isRoteiro) {
+    lines.push('🎯 PRIMEIRA FRASE: "' + (d.gancho || '') + '"');
+    lines.push('');
+    (d.blocos || []).forEach(b => {
+      lines.push('[ ' + (b.label || '') + (b.tempo ? ' · ' + b.tempo : '') + ' ]');
+      if (b.texto) lines.push(b.texto);
+      if (b.nota_direcao) lines.push('→ ' + b.nota_direcao);
+      lines.push('');
+    });
+    if (Array.isArray(d.dicas_gravacao) && d.dicas_gravacao.length) {
+      lines.push('DICAS DE GRAVAÇÃO:');
+      d.dicas_gravacao.forEach(x => lines.push('• ' + x));
+      lines.push('');
+    }
+    if (d.legenda_sugerida) { lines.push('LEGENDA SUGERIDA:'); lines.push(d.legenda_sugerida); }
+  } else {
+    const slides = d.slidesNormalizados || d.slides || [];
+    slides.forEach((s, si) => {
+      const n = s.slide || si + 1;
+      lines.push('────────────────────────────────────────');
+      lines.push('SLIDE ' + n + ' — ' + (s.funcao || ''));
+      lines.push('────────────────────────────────────────');
+      const txs = s.textos || [];
+      if (txs.length) {
+        txs.forEach(tx => {
+          if (tx.texto) { if (tx.tipo) lines.push('[' + String(tx.tipo).toUpperCase() + ']'); lines.push(tx.texto); lines.push(''); }
+        });
+      } else if (s.heading) { lines.push(s.heading); lines.push(''); }
+    });
+    const caption = d.caption || d.legenda || '';
+    const hashtags = d.hashtags || '';
+    if (caption || hashtags) {
+      lines.push('════════════════════════════════════════');
+      lines.push('LEGENDA + HASHTAGS');
+      lines.push('════════════════════════════════════════');
+      if (caption) lines.push(caption);
+      if (hashtags) lines.push(hashtags);
+    }
+  }
+  return lines.join('\n');
+}
+
+function copiarTrendCopy(i, btn) {
+  const text = buildTrendCopyText(i);
+  if (!text) return toast('Gera a copy primeiro', 'error');
+  copiarTexto(text, btn, 'Copy copiada!');
+}
+
+function exportTrendCopyForDesigner(i) {
+  const text = buildTrendCopyText(i);
+  if (!text) return toast('Gera a copy primeiro', 'error');
+  const t = trendsData[i];
+  const nome = (t.termo || 'tendencia').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').slice(0, 40) || 'tendencia';
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome + '_designer.txt';
+  a.click();
+  toast('Arquivo exportado!', 'success');
+}
+
+function enviarTrendCopyParaCarrossel(i) {
+  const c = trendsData[i] && trendsData[i]._copy;
+  if (!c || c.data.isRoteiro) return toast('Sem slides para o carrossel', 'error');
+  const t = trendsData[i];
+  const src = c.data.slidesNormalizados || c.data.slides || [];
+  const slides = src.map((s, si) => ({
+    slideNumber: s.slide || si + 1,
+    funcao: s.funcao || 'DESENVOLVIMENTO',
+    heading: (s.textos && s.textos[0] ? s.textos[0].texto : s.heading) || '',
+    body: (s.textos && s.textos[1] ? s.textos[1].texto : s.body) || '',
+    imagePrompt: s.imagePrompt || ''
+  }));
+  currentCarouselImages = [];
+  lbCommentStore = {};
+  lbStatusStore = {};
+  currentCarouselData = { slides, title: t.termo || '', caption: c.data.caption || '', hashtags: c.data.hashtags || '' };
+  currentCarouselContentId = c.data.contentId || null;
+  resetCarouselToConfig();
+  showSection('carousel', null);
+  setTimeout(() => {
+    renderSlidesPreview(slides);
+    document.getElementById('carouselSlideCount').textContent = slides.length + ' slides carregados da tendência';
+    document.getElementById('carouselPreviewTitle').textContent = t.termo || 'Carrossel';
+    document.getElementById('carouselGeneratedCaption').value = c.data.caption || '';
+    document.getElementById('carouselPreviewCard').style.display = 'block';
+    document.getElementById('publishPanel').classList.add('visible');
+    enterCarouselPreviewMode();
+    toast('Slides carregados! Clica em "Gerar imagens" para criar as artes.', 'success');
+  }, 200);
+}
+
 function copiarTexto(texto, btn, label) {
   const done = () => { if(!btn)return; const orig=btn.textContent; btn.textContent='✅ Copiado!'; setTimeout(()=>btn.textContent=orig,2000); };
   if (navigator.clipboard?.writeText) { navigator.clipboard.writeText(texto).then(done).catch(()=>copiarFallback(texto,done)); }
@@ -1845,9 +2019,10 @@ function copiarFallback(texto, cb) {
   const ta=document.createElement('textarea'); ta.value=texto; ta.style.position='fixed'; ta.style.opacity='0';
   document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');if(cb)cb();}catch(e){toast('Não foi possível copiar','error');}document.body.removeChild(ta);
 }
-function copiarGancho(btn, ganchoJson) {
-  const gancho = JSON.parse(ganchoJson);
-  copiarTexto(gancho, btn, 'Gancho copiado!');
+function copiarGancho(i, btn) {
+  const t = trendsData[i];
+  if (!t) return;
+  copiarTexto(t.gancho || t.termo || '', btn, 'Gancho copiado!');
 }
 
 async function generateRoteiro(){
@@ -1914,7 +2089,8 @@ function loadCMFromHistory(i){const h=cmSessionHistory[i];if(!h)return;cmSelecte
 let manualCurrentProfile='marca',manualProfileData={},manualDirty=false;
 const ALL_CONTENT_TYPES=[{id:'tendencia',emoji:'📡',label:'Análise de Tendência',tipos:['pessoal','corporativa']},{id:'case',emoji:'🏆',label:'Case de Sucesso',tipos:['pessoal','corporativa']},{id:'educativo',emoji:'📚',label:'Educativo / Framework',tipos:['pessoal','corporativa']},{id:'comparacao',emoji:'⚖️',label:'Comparação',tipos:['corporativa']},{id:'lista',emoji:'📋',label:'Lista Valiosa',tipos:['pessoal','corporativa']},{id:'prova_social',emoji:'🌟',label:'Prova Social',tipos:['pessoal','corporativa']},{id:'oferta',emoji:'🎯',label:'Oferta',tipos:['corporativa']},{id:'dump',emoji:'📸',label:'Dump / Bastidores',tipos:['pessoal']},{id:'lofi',emoji:'🎥',label:'Lo-Fi (câmera ligada)',tipos:['pessoal']},{id:'video_curto',emoji:'⚡',label:'Vídeo Curto',tipos:['pessoal']},{id:'video_medio',emoji:'🎬',label:'Vídeo Médio',tipos:['pessoal']},{id:'frase',emoji:'✍️',label:'Frase de Impacto',tipos:['pessoal']},{id:'bastidores',emoji:'🎬',label:'Bastidores',tipos:['pessoal']}];
 
-async function initManualSection(){try{const r=await fetch('/api/profiles');manualProfileData=await r.json();}catch(e){manualProfileData=buildLocalProfileDefaults();}renderManualProfileSwitcher();loadManualProfile(currentProfile);}
+async function ensureProfilesLoaded(force){if(!force&&manualProfileData&&Object.keys(manualProfileData).length)return manualProfileData;try{const r=await fetch('/api/profiles');manualProfileData=await r.json();}catch(e){manualProfileData=buildLocalProfileDefaults();}return manualProfileData;}
+async function initManualSection(){await ensureProfilesLoaded(true);renderManualProfileSwitcher();loadManualProfile(currentProfile);}
 function buildLocalProfileDefaults(){return{marca:{profileId:'marca',tipo:'corporativa',nome:'Case Aceleradora',handle:'@caseaceleradora',niche:'Aceleração de negócios digitais, B2B',bio:'Aceleramos negócios digitais com estratégia, dados e criatividade.',tom:'Autoritário, estratégico, direto. Premium B2B.',proibidos:['Descubra','Transforme sua vida','Saiba como'],pilares:['Estratégia de negócio','Cases de sucesso','Tendências de mercado'],publicoAlvo:'Fundadores, CEOs e diretores de empresas digitais em fase de escala',cta:'Comente "CASE" que nossa equipe te chama.',referencias:['Monocle','FT Weekend','McKinsey Digital'],tiposConteudo:['tendencia','case','educativo','comparacao','lista','prova_social','oferta'],observacoes:''},pessoal:{profileId:'pessoal',tipo:'pessoal',nome:'Ana Moutinho',handle:'@analuisa.moutinho',niche:'Marca pessoal, construção de vida intencional',bio:'Construindo a própria vida com intenção. Sem fórmulas, sem guru.',tom:'Reflexivo, íntimo, direto, levemente provocativo. Nunca motivacional.',proibidos:['Desbloqueie','Seja sua melhor versão','Transforme','Coach','Sucesso'],pilares:['Construção pessoal','Estratégia de vida','Estética de vida real','Marca pessoal'],publicoAlvo:'Mulheres 25-38 anos construindo identidade profissional e vida própria',cta:'Salva pra reler quando esquecer disso. Me diz nos comentários se fez sentido.',referencias:['Sofia Coppola','Lo-fi diary aesthetic','Candid editorial'],tiposConteudo:['lofi','carrossel','video_curto','video_medio','frase','dump','bastidores'],observacoes:'Não é coach, não é guru.'},virttus:{profileId:'virttus',tipo:'corporativa',nome:'Virttus',handle:'@virttus',niche:'Tech B2B, transformação digital',bio:'Tecnologia de precisão para empresas que não aceitam mediano.',tom:'Técnico, forward-looking, preciso. B2B premium.',proibidos:['Incrível','Revolucionário','Disruptivo','Mudando o jogo'],pilares:['Tecnologia e inovação','Casos de uso B2B','Data & Analytics'],publicoAlvo:'CTOs, gerentes de TI e diretores de operações',cta:'Quer saber como aplicar isso? Nos chame no direct.',referencias:['Bloomberg Businessweek','Wired','MIT Tech Review'],tiposConteudo:['tendencia','case','educativo','comparacao','lista','oferta'],observacoes:''}};}
 function renderManualProfileSwitcher(){const el=document.getElementById('manualProfileSwitcher');if(!el)return;const names={marca:'Case Aceleradora',pessoal:'Ana Moutinho',virttus:'Virttus'};el.innerHTML=Object.keys(manualProfileData).map(id=>{const p=manualProfileData[id];const label=p.nome||names[id]||id;const active=id===manualCurrentProfile?'active':'';return`<button class="manual-ps-btn ${active}" onclick="loadManualProfile('${id}')"><div class="manual-ps-dot"></div><span>${label}</span><span style="font-size:.68rem;color:var(--mid);">${p.handle||''}</span></button>`;}).join('');}
 function loadManualProfile(profileId){manualCurrentProfile=profileId;manualDirty=false;renderManualProfileSwitcher();const p=manualProfileData[profileId];if(!p)return;setVal('manualNome',p.nome||'');setVal('manualHandle',p.handle||'');setVal('manualNiche',p.niche||'');setVal('manualBio',p.bio||'');setVal('manualPublico',p.publicoAlvo||'');setVal('manualTom',p.tom||'');setVal('manualCta',p.cta||'');setVal('manualObservacoes',p.observacoes||'');setManualTipoUI(p.tipo||'corporativa');renderManualTags('manualPilaresContainer',p.pilares||[],'pilar',removeManualPilar);renderManualTags('manualProibidosContainer',p.proibidos||[],'proibido',removeManualProibido);renderManualTags('manualRefContainer',p.referencias||[],'ref',removeManualRef);renderTiposGrid(p.tipo||'corporativa',p.tiposConteudo||[]);if(p.pdfUploadedAt){const zone=document.getElementById('manualPdfZone');const txt=document.getElementById('manualPdfText');if(zone)zone.classList.add('has-file');if(txt)txt.textContent='✅ PDF carregado';}updateManualSaveStatus(p.updatedAt?`Salvo em ${new Date(p.updatedAt).toLocaleString('pt-PT')}`:'Nunca salvo');setTimeout(attachManualDirtyListeners,100);}
@@ -2220,7 +2396,7 @@ initDesignStyles();
 loadCanvaTemplates().then(renderCarouselTemplatePicker);
 loadDashboard();
 loadUserSettings();
-document.addEventListener('DOMContentLoaded',()=>{initSlidesDragScroll();});
+document.addEventListener('DOMContentLoaded',()=>{initSlidesDragScroll();ensureProfilesLoaded();});
 setTimeout(initSlidesDragScroll,500);
 
 /* ═══════════════════════════════════════════════════════

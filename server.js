@@ -1256,18 +1256,17 @@ app.post('/api/calendar/generate', async (req, res) => {
     const tiposDisponiveis = Object.values(tipos).map(t => t.id).join(' | ');
     const tiposLabels = Object.values(tipos).map(t => t.id + ' (' + t.label + ')').join(', ');
 
-    // Busca tendências em tempo real para perfis BrandsDecoded
-    let trendTopics = [];
-    if (!isRR) {
-      trendTopics = await getTrendsForCalendar(profile);
-    }
+    // Busca tendências em tempo real para todos os perfis (pessoal e corporativo)
+    const trendTopics = await getTrendsForCalendar(profile);
     const trendBlock = trendTopics.length
-      ? '\nTENDÊNCIAS EM ALTA AGORA (use como tópicos do tipo "tendencia" distribuídos ao longo do mês):\n' + trendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+      ? (isRR
+          ? '\nTENDÊNCIAS EM ALTA AGORA (encaixe 1-2 destes temas ao longo do mês, adaptando à voz da marca pessoal — pode virar carrossel, frase, lofi ou vídeo):\n' + trendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+          : '\nTENDÊNCIAS EM ALTA AGORA (use como tópicos do tipo "tendencia" distribuídos ao longo do mês):\n' + trendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n')
       : '';
 
-    const proporcaoBD = !isRR
-      ? '\nPROPORÇÃO RECOMENDADA BrandsDecoded (distribuir ao longo do mês):\n- 35% educativo (conteúdo de autoridade, ensina algo prático)\n- 20% tendencia (use os tópicos de tendência listados acima quando disponíveis)\n- 15% case (resultado real de cliente ou negócio)\n- 15% lista (conteúdo de alcance, shareável)\n- 10% comparacao (antes/depois, certo/errado)\n- 5% prova_social ou oferta\n'
-      : '';
+    const proporcaoBlock = isRR
+      ? '\nPROPORÇÃO RECOMENDADA Metodologia RR (distribuir ao longo do mês):\n- 30% carrossel (educação e profundidade)\n- 20% lofi ou video (conexão direta com a câmera)\n- 20% aproveitando as TENDÊNCIAS listadas acima quando disponíveis, adaptadas ao tom da marca\n- 15% frase (verdade concentrada, alto alcance)\n- 15% dump ou bastidores (autenticidade e relacionamento)\n'
+      : '\nPROPORÇÃO RECOMENDADA BrandsDecoded (distribuir ao longo do mês):\n- 35% educativo (conteúdo de autoridade, ensina algo prático)\n- 20% tendencia (use os tópicos de tendência listados acima quando disponíveis)\n- 15% case (resultado real de cliente ou negócio)\n- 15% lista (conteúdo de alcance, shareável)\n- 10% comparacao (antes/depois, certo/errado)\n- 5% prova_social ou oferta\n';
 
     const BLOCK = 10;
     const allDays = [];
@@ -1280,7 +1279,7 @@ app.post('/api/calendar/generate', async (req, res) => {
       const examplePosts = postsPerDay === 1
         ? (isRR ? '[{"time":"09:00","type":"lofi","topic":"Por que a maioria das pessoas sabota o próprio crescimento"}]' : '[{"time":"09:00","type":"educativo","topic":"Por que 90% das empresas param de crescer quando o dono para de aparecer"}]')
         : (isRR ? '[{"time":"09:00","type":"carrossel","topic":"A mentira que o Instagram vende sobre consistência"},{"time":"18:00","type":"frase","topic":"Você não precisa de motivação, precisa de estrutura"}]' : '[{"time":"09:00","type":"educativo","topic":"O erro que faz donos de negócio trabalharem mais e faturarem menos"},{"time":"18:00","type":"tendencia","topic":"O que está mudando no comportamento do consumidor brasileiro em 2026"}]');
-      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + trendBlock + proporcaoBD + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos, com ângulo concreto e linguagem de dono de negócio real (sem jargão técnico).\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
+      const blockPrompt = 'Você é estrategista de conteúdo para Instagram. Crie o calendário editorial para ' + account.name + ' — ' + month + '/' + year + '.\n\n' + brandContext + '\n' + (manualNote ? 'DIRETRIZES DO PERFIL:\n' + manualNote + '\n\n' : '') + trendBlock + proporcaoBlock + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nREGRAS DO TOPIC: Topics devem ser específicos, com ângulo concreto e linguagem de dono de negócio real (sem jargão técnico).\nHORÁRIOS: use 09:00 para manhã e 18:00 para tarde/noite.\n\nRESPONDA APENAS COM JSON VÁLIDO, SEM MARKDOWN.\n\nFormato EXATO:\n{\n  "days": [\n    {"day": ' + blockStart + ', "posts": ' + examplePosts + '}\n  ]\n}\n\nGere TODOS os dias de ' + blockStart + ' a ' + blockEnd + ' (total: ' + daysInBlock + ' dias, ' + postsPerDay + ' post(s) por dia).';
       const blockRes = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
@@ -1336,20 +1335,19 @@ app.post('/api/calendar/generate-week', async (req, res) => {
     }
     const daysText = weekDays.map(d => d.dayOfWeek + ' ' + d.date).join(', ');
 
-    // Busca tendências para perfis BrandsDecoded
-    let weekTrendTopics = [];
-    if (!isRR) {
-      weekTrendTopics = await getTrendsForCalendar(profile);
-    }
+    // Busca tendências para todos os perfis (pessoal e corporativo)
+    const weekTrendTopics = await getTrendsForCalendar(profile);
     const weekTrendBlock = weekTrendTopics.length
-      ? '\nTENDÊNCIAS EM ALTA AGORA (use 1-2 como tópico do tipo "tendencia" na semana):\n' + weekTrendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+      ? (isRR
+          ? '\nTENDÊNCIAS EM ALTA AGORA (encaixe 1-2 como tópico da semana, adaptando à voz da marca pessoal — carrossel, frase, lofi ou vídeo):\n' + weekTrendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n'
+          : '\nTENDÊNCIAS EM ALTA AGORA (use 1-2 como tópico do tipo "tendencia" na semana):\n' + weekTrendTopics.map((t, i) => (i + 1) + '. ' + t.gancho + ' [termo: ' + t.termo + ']').join('\n') + '\n')
       : '';
-    const weekProporcaoBD = !isRR
-      ? '\nPROPORÇÃO SEMANAL BrandsDecoded: priorize educativo (autoridade) + 1 tendencia (usando os tópicos acima se disponíveis) + 1 lista ou case. Evite mais de 1 oferta por semana.\n'
-      : '';
+    const weekProporcaoBlock = isRR
+      ? '\nPROPORÇÃO SEMANAL Metodologia RR: priorize carrossel (profundidade) + 1 lofi/video (conexão) + 1 tema aproveitando as tendências acima quando disponíveis + 1 frase ou dump. Mantém o tom íntimo e real da marca.\n'
+      : '\nPROPORÇÃO SEMANAL BrandsDecoded: priorize educativo (autoridade) + 1 tendencia (usando os tópicos acima se disponíveis) + 1 lista ou case. Evite mais de 1 oferta por semana.\n';
 
     const examplePost = isRR ? '{"time":"09:00","type":"lofi","topic":"Tema específico aqui"}' : '{"time":"09:00","type":"educativo","topic":"Tema específico aqui"}';
-    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + weekTrendBlock + weekProporcaoBD + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia. Topics devem ser específicos com linguagem de dono de negócio real.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
+    const prompt = 'Você é estrategista de conteúdo para ' + account.name + ' (' + account.handle + ').\n\n' + (manualNote ? 'DIRETRIZES:\n' + manualNote + '\n\n' : '') + weekTrendBlock + weekProporcaoBlock + 'TIPOS DISPONÍVEIS: ' + tiposDisponiveis + '\n\nCrie um plano editorial para a semana: ' + daysText + '\n' + postsPerDay + ' post(s) por dia. Topics devem ser específicos com linguagem de dono de negócio real.\n\nRESPONDA APENAS JSON VÁLIDO:\n{"days":[{"date":"2026-06-09","dayOfWeek":"Segunda","posts":[' + examplePost + ']}]}';
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
