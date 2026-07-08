@@ -1984,9 +1984,18 @@ app.post('/api/canva/generate-slides', async (req, res) => {
   }
 });
 
-app.use(express.static('public'));
+// Serve estáticos, mas garante que o HTML nunca fica em cache no browser/CDN
+// (senão actualizações à app não chegam ao utilizador sem hard-refresh).
+app.use(express.static('public', {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) res.set('Cache-Control', 'no-cache, must-revalidate');
+  },
+}));
 app.use('/api', (req, res) => { res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.originalUrl}` }); });
-app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('*', (req, res) => {
+  res.set('Cache-Control', 'no-cache, must-revalidate');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 app.listen(PORT, () => {
   console.log(`🚀 Máquina de Conteúdo na porta ${PORT} | quality default: ${DEFAULT_QUALITY} | valid: ${VALID_QUALITIES.join(', ')}`);
   checkSupabaseTables();
