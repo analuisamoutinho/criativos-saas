@@ -1806,9 +1806,9 @@ function renderTrendCard(t, i) {
     <div class="trend-gancho">"${t.gancho || ''}"</div>
     <div class="trend-angulo">${t.angulo || ''}</div>
     <div class="trend-actions">
-      <button class="btn btn-primary btn-sm" onclick="gerarCopyTrend(${i}, this)">⚡ Gerar copy</button>
-      <button class="btn btn-secondary btn-sm" onclick="usarTrendComoTema(${i})">✏️ Usar como pauta</button>
+      <button class="btn btn-primary btn-sm" onclick="gerarCopyTrend(${i}, this)" style="flex:1;min-width:180px;">⚡ Gerar copy do carrossel</button>
       <button class="btn btn-secondary btn-sm" onclick="copiarGancho(${i}, this)">📋 Copiar gancho</button>
+      <button class="btn btn-secondary btn-sm" onclick="usarTrendComoTema(${i})">✏️ Editar manualmente</button>
     </div>
     <div class="trend-copy-result" id="trendCopyResult_${i}" style="display:none;"></div>`;
   return div;
