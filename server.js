@@ -115,15 +115,19 @@ function detectFeaturedBrand(...texts) {
 function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint, topic }) {
   const isFirst = slideNumber === 1 || slideRole === 'CAPA';
   const isLast  = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
-  const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial minimalist design';
+  const aestheticDNA = brand.aestheticDNA || 'premium editorial minimalist design';
   const brandName    = brand.name    || 'MARCA';
   const brandHandle  = brand.handle  || '';
   const featured     = detectFeaturedBrand(topic, heading, body, sceneHint);
 
+  // Em low/medium a gpt-image-1 não renderiza parágrafos de forma legível —
+  // só o título entra na imagem; o corpo só é renderizado em high/auto.
+  const bakeBody = !!body && (quality === 'high' || quality === 'auto');
+
   // ── Textos exatos a renderizar no slide ───────────────────────────────────
   const textsToRender = [
     heading ? `TÍTULO PRINCIPAL (grande, dominante): "${heading}"` : '',
-    body    ? `TEXTO DE APOIO (menor, sob o título ou em bloco lateral): "${body}"` : '',
+    bakeBody ? `TEXTO DE APOIO (menor, sob o título ou em bloco lateral): "${body}"` : '',
     brandHandle ? `ASSINATURA DISCRETA no topo do slide: "${brandHandle}"` : '',
   ].filter(Boolean).join('\n— ');
 
@@ -143,8 +147,9 @@ function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole
 — Tom convidativo e profissional, sensação de conclusão`;
   } else {
     layoutStructure = `ESTE É UM SLIDE DE CONTEÚDO — slide ${slideNumber} de ${totalSlides}:
-— Título renderizado no topo em tipografia forte (peso 800), texto de apoio em bloco legível abaixo
-— Se o texto de apoio contém itens/conceitos distintos, organize como LISTA com pequenos ÍCONES de linha fina (outline icons) ao lado de cada item — padrão infográfico editorial premium
+— Título renderizado no topo em tipografia forte (peso 800)${bakeBody ? `, texto de apoio em bloco legível abaixo
+— Se o texto de apoio contém itens/conceitos distintos, organize como LISTA com pequenos ÍCONES de linha fina (outline icons) ao lado de cada item — padrão infográfico editorial premium` : `
+— SEM bloco de texto de apoio: abaixo do título, apenas respiro visual limpo e a fotografia/elemento gráfico — NENHUM outro texto`}
 — FOTOGRAFIA ou ELEMENTO VISUAL de apoio: ${featured ? `produto/detalhe icônico da ${featured.name} em fotografia premium, ocupando um terço a metade da composição` : `visual concreto do conceito "${sceneHint || heading || ''}"`}
 — Numeração discreta do slide (0${slideNumber}) como detalhe editorial no topo
 — Mesmo grid, mesma paleta e mesma tipografia dos outros slides da série`;
@@ -164,7 +169,9 @@ REGRA DE FUSÃO DAS DUAS IDENTIDADES:
 
   // ── Execution requirements ────────────────────────────────────────────────
   const execution = [
-    `TEXTO RENDERIZADO NA IMAGEM: renderize os textos fornecidos EXATAMENTE como escritos, letra por letra, em português correto. NÃO invente, traduza, abrevie ou adicione palavras. Nenhum texto além dos fornecidos.`,
+    `TEXTO RENDERIZADO NA IMAGEM: renderize os textos fornecidos EXATAMENTE como escritos, letra por letra, em português correto — atenção total aos acentos (á, é, ó, ê, ã, õ, ç). NÃO invente, traduza, abrevie ou adicione palavras.`,
+    `CADA TEXTO APARECE EXATAMENTE UMA VEZ: nunca renderize o título ou o texto de apoio em dois lugares da composição.`,
+    `PROIBIDO TEXTO FANTASMA: nenhum pseudo-texto, lorem ipsum, letras aleatórias ou blocos de escrita ilegível usados como "textura". Toda área sem os textos listados fica com visual puro (fotografia, cor, elemento gráfico) — completamente limpa de letras.`,
     `Tipografia: hierarquia absolutamente clara (título dominante > apoio > detalhes). Kerning e alinhamento impecáveis, como peça finalizada por designer sênior.`,
     `Fotografia: qualidade de campanha publicitária — iluminação de estúdio, texturas ricas, profundidade de campo, materiais reais. NUNCA render 3D genérico, clip-art ou stock photo com cara de banco de imagens.`,
     `Cores: base estritamente na paleta do perfil${featured ? `; acentos e fotografia nas cores reais da ${featured.name}` : ''}. Zero improvisação cromática.`,
@@ -179,6 +186,7 @@ REGRA DE FUSÃO DAS DUAS IDENTIDADES:
     '',
     `════ SISTEMA DE DESIGN E IDENTIDADE VISUAL DO PERFIL (${brandName}) ════`,
     aestheticDNA,
+    aestheticOverride ? `\n════ DIREÇÃO DE ESTILO ADICIONAL DESTE CARROSSEL ════\n${aestheticOverride}\n(Esta direção COMPLEMENTA a identidade do perfil acima. Em caso de conflito, a paleta de cores, a tipografia e as regras da identidade do perfil SEMPRE prevalecem.)` : '',
     featuredSection,
     '',
     `════ TEXTOS EXATOS A RENDERIZAR NESTE SLIDE ════`,
