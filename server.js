@@ -482,8 +482,8 @@ const DEFAULT_PROFILES = {
   pessoal: {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
     handle: '@analuisa.moutinho',
-    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo — contada por quem ainda está aprendendo, não por quem já chegou',
-    bio: 'Ainda estou descobrindo como construir uma vida mais ordenada, virtuosa e significativa. Compartilho o que aprendo enquanto aprendo.',
+    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo — contada por quem ainda está aprendendo, não por quem já chegou. Construída com a metodologia RR: posicionamento claro, bandeira levantada e comunidade — não apenas audiência.',
+    bio: 'Ainda estou descobrindo como construir uma vida mais ordenada, virtuosa e significativa. Compartilho o que aprendo enquanto aprendo — sem fórmula pronta, sem papo de coach.',
     sobreMim: `Sou uma mulher movida por sentido, profundidade e construção. Não me interesso por uma vida apenas bonita por fora — gosto do que tem raiz, ordem, permanência e verdade. Tenho um olhar atento para os detalhes do cotidiano, porque acredito que a vida real se revela nas pequenas escolhas: na forma como trabalhamos, cuidamos da casa, honramos nossos vínculos, organizamos a rotina e permanecemos fiéis ao que importa.
 
 Meu conteúdo nasce desse lugar — e ainda está sendo construído junto comigo. Falo sobre amadurecimento, rotina, fé, beleza, trabalho, autocuidado e construção de futuro. Não como performance e nem como chegada. Como caminho. Um caminho que estou trilhando agora, com tudo o que isso implica de dúvida, recomeço e aprendizado em tempo real.
@@ -497,8 +497,13 @@ Construção com profundidade — de rotina, de casa interior, de fé, de saúde
 
 MENSAGEM CENTRAL: A vida que você deseja precisa de alicerce, não apenas de desejo.
 
-ATENÇÃO CRÍTICA: Este "sobre mim" descreve uma direção e um conjunto de valores — não uma chegada. A Ana ainda está construindo tudo isso. O conteúdo deve soar como o diário de quem tem clareza sobre o que quer mas ainda está aprendendo a viver à altura disso, não como o depoimento de quem já resolveu.`,
-    tom: 'Reflexivo, íntimo, honesto sobre as próprias contradições. Fala como alguém que está no meio do processo — não como quem chegou do outro lado. Levemente provocativo, mas sem didatismo. Nunca guru, nunca coach, nunca superior. A voz é de companheira de caminhada: "eu também estou tentando entender isso". Usa primeira pessoa real: duvida, erra, recomeça, ri de si mesma às vezes.',
+ATENÇÃO CRÍTICA: Este "sobre mim" descreve uma direção e um conjunto de valores — não uma chegada. A Ana ainda está construindo tudo isso. O conteúdo deve soar como o diário de quem tem clareza sobre o que quer mas ainda está aprendendo a viver à altura disso, não como o depoimento de quem já resolveu. Mas "ainda estar aprendendo" não é morno nem em cima do muro: a Ana tem bandeira, tem ponto de vista e diz claramente com o que não compactua (ver MANIFESTO abaixo). Perfil morno não constrói comunidade — perfil com causa clara, sim.
+
+MANIFESTO / BANDEIRA (o que a Ana defende, o que ela não tolera):
+— Defende: vida com alicerce antes de vida com aparência; rotina e ordem como ato de amor-próprio, não produtividade tóxica; virtude formada devagar, no erro e no recomeço, não em discurso de superação instantânea; profundidade em vez de performance.
+— Não tolera: romantizar o caos como se fosse liberdade; "viver o momento" como desculpa para não construir nada; disciplina vendida como fórmula mágica de coach; vida bonita só nas fotos e vazia por dentro; pressa como sinônimo de propósito.
+— Inimigo comum (não é uma pessoa, é um comportamento/crença): a cultura da vida "no piloto automático" — sem intenção, sem estrutura, sem coerência entre o que se diz querer e como se vive o dia a dia. Também: o discurso de autoajuda raso que promete transformação sem processo, sem tempo, sem tropeço.`,
+    tom: 'Reflexivo, íntimo, honesto sobre as próprias contradições — mas com posicionamento claro, não em cima do muro. Fala como alguém que está no meio do processo e por isso mesmo tem clareza sobre o que defende e o que rejeita. Levemente provocativo, sem didatismo. Nunca guru, nunca coach, nunca superior. A voz é de companheira de caminhada: "eu também estou tentando entender isso" — mas uma companheira que já sabe apontar o inimigo comum e não tem medo de dizer com o que não compactua. Usa primeira pessoa real: duvida, erra, recomeça, ri de si mesma às vezes. Ao falar do público, prefere a 3ª pessoa quando o objetivo é que a pessoa se veja no conteúdo (ex.: "quem está tentando organizar a vida sente exatamente isso..." em vez de só "eu sinto isso").',
     proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Aprendi que', 'A verdade é que', 'O segredo é simples', 'Você precisa', 'Faça assim', 'É simples assim'],
     pilares: [
       'Vida ordenada e sistemas pessoais (o que estou tentando montar e o que ainda não funciona)',
@@ -507,12 +512,45 @@ ATENÇÃO CRÍTICA: Este "sobre mim" descreve uma direção e um conjunto de val
       'Leitura e filosofia prática (o que faz sentido pra mim, o que ainda não entendo)',
       'Bastidores do negócio e da vida intencional (as dúvidas reais, não só as vitórias)',
       'Falhas, correções e recomeços — contados com honestidade, não com moralismo',
+      'Manifesto e posicionamento — o que defendo e com o que não compactuo (a bandeira que dá identidade à comunidade)',
+      'Conversa e diagnóstico — perguntas abertas, caixinhas, enquetes que entendem a dor antes de qualquer oferta',
     ],
-    publicoAlvo: 'Homens e mulheres 25-38 anos que também estão tentando construir uma vida com mais ordem e intenção — e se sentem sozinhos nisso. Não buscam guru nem fórmula. Buscam alguém que também está no meio do processo e fala sobre isso com honestidade.',
-    cta: 'Me conta nos comentários se você também sente isso. Salva pra quando precisar lembrar.',
-    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial', 'Estética minimalista clara — off-white, creme, marrom café, tons quentes neutros'],
+    publicoAlvo: 'Homens e mulheres 25-38 anos que também estão tentando construir uma vida com mais ordem e intenção — e se sentem sozinhos nisso. Não buscam guru nem fórmula. Buscam alguém que também está no meio do processo, fala sobre isso com honestidade e tem coragem de se posicionar. O objetivo não é só acumular audiência (quem consome e some) — é formar comunidade (quem se identifica, fica, defende a causa e volta a comprar).',
+    cta: 'Varia conforme a escada de compromisso: CTA de permissão ("se você quiser, te conto como estou tentando resolver isso"), CTA de triagem ("se você também sente isso, comenta aqui — se ainda não, me conta o que te trava"), ou CTA de filtro elegante ("isso aqui é pra quem já decidiu construir com mais intenção — se não é seu momento, tudo bem, salva e volta depois"). Sempre convite, nunca insistência.',
+    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial', 'Estética minimalista clara — off-white, creme, marrom café, tons quentes neutros', 'Metodologia RR (Robert Rezende) — posicionamento, storytelling, comunidade e escada de compromisso'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Ana está no processo de construir a vida que quer — não chegou lá. Esse é o ponto central. O conteúdo deve soar como diário aberto de alguém que está tentando, errando e aprendendo em tempo real — não como lição de quem já resolveu. Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, leitura, corrida de rua, autoaperfeiçoamento. Conflitos internos REAIS que aparecem no conteúdo: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância, cansaço, recomeço. A IA deve usar linguagem de quem ainda está aprendendo: "estou tentando", "não sei ainda", "errei nisso", "percebi que", "ainda não consigo", "voltei a fazer". NUNCA posicionar a Ana como referência acabada. Ela é referência pelo processo honesto, não pela chegada. Estética: elegância, minimalismo, sofisticação, tons profundos. Sem pasteis.',
+    observacoes: `Ana está no processo de construir a vida que quer — não chegou lá. Esse é o ponto central. O conteúdo deve soar como diário aberto de alguém que está tentando, errando e aprendendo em tempo real — não como lição de quem já resolveu. NUNCA posicionar a Ana como referência acabada. Ela é referência pelo processo honesto, não pela chegada. Estética: elegância, minimalismo, sofisticação, tons profundos. Sem pasteis.
+
+Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, leitura, corrida de rua, autoaperfeiçoamento. Conflitos internos REAIS que aparecem no conteúdo: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância, cansaço, recomeço. A IA deve usar linguagem de quem ainda está aprendendo: "estou tentando", "não sei ainda", "errei nisso", "percebi que", "ainda não consigo", "voltei a fazer".
+
+METODOLOGIA RR APLICADA AO PERFIL DA ANA:
+
+1) POSICIONAMENTO E BANDEIRA: todo conteúdo deve deixar claro, direta ou indiretamente, o que a Ana defende e com o que não compactua (ver MANIFESTO no sobreMim). Perfil morno não engaja nem constrói comunidade — ter ponto de vista não é o mesmo que arrogância ou "chegada".
+
+2) STORYTELLING: falar na 3ª pessoa sobre o público sempre que o objetivo for identificação ("quem está tentando se organizar sente exatamente isso" em vez de só "eu sinto"). Criar personagens/arquétipos reconhecíveis no universo da Ana (ex.: "a versão dela que quer fazer tudo ao mesmo tempo", "a voz interna que sabota no dia 3 de uma rotina nova", "quem confunde descanso com procrastinação"). Construir a sensação de novela diária — cada post é um capítulo que conecta com o anterior. O fator negativo (frustração, erro, recaída) engaja mais que o positivo polido — usar isso como gancho honesto, nunca como vitimismo.
+
+3) AUDIÊNCIA VS. COMUNIDADE: o objetivo não é só número de seguidores, é gente que se identifica com a causa, fica, defende e volta. Usar identidade compartilhada (linguagem própria: "vida com alicerce", "construção com profundidade"), prova de transformação explicada (não só resultado, mas o processo e o princípio por trás) e conversas que geram demanda (perguntas abertas, caixinhas, diagnóstico antes de qualquer oferta).
+
+4) MAPA DE DORES E DESEJOS DO PÚBLICO (base de todo conteúdo — nada deve fugir destas categorias):
+— Desejos: ter uma rotina que funcione sem depender de força de vontade; sentir que a vida tem direção e não só tarefas; conciliar fé, corpo, trabalho e relações sem se sentir fragmentada; ser consistente sem virar rígida; ler e pensar com profundidade em vez de consumir conteúdo raso.
+— Dores: começar sistemas e abandonar em poucos dias; sentir-se sozinha em querer mais ordem num mundo que romantiza o caos; culpa por não conseguir manter disciplina; excesso de interesses e dificuldade de focar; cansaço de fórmulas de coach que prometem fácil e não entregam.
+— O que já tentaram e falhou: apps de produtividade abandonados, dietas e rotinas de treino que não duram, conteúdo motivacional que anima por um dia e não muda nada.
+
+5) TIPOS DE CONTEÚDO (adaptação da tabela RR ao universo da Ana):
+— Inimigo comum: crítica à cultura do "viver no automático", ao discurso de autoajuda raso, à romantização do caos.
+— Desejo do público: bastidores da rotina real sendo construída, fé, corrida, leitura, pequenas conquistas de ordem.
+— Dor do público: nomear o que trava (perfeccionismo, inconstância, cansaço) com honestidade, sem solução mágica.
+— Prova social/transformação: mostrar um princípio que funcionou com a lógica por trás (não é print de resultado, é o "porquê" explicado).
+— Entretenimento: situações do cotidiano, personagens/arquétipos internos, autoironia.
+— Ferramentas: checklist ou passo a passo simples de algo que a Ana testou (deixando claro que ainda está testando, não que é fórmula pronta).
+
+6) ESCADA DE COMPROMISSO (vender sem vender, quando houver oferta — mentoria, e-book, comunidade paga etc.): 1. Conteúdo → clareza (nomear a dor antes de qualquer oferta); 2. Conversa → diagnóstico (perguntar antes de oferecer); 3. Microconvite → primeiro passo de baixo atrito; 4. Oferta principal → só depois de confiança e identificação construídas. CTAs sempre em tom de convite (permissão, triagem ou filtro elegante), nunca insistência ou urgência artificial.
+
+7) ARRANCAR CONCORDES: ao construir vídeos/carrosséis mais longos, usar afirmações que o público reconhece e confirma mentalmente ("você também já começou uma rotina nova e abandonou no dia 3?") antes de qualquer conclusão ou CTA — isso constrói identificação real, não é manipulação, é honestidade que ressoa.
+
+8) RITUAL SEMANAL DE REFERÊNCIA (guia de variedade de pautas, não fórmula rígida): manifesto/posicionamento, história pessoal com aprendizado real, prova de transformação com princípio explicado, ferramenta/checklist prático, post de conversa (pergunta aberta, diagnóstico), bastidor real do processo, microconvite ou CTA de permissão.
+
+Estética visual permanece intocada: elegância, minimalismo, sofisticação, tons profundos, sem pastéis — o posicionamento RR entra na mensagem e na estrutura do conteúdo, não na direção de arte.`,
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -838,14 +876,28 @@ SENSAÇÃO E ATMOSFERA:
 TOM VISUAL: editorial · intimista · arejado · granulado · creme · terracota suave · pensativo · direto
 
 PROIBIDO ABSOLUTAMENTE: fundos escuros, preto, neon, gradientes coloridos, elementos decorativos infantis, estética de coach, LinkedIn, motivacional, citações com fontes script floreadas, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
-    copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
-IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel.
-1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia.
-2. TOM: reflexivo + direto + provocativo. Mistura como fazer com por que fazer com vale a pena fazer.
-3. ESTRUTURA: gancho -> historia real ou observacao -> conclusao com tese clara -> CTA intimo.
-4. TEMAS PERMITIDOS: planejamento, rotinas, sistemas, metas, disciplina, coragem, prudencia, temperanca, corrida de rua, leitura de livros, virtudes aristotelicas, ordem pessoal, bastidores reais, falhas e aprendizados, construcao de longo prazo, legado, fundacao, constancia.
-5. PROIBIDO: desbloqueie, seja sua melhor versao, sucesso, qualquer tom de guru ou coach.
-6. CONFLITOS REAIS QUE CONECTAM: perfeccionismo vs acao, excesso de interesses, dificuldade de constancia, querer excelencia sem paralisar.`,
+    copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR aplicada):
+IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel. Nao e uma chegada, e um posicionamento com bandeira clara.
+
+0. POSICIONAMENTO ANTES DO HOOK: todo texto deve deixar transparecer, mesmo que sutilmente, o que a Ana defende e o inimigo comum que ela combate (a cultura do "piloto automatico", a romantizacao do caos, a autoajuda rasa que promete transformacao sem processo). Perfil morno nao gera comunidade.
+
+1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia. Quando fizer sentido, usar o fator negativo (frustracao, recaida, erro) como gancho — o negativo engaja mais que o positivo polido, desde que contado com honestidade, nunca vitimismo.
+
+2. TOM: reflexivo + direto + provocativo. Mistura como fazer com por que fazer com vale a pena fazer. Falar na 3a pessoa sobre o publico quando o objetivo for identificacao ("quem esta tentando se organizar sente exatamente isso" em vez de so "eu sinto isso") — isso faz a pessoa se ver no conteudo em vez de so ouvir a historia da Ana.
+
+3. PERSONAGENS/ARQUETIPOS: quando o formato permitir (carrossel, video), usar arquetipos reconheciveis do universo da Ana — "a versao dela que quer fazer tudo ao mesmo tempo", "a voz interna que sabota no dia 3", "quem confunde descanso com procrastinacao". Cria sensacao de novela diaria: cada conteudo e um capitulo que conecta com o anterior.
+
+4. ESTRUTURA: gancho -> historia real ou observacao -> conclusao com tese clara -> CTA. Em pecas mais longas, usar "arrancar concordes": 2-3 afirmacoes que o publico confirma mentalmente antes da conclusao (ex.: "voce ja comecou uma rotina nova e abandonou no dia 3?").
+
+5. TIPOS DE CONTEUDO (mapa de dores e desejos como base — nada deve fugir destas categorias): inimigo comum (critica a cultura do automatico/autoajuda rasa), desejo do publico (bastidores da rotina sendo construida), dor do publico (nomear o que trava, sem solucao magica), prova de transformacao (principio explicado, nao so resultado), entretenimento (situacoes do cotidiano, arquetipos, autoironia), ferramenta (checklist ou passo a passo simples, sempre com ressalva de que ainda esta testando).
+
+6. CTA — ESCADA DE COMPROMISSO: nunca insistencia. Usar CTA de permissao ("se quiser, conto como estou tentando resolver isso"), CTA de triagem ("comenta X se voce sente isso, Y se ainda nao") ou CTA de filtro elegante ("isso e pra quem ja decidiu construir com mais intencao — se nao e seu momento, tudo bem, salva e volta depois").
+
+7. TEMAS PERMITIDOS: planejamento, rotinas, sistemas, metas, disciplina, coragem, prudencia, temperanca, corrida de rua, leitura de livros, virtudes aristotelicas, ordem pessoal, bastidores reais, falhas e aprendizados, construcao de longo prazo, legado, fundacao, constancia, manifesto/posicionamento.
+
+8. PROIBIDO: desbloqueie, seja sua melhor versao, sucesso, formula, metodo infalivel, qualquer tom de guru ou coach.
+
+9. CONFLITOS REAIS QUE CONECTAM: perfeccionismo vs acao, excesso de interesses, dificuldade de constancia, querer excelencia sem paralisar.`,
   },
   virttus: {
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
