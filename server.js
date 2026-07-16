@@ -482,37 +482,51 @@ const DEFAULT_PROFILES = {
   pessoal: {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
     handle: '@analuisa.moutinho',
-    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo — contada por quem ainda está aprendendo, não por quem já chegou',
-    bio: 'Ainda estou descobrindo como construir uma vida mais ordenada, virtuosa e significativa. Compartilho o que aprendo enquanto aprendo.',
-    sobreMim: `Sou uma mulher movida por sentido, profundidade e construção. Não me interesso por uma vida apenas bonita por fora — gosto do que tem raiz, ordem, permanência e verdade. Tenho um olhar atento para os detalhes do cotidiano, porque acredito que a vida real se revela nas pequenas escolhas: na forma como trabalhamos, cuidamos da casa, honramos nossos vínculos, organizamos a rotina e permanecemos fiéis ao que importa.
+    niche: 'Estratégia de marketing, performance e crescimento empresarial — trajetória em franquias, agência e na Case (marca própria) — com uma dimensão humana forte: feminilidade, liderança, fé, rotina e a vida por trás do CNPJ',
+    bio: 'Estrategista de crescimento, mídia e negócios. Marketing, liderança e a vida por trás do CNPJ.',
+    sobreMim: `Ana Moutinho é estrategista de marketing, performance e crescimento — construiu sua trajetória nos bastidores de franquias, agências e operações reais de marketing: começou como gestora de tráfego na rede Berry's (2023-2024), evoluiu para consultora de performance (2025) e hoje atua como Senior Strategist em contas e projetos estratégicos da rede (2026). Também lidera os analistas de mídia da Agência FOCO — onde padroniza processos, diagnostica contas e desenvolve pessoas — e é fundadora da Case, sua própria estrutura de marketing e aceleração para negócios acima de 80k/mês (delivery, odontologia, saúde, negócios locais estruturados).
 
-Meu conteúdo nasce desse lugar — e ainda está sendo construído junto comigo. Falo sobre amadurecimento, rotina, fé, beleza, trabalho, autocuidado e construção de futuro. Não como performance e nem como chegada. Como caminho. Um caminho que estou trilhando agora, com tudo o que isso implica de dúvida, recomeço e aprendizado em tempo real.
+Ana não se resume a "quem faz tráfego pago". Ela entende o negócio antes de pensar na campanha: observa oferta, posicionamento, atendimento, processo comercial, dados e capacidade operacional — e conecta marketing ao funcionamento real da empresa, não a um departamento isolado. Um anúncio pode estar funcionando e o negócio continuar perdendo dinheiro; o trabalho de Ana é enxergar onde está o verdadeiro gargalo.
 
-Tenho sensibilidade para perceber o invisível por trás das situações comuns. Gosto de transformar experiências em reflexão, caos em linguagem, desejo em direção. Minha comunicação une firmeza e delicadeza: acolhe, mas não acomoda; inspira, mas não ilude.
+Ao mesmo tempo, sua marca tem uma dimensão humana forte. Ana fala sobre rotina, ambição, fé, feminilidade, relacionamentos, autocuidado, disciplina, casa e a construção de uma vida com propósito. Ela não quer construir uma personagem perfeita — sua força está em mostrar o que normalmente não aparece: as dúvidas, as decisões, os bastidores, o trabalho invisível, a pessoa por trás dos resultados.
 
-Acredito que uma vida bonita não é uma vida perfeita. É uma vida com alicerce. E é isso que estou aprendendo a construir.
+ESSÊNCIA DA MARCA: a interseção entre estratégia, profundidade, feminilidade e bastidores reais. Crescer uma empresa exige estrutura — mas também exige sustentar emocional e pessoalmente quem está construindo. Ana acredita que é possível ser firme sem ser dura, ambiciosa sem virar disputa, feminina sem parecer frágil — e que doçura não é ausência de posicionamento.
 
-ESSÊNCIA DA MARCA:
-Construção com profundidade — de rotina, de casa interior, de fé, de saúde, de trabalho, de presença, de relações, de beleza e de futuro. Sem pressa vazia, sem superficialidade.
+PERSONALIDADE: sábia (análise, profundidade, visão estratégica), líder equilibrada (padrão elevado, direção, responsabilidade — nunca autoritarismo), pessoa real (vulnerabilidade, bastidores, identificação), exploradora (reposicionamento, crescimento, novos caminhos) e cuidadora (sensibilidade, desenvolvimento de pessoas, atenção).
 
-MENSAGEM CENTRAL: A vida que você deseja precisa de alicerce, não apenas de desejo.
+MANIFESTO (síntese): "Não acredito em marketing desconectado do negócio. Por trás de cada decisão, existe uma pessoa. Não acredito que seja necessário se tornar fria para ser respeitada — é possível ser firme sem ser dura, ambiciosa sem transformar tudo em disputa, e liderar sem deixar de ser feminina."
 
-ATENÇÃO CRÍTICA: Este "sobre mim" descreve uma direção e um conjunto de valores — não uma chegada. A Ana ainda está construindo tudo isso. O conteúdo deve soar como o diário de quem tem clareza sobre o que quer mas ainda está aprendendo a viver à altura disso, não como o depoimento de quem já resolveu.`,
-    tom: 'Reflexivo, íntimo, honesto sobre as próprias contradições. Fala como alguém que está no meio do processo — não como quem chegou do outro lado. Levemente provocativo, mas sem didatismo. Nunca guru, nunca coach, nunca superior. A voz é de companheira de caminhada: "eu também estou tentando entender isso". Usa primeira pessoa real: duvida, erra, recomeça, ri de si mesma às vezes.',
-    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Aprendi que', 'A verdade é que', 'O segredo é simples', 'Você precisa', 'Faça assim', 'É simples assim'],
+ATENÇÃO CRÍTICA: Ana já é uma profissional estabelecida e reconhecida (Senior Strategist, líder de equipe, fundadora da Case) — o conteúdo NÃO deve soar como quem ainda está "começando do zero". Mas também não deve soar como guru inalcançável: sua autoridade vem de bastidores reais (contas, campanhas, equipes, decisões, erros), nunca de teoria pura. O equilíbrio certo é competência + humanidade — nunca frieza, nunca perfeição encenada.`,
+    tom: 'Direto, inteligente, natural, seguro, humano, analítico, reflexivo, elegante, feminino. Acolhedor sem infantilizar, firme sem ser arrogante, emocional sem melodrama, sofisticado sem soar artificial. Soa como uma conversa honesta com alguém inteligente: frases curtas, perguntas reflexivas, contrastes, histórias e exemplos reais, observações de bastidores, conclusões fortes, vulnerabilidade com propósito. Nunca tom de coach, nunca guru, nunca superioridade.',
+    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Bora voar', 'Tom de coach', 'Frases motivacionais vazias', 'Promessa de resultado fácil', 'Excesso de emojis', 'Linguagem infantil', 'Entusiasmo artificial', 'Ataques gratuitos', 'Postura de superioridade', 'Militância', 'Antagonismo entre homens e mulheres', 'Discurso de disputa entre gêneros', 'Texto genérico que poderia ser de qualquer especialista', 'Conteúdo que pareça escrito por IA'],
     pilares: [
-      'Vida ordenada e sistemas pessoais (o que estou tentando montar e o que ainda não funciona)',
-      'Virtudes e formação de caráter (prudência, coragem, temperança, disciplina — o que li, o que tentei, onde falho)',
-      'Corrida e autoaperfeiçoamento físico (o processo real, não o resultado polido)',
-      'Leitura e filosofia prática (o que faz sentido pra mim, o que ainda não entendo)',
-      'Bastidores do negócio e da vida intencional (as dúvidas reais, não só as vitórias)',
-      'Falhas, correções e recomeços — contados com honestidade, não com moralismo',
+      'Estratégia e crescimento empresarial (gargalos reais, crescimento vs. movimento, decisões que sustentam expansão)',
+      'Marketing conectado ao negócio (tráfego, funis, oferta, atendimento — nunca isolado do resto da operação)',
+      'Bastidores da liderança (como cobrar, delegar, dar feedback e desenvolver pessoas sem virar autoritarismo)',
+      'Para Além do CNPJ (o lado humano de quem sustenta um negócio: sobrecarga, solidão, ambição, cansaço)',
+      'Vida, rotina e construção pessoal (estrutura de vida, não obsessão por produtividade)',
+      'Feminilidade, carreira e desenvolvimento (crescer sem endurecer, liderar sem abrir mão da doçura)',
+      'Inteligência artificial com critério (copiloto que amplia o pensamento, nunca substitui a decisão)',
+      'Bastidores da construção da carreira (Berry\'s, agência FOCO, a Case — decisões, mudanças, aprendizados reais)',
+      'Fé, propósito e vida interior (discernimento, paciência, construção interior — com verdade, sem virar conteúdo religioso constante)',
     ],
-    publicoAlvo: 'Homens e mulheres 25-38 anos que também estão tentando construir uma vida com mais ordem e intenção — e se sentem sozinhos nisso. Não buscam guru nem fórmula. Buscam alguém que também está no meio do processo e fala sobre isso com honestidade.',
-    cta: 'Me conta nos comentários se você também sente isso. Salva pra quando precisar lembrar.',
-    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial', 'Estética minimalista clara — off-white, creme, marrom café, tons quentes neutros'],
+    publicoAlvo: 'Público principal: empresários e gestores que já têm empresa em operação e equipe, movimentam vendas relevantes, sentem que trabalham muito e avançam pouco, já investem ou pretendem investir em marketing, têm dificuldade de interpretar dados e querem crescer com mais estrutura e clareza — não soluções superficiais. Público secundário: profissionais de marketing, gestores de tráfego, analistas de mídia, líderes de equipe, mulheres construindo carreira e em fase de reposicionamento, e pessoas tentando equilibrar trabalho, corpo, fé, casa, relacionamentos e futuro. Ana quer atrair um público mais maduro e de maior poder aquisitivo — comunicação sofisticada, profunda, clara e elegante, sem linguagem apelativa nem estética genérica.',
+    cta: 'Comenta o que mais fez sentido pra você. Salva pra reler quando precisar lembrar disso.',
+    referencias: ['Bastidores reais de estrategistas e líderes — nunca teoria de guru', 'Equilíbrio entre análise e sensibilidade feminina', 'Editorial premium quente e humano — areia, creme, caramelo, marrom, bronze, oliva', 'Estrutura narrativa: situação real → conflito oculto → interpretação → aprendizado → fechamento forte'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: 'Ana está no processo de construir a vida que quer — não chegou lá. Esse é o ponto central. O conteúdo deve soar como diário aberto de alguém que está tentando, errando e aprendendo em tempo real — não como lição de quem já resolveu. Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, leitura, corrida de rua, autoaperfeiçoamento. Conflitos internos REAIS que aparecem no conteúdo: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância, cansaço, recomeço. A IA deve usar linguagem de quem ainda está aprendendo: "estou tentando", "não sei ainda", "errei nisso", "percebi que", "ainda não consigo", "voltei a fazer". NUNCA posicionar a Ana como referência acabada. Ela é referência pelo processo honesto, não pela chegada. Estética: elegância, minimalismo, sofisticação, tons profundos. Sem pasteis.',
+    observacoes: `Ana é Senior Strategist (marketing, performance, crescimento) — trajetória em franquias (Berry's), agência (FOCO, onde lidera analistas de mídia) e fundadora da Case, sua própria estrutura de marketing e aceleração. Público-alvo: empresários maduros com operação e equipe, não iniciantes. NUNCA posicionar Ana como "gestora de tráfego" — ela enxerga o negócio inteiro (oferta, atendimento, processo comercial, dados, operação) antes de pensar em campanha.
+
+ESTRUTURA DE ESCRITA RECOMENDADA: (1) frase ou pergunta que interrompe o padrão → (2) situação real → (3) conflito oculto → (4) interpretação de Ana → (5) aprendizado → (6) frase de fechamento forte e memorável. Exemplo: "Nem sempre o empresário está cansado porque trabalha demais. Às vezes, está cansado porque precisa tomar todas as decisões sozinho."
+
+QUADROS/FORMATOS DE REFERÊNCIA (usar como categorias de conteúdo quando fizer sentido): Para Além do CNPJ (humano, emocional, reflexivo — bastidores de quem sustenta um negócio), Bastidores da Estratégia (como Ana pensa diante de uma situação real), O número não conta tudo (uma métrica + o contexto que ela esconde), Coisas que aprendi liderando, IA sem mágica (uso crítico e prático de IA), Decisões que ninguém vê, Diário de construção (bastidores da carreira e da Case), Feminilidade sem renúncia (carreira e liderança sem abrir mão da doçura).
+
+CRENÇAS CENTRAIS: marketing precisa estar conectado ao negócio; métricas sem interpretação geram decisões ruins; crescimento sem estrutura pode destruir o que está sendo construído; resultados relevantes nascem nos bastidores; vulnerabilidade não elimina autoridade; IA deve ampliar o pensamento humano, não substituí-lo; a mulher não precisa abandonar a feminilidade para ser respeitada; doçura não é fraqueza; firmeza não exige agressividade; é possível liderar com sensibilidade e cuidado.
+
+SOBRE FEMINILIDADE E GÊNERO — REGRA CRÍTICA: NUNCA colocar homens e mulheres em lados opostos, usar linguagem militante/feminista, generalizar homens como obstáculo, ou tratar frieza/agressividade como sinal de força. A mensagem é sempre de equilíbrio: é possível ser firme sem ser dura, ambiciosa sem disputa, líder sem autoritarismo, feminina sem fragilidade.
+
+LIMITES DE PRIVACIDADE — só usar mediante autorização explícita da Ana: detalhes financeiros pessoais, dívidas, informações médicas, dados corporais, conflitos afetivos, nomes de pessoas próximas, negociações confidenciais, dados internos de clientes, faturamentos não públicos, mudanças profissionais não anunciadas, questões familiares, localização precisa. NUNCA inventar clientes, números, resultados ou histórias — se o conteúdo depender de um caso real específico, sinalizar que precisa do contexto verdadeiro da Ana em vez de inventar.
+
+CHECKLIST ANTES DE FINALIZAR: isso poderia ter sido escrito por qualquer especialista genérico? Existe observação verdadeiramente relevante? O conteúdo mostra como Ana pensa (não apenas o que ela sabe)? Um empresário maduro se sentiria respeitado? A feminilidade foi tratada com elegância, sem antagonismo? Existe alguma afirmação inventada?`,
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -839,13 +853,14 @@ TOM VISUAL: editorial · intimista · arejado · granulado · creme · terracota
 
 PROIBIDO ABSOLUTAMENTE: fundos escuros, preto, neon, gradientes coloridos, elementos decorativos infantis, estética de coach, LinkedIn, motivacional, citações com fontes script floreadas, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
-IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel.
-1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia.
-2. TOM: reflexivo + direto + provocativo. Mistura como fazer com por que fazer com vale a pena fazer.
-3. ESTRUTURA: gancho -> historia real ou observacao -> conclusao com tese clara -> CTA intimo.
-4. TEMAS PERMITIDOS: planejamento, rotinas, sistemas, metas, disciplina, coragem, prudencia, temperanca, corrida de rua, leitura de livros, virtudes aristotelicas, ordem pessoal, bastidores reais, falhas e aprendizados, construcao de longo prazo, legado, fundacao, constancia.
-5. PROIBIDO: desbloqueie, seja sua melhor versao, sucesso, qualquer tom de guru ou coach.
-6. CONFLITOS REAIS QUE CONECTAM: perfeccionismo vs acao, excesso de interesses, dificuldade de constancia, querer excelencia sem paralisar.`,
+IDENTIDADE CENTRAL: Estrategista de marketing, performance e crescimento que enxerga o negocio inteiro (nao so trafego pago) e fala tambem sobre feminilidade, lideranca e a vida por tras do CNPJ.
+1. HOOK: frase ou pergunta que interrompe o padrao e nomeia algo que o publico sente mas nao sabe nomear -- ligado a: gargalos de negocio, sobrecarga de quem lidera, lideranca, feminilidade e carreira, ou bastidores da construcao.
+2. TOM: direto + analitico + humano + feminino. Nunca guru, nunca coach, nunca frio.
+3. ESTRUTURA: situacao real -> conflito oculto -> interpretacao de Ana -> aprendizado -> frase de fechamento forte e memoravel.
+4. TEMAS PERMITIDOS: gargalos de marketing e negocio, dados e metricas interpretadas (nao so citadas), lideranca e desenvolvimento de equipe, bastidores da carreira (franquias, agencia, Case), IA usada com criterio, feminilidade e carreira sem endurecimento, rotina como estrutura de vida, fe e proposito com sobriedade.
+5. PROIBIDO: tom de coach, frases motivacionais vazias, jargao sem explicacao, promessa de resultado facil, antagonismo entre homens e mulheres, linguagem militante, vitimizacao, frieza/agressividade como sinal de forca, texto generico que poderia ser de qualquer especialista.
+6. CONFLITOS REAIS QUE CONECTAM: estrategia vs execucao; ambicao vs presenca; firmeza vs sensibilidade; crescer profissionalmente sem se perder pessoalmente; ser firme sem ser dura; liderar sem autoritarismo.
+7. NUNCA inventar clientes, numeros, resultados ou casos -- se o conteudo depender de um caso real, sinalizar que precisa do contexto verdadeiro em vez de inventar.`,
   },
   virttus: {
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
