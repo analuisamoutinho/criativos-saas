@@ -802,56 +802,66 @@ ESTILO FOTOGRÁFICO:
 ATMOSFERA: como a sala de um empresário visionário — conquista silenciosa, estratégia e legado`,
   },
   pessoal: {
-    accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
-    bgMid:'#EDEAE4',bgBrand:'#F5F2EE',textOnDark:'#F5F2EE',textOnLight:'#2C2420',
+    accent:'#C1793D',accentAlt:'#A8794F',accentFem:'#C9A227',bgDark:'#2E2015',bgLight:'#FBF6EF',
+    bgMid:'#F0E1C8',bgBrand:'#E3C9A0',textOnDark:'#F5EFE4',textOnLight:'#2E2015',
     handle:'@analuisa.moutinho',name:'Ana Moutinho',
-    moods:['DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','VIRADA','CTA_INTIMO'],
-    aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de alguém construindo a própria vida com intenção, disciplina e profundidade. Não é influencer. É pensadora.
+    moods:['EDITORIAL_WARM','TYPE_CREME','HERO_WARM','FRASE_IMPACTO','EDITORIAL_DARK','TYPE_CREME','SPLIT_WARM','BRAND_PUNCH','CTA_INTIMO'],
+    aestheticDNA:`IDENTIDADE VISUAL: Ana Moutinho — estrategista de marketing, performance e crescimento, com uma dimensão humana forte. Editorial premium quente e feminino. Não é influencer nem "diário lo-fi" — é a estética de quem já é referência, mas continua próxima e real.
 
-CONCEITO VISUAL: editorial minimalista intimista. Como as páginas de um livro bonito encontradas com a estética de um feed de fotógrafo documental europeu. Sofisticação sem ostentação. Profundidade sem heaviness.
+CONCEITO VISUAL: sofisticação com temperatura humana. Como a página de uma revista de negócios de alto padrão (Forbes, Harvard Business Review) reencontrada com a delicadeza de um editorial de moda contemporâneo — nunca frio ou corporativo, nunca genérico de agência de marketing.
 
 PALETA CROMÁTICA OBRIGATÓRIA:
-— Fundo primário dominante: off-white creme #FAF8F5 (ocupa 65-75% da composição) — nunca branco puro, nunca cinza frio
-— Fundo secundário: bege claro aconchegante #EDEAE4
-— Acento principal: marrom café aquecido #8B7355 — para bordas finas, linhas divisórias, detalhes pontuais
-— Acento feminino pontual: rosa queimado terracota #C17B6F — apenas em detalhes muito sutis, como sublinhados ou pequenos elementos gráficos
-— Texto principal: marrom escuro quente #2C2420
-— Texto secundário: marrom médio #8B7355
-— NUNCA: preto puro, fundos escuros, azul, verde, cinza frio, branco clínico
+— Fundo primário dominante: creme #FBF6EF (ocupa 60-70% da composição) — nunca branco puro, nunca cinza frio
+— Fundo secundário: areia #F0E1C8 (blocos, divisórias, segundos planos)
+— Fundo de destaque: amendoado #E3C9A0 (cards, tarjas, elementos de contraste suave)
+— Fundo escuro (uso pontual, capas e slides de maior peso emocional — ex. "Para Além do CNPJ"): marrom profundo #2E2015
+— Acento principal: caramelo #C1793D — títulos, linhas, elementos de destaque
+— Acento secundário: bronze #A8794F — bordas finas, detalhes, molduras
+— Acento sutil de luxo discreto: dourado #C9A227 — usado com extrema moderação, nunca como fundo, nunca brilhante/metálico chapado
+— Acentos terciários muito pontuais: oliva #6B6F47 e musgo #4F5D40 — apenas em pequenos elementos gráficos ou texturas de fundo, jamais dominantes
+— Texto sobre fundo claro: marrom profundo #2E2015
+— Texto sobre fundo escuro: creme claro #F5EFE4
+— NUNCA: preto puro, azul, verde saturado, cinza frio, branco clínico, rosa/pastel excessivo, neon
 
 TIPOGRAFIA — REGRAS ABSOLUTAS:
-— Títulos: serifada editorial ou sans-serif geométrica leve, peso 300-400 para frases longas ou 700-800 para statements de impacto curtos
-— Frases de impacto: letra grande, ocupando boa parte da composição, quase sem margens — editorial, não de blog
-— Subtítulos e legendas: sans-serif clean em peso 400, espaçamento generoso
-— Nunca fontes decorativas, scripts cursivos exagerados ou tipografias de coach/LinkedIn
+— Títulos: serifada editorial elegante (peso 400 para frases longas, peso 700-800 para statements de impacto curtos) — transmite autoridade sem ser corporativa
+— Frases de impacto: letra grande, ocupando boa parte da composição, quase sem margens — editorial, nunca estética de blog
+— Subtítulos e legendas: sans-serif humanista clean, peso 400-500, espaçamento generoso
+— Nunca fontes decorativas, scripts cursivos exagerados, tipografia de coach/LinkedIn ou templates prontos
 
 ATMOSFERA E LUZ:
-— Luz natural difusa, como entrada de janela em dia nublado ou manhã tranquila
-— Granulação fotográfica sutil sobre qualquer elemento fotográfico (grain de filme analógico leve)
-— Profundidade com sombras muito suaves e translúcidas — nunca sombra dura
-— Textura de fundo: papel aquarela, linho fine art, ou papel de algodão — nunca digital liso
+— Luz natural quente e difusa — fim de tarde, janela grande, manhã tranquila
+— Granulação fotográfica sutil (grain de filme analógico leve) — nunca digital hiper-saturado
+— Profundidade com sombras suaves — nunca sombra dura, nunca luz de estúdio artificial ou flash
+— Textura de fundo: papel, linho fine art, madeira clara — nunca digital liso
+
+ELEMENTOS E OBJETOS PERMITIDOS (fotografia hero):
+— Madeira clara, tecidos naturais, café em xícara nude, livros abertos, cadernos, luz de jardim ou escritório com janelas grandes
+— Ambientes sofisticados mas habitáveis — nunca cenário de estúdio corporativo genérico
+— Elementos femininos sutis: flor solta, tecido leve, joia discreta — sempre com contenção, nunca decorativo/infantil
+— Detalhes de rotina e trabalho real: laptop aberto, dashboard em tela, anotações à mão — sinal de estratégia em ação, não still de banco de imagens
 
 ELEMENTOS GRÁFICOS (usar com extrema contenção):
-— Linhas finíssimas horizontais em marrom #8B7355 como separadores
+— Linhas finíssimas horizontais em bronze #A8794F como separadores
 — Formas geométricas simples — retângulos de borda fina como enquadramentos
-— Manchas de cor muito suaves e translúcidas como elementos de fundo
-— NUNCA: ícones decorativos, florinhas, estrelas, ornamentos, stickers, clip art
+— Manchas de cor muito suaves e translúcidas (areia, amendoado) como elementos de fundo
+— NUNCA: ícones decorativos em excesso, florinhas, estrelas, ornamentos, stickers, clip art, degradês genéricos, elementos tech/gráficos frios
 
 DIREÇÃO DE COMPOSIÇÃO:
 — Layout editorial com respiração ampla — muito espaço vazio intencional
 — Regra dos terços para posicionamento do texto principal
 — Assimetria elegante — não tudo centralizado (exceto frases de impacto)
-— Como a página de um livro do Penguin Classics ou editorial da Vogue Portugal
-— Sensação: você está lendo algo que vale a pena ler
+— Como a página de uma revista de negócios premium com camada editorial de moda
+— Sensação: você está lendo algo escrito por alguém que pensou antes de falar
 
 SENSAÇÃO E ATMOSFERA:
-— Real sem ser crua. Sofisticada sem ser fria. Íntima sem ser vulgar.
-— Como um ensaio fotográfico de alguém muito bem-resolvida sendo vista em seu habitat natural
-— Transmite: inteligência, intencionalidade, disciplina, profundidade, vida real construída com propósito
+— Estratégica sem ser fria. Feminina sem ser frágil. Real sem ser crua.
+— Como o ensaio fotográfico de uma mulher extremamente competente, vista também em seu lado humano
+— Transmite: inteligência, autoridade, sensibilidade, profundidade, feminilidade sem ostentação
 
-TOM VISUAL: editorial · intimista · arejado · granulado · creme · terracota suave · pensativo · direto
+TOM VISUAL: editorial · estratégico · quente · feminino · maduro · premium · natural · elegante sem ostentação
 
-PROIBIDO ABSOLUTAMENTE: fundos escuros, preto, neon, gradientes coloridos, elementos decorativos infantis, estética de coach, LinkedIn, motivacional, citações com fontes script floreadas, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
+PROIBIDO ABSOLUTAMENTE: fundos frios ou clínicos, preto puro dominante, neon, gradientes coloridos genéricos, excesso de ícones ou elementos tecnológicos, estética de template pronto, luxo artificial/ostentação, feed corporativo de agência de marketing comum, visual excessivamente rígido ou masculino, estética infantil ou excessivamente rosa, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR):
 IDENTIDADE CENTRAL: Estrategista de marketing, performance e crescimento que enxerga o negocio inteiro (nao so trafego pago) e fala tambem sobre feminilidade, lideranca e a vida por tras do CNPJ.
 1. HOOK: frase ou pergunta que interrompe o padrao e nomeia algo que o publico sente mas nao sabe nomear -- ligado a: gargalos de negocio, sobrecarga de quem lidera, lideranca, feminilidade e carreira, ou bastidores da construcao.
