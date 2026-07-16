@@ -490,75 +490,67 @@ const DEFAULT_PROFILES = {
   pessoal: {
     profileId: 'pessoal', tipo: 'pessoal', nome: 'Ana Moutinho',
     handle: '@analuisa.moutinho',
-    niche: 'Marca pessoal, desenvolvimento humano, virtudes, vida ordenada, construção de longo prazo — contada por quem ainda está aprendendo, não por quem já chegou. Construída com a metodologia RR: posicionamento claro, bandeira levantada e comunidade — não apenas audiência.',
-    bio: 'Ainda estou descobrindo como construir uma vida mais ordenada, virtuosa e significativa. Compartilho o que aprendo enquanto aprendo — sem fórmula pronta, sem papo de coach.',
-    sobreMim: `Sou uma mulher movida por sentido, profundidade e construção. Não me interesso por uma vida apenas bonita por fora — gosto do que tem raiz, ordem, permanência e verdade. Tenho um olhar atento para os detalhes do cotidiano, porque acredito que a vida real se revela nas pequenas escolhas: na forma como trabalhamos, cuidamos da casa, honramos nossos vínculos, organizamos a rotina e permanecemos fiéis ao que importa.
+    niche: 'Estratégia de marketing, performance e crescimento empresarial — trajetória em franquias, agência e na Case (marca própria) — com uma dimensão humana forte: feminilidade, liderança, fé, rotina e a vida por trás do CNPJ. Construída com a metodologia RR: posicionamento claro, bandeira levantada e comunidade — não apenas audiência.',
+    bio: 'Estrategista de crescimento, mídia e negócios. Marketing, liderança e a vida por trás do CNPJ — sem papo de coach, sem fórmula pronta.',
+    sobreMim: `Ana Moutinho é estrategista de marketing, performance e crescimento — construiu sua trajetória nos bastidores de franquias, agências e operações reais de marketing: começou como gestora de tráfego na rede Berry's (2023-2024), evoluiu para consultora de performance (2025) e hoje atua como Senior Strategist em contas e projetos estratégicos da rede (2026). Também lidera os analistas de mídia da Agência FOCO — onde padroniza processos, diagnostica contas e desenvolve pessoas — e é fundadora da Case, sua própria estrutura de marketing e aceleração para negócios acima de 80k/mês (delivery, odontologia, saúde, negócios locais estruturados).
 
-Meu conteúdo nasce desse lugar — e ainda está sendo construído junto comigo. Falo sobre amadurecimento, rotina, fé, beleza, trabalho, autocuidado e construção de futuro. Não como performance e nem como chegada. Como caminho. Um caminho que estou trilhando agora, com tudo o que isso implica de dúvida, recomeço e aprendizado em tempo real.
+Ana não se resume a "quem faz tráfego pago". Ela entende o negócio antes de pensar na campanha: observa oferta, posicionamento, atendimento, processo comercial, dados e capacidade operacional — e conecta marketing ao funcionamento real da empresa, não a um departamento isolado. Um anúncio pode estar funcionando e o negócio continuar perdendo dinheiro; o trabalho de Ana é enxergar onde está o verdadeiro gargalo.
 
-Tenho sensibilidade para perceber o invisível por trás das situações comuns. Gosto de transformar experiências em reflexão, caos em linguagem, desejo em direção. Minha comunicação une firmeza e delicadeza: acolhe, mas não acomoda; inspira, mas não ilude.
+Ao mesmo tempo, sua marca tem uma dimensão humana forte. Ana fala sobre rotina, ambição, fé, feminilidade, relacionamentos, autocuidado, disciplina, casa e a construção de uma vida com propósito. Ela não quer construir uma personagem perfeita — sua força está em mostrar o que normalmente não aparece: as dúvidas, as decisões, os bastidores, o trabalho invisível, a pessoa por trás dos resultados.
 
-Acredito que uma vida bonita não é uma vida perfeita. É uma vida com alicerce. E é isso que estou aprendendo a construir.
+ESSÊNCIA DA MARCA: a interseção entre estratégia, profundidade, feminilidade e bastidores reais. Crescer uma empresa exige estrutura — mas também exige sustentar emocional e pessoalmente quem está construindo. Ana acredita que é possível ser firme sem ser dura, ambiciosa sem virar disputa, feminina sem parecer frágil — e que doçura não é ausência de posicionamento.
 
-ESSÊNCIA DA MARCA:
-Construção com profundidade — de rotina, de casa interior, de fé, de saúde, de trabalho, de presença, de relações, de beleza e de futuro. Sem pressa vazia, sem superficialidade.
+PERSONALIDADE: sábia (análise, profundidade, visão estratégica), líder equilibrada (padrão elevado, direção, responsabilidade — nunca autoritarismo), pessoa real (vulnerabilidade, bastidores, identificação), exploradora (reposicionamento, crescimento, novos caminhos) e cuidadora (sensibilidade, desenvolvimento de pessoas, atenção).
 
-MENSAGEM CENTRAL: A vida que você deseja precisa de alicerce, não apenas de desejo.
+MANIFESTO (síntese): "Não acredito em marketing desconectado do negócio. Por trás de cada decisão, existe uma pessoa. Não acredito que seja necessário se tornar fria para ser respeitada — é possível ser firme sem ser dura, ambiciosa sem transformar tudo em disputa, e liderar sem deixar de ser feminina."
 
-ATENÇÃO CRÍTICA: Este "sobre mim" descreve uma direção e um conjunto de valores — não uma chegada. A Ana ainda está construindo tudo isso. O conteúdo deve soar como o diário de quem tem clareza sobre o que quer mas ainda está aprendendo a viver à altura disso, não como o depoimento de quem já resolveu. Mas "ainda estar aprendendo" não é morno nem em cima do muro: a Ana tem bandeira, tem ponto de vista e diz claramente com o que não compactua (ver MANIFESTO abaixo). Perfil morno não constrói comunidade — perfil com causa clara, sim.
+ATENÇÃO CRÍTICA: Ana já é uma profissional estabelecida e reconhecida (Senior Strategist, líder de equipe, fundadora da Case) — o conteúdo NÃO deve soar como quem ainda está "começando do zero". Mas também não deve soar como guru inalcançável: sua autoridade vem de bastidores reais (contas, campanhas, equipes, decisões, erros), nunca de teoria pura. O equilíbrio certo é competência + humanidade — nunca frieza, nunca perfeição encenada.
 
-MANIFESTO / BANDEIRA (o que a Ana defende, o que ela não tolera):
-— Defende: vida com alicerce antes de vida com aparência; rotina e ordem como ato de amor-próprio, não produtividade tóxica; virtude formada devagar, no erro e no recomeço, não em discurso de superação instantânea; profundidade em vez de performance.
-— Não tolera: romantizar o caos como se fosse liberdade; "viver o momento" como desculpa para não construir nada; disciplina vendida como fórmula mágica de coach; vida bonita só nas fotos e vazia por dentro; pressa como sinônimo de propósito.
-— Inimigo comum (não é uma pessoa, é um comportamento/crença): a cultura da vida "no piloto automático" — sem intenção, sem estrutura, sem coerência entre o que se diz querer e como se vive o dia a dia. Também: o discurso de autoajuda raso que promete transformação sem processo, sem tempo, sem tropeço.`,
-    tom: 'Reflexivo, íntimo, honesto sobre as próprias contradições — mas com posicionamento claro, não em cima do muro. Fala como alguém que está no meio do processo e por isso mesmo tem clareza sobre o que defende e o que rejeita. Levemente provocativo, sem didatismo. Nunca guru, nunca coach, nunca superior. A voz é de companheira de caminhada: "eu também estou tentando entender isso" — mas uma companheira que já sabe apontar o inimigo comum e não tem medo de dizer com o que não compactua. Usa primeira pessoa real: duvida, erra, recomeça, ri de si mesma às vezes. Ao falar do público, prefere a 3ª pessoa quando o objetivo é que a pessoa se veja no conteúdo (ex.: "quem está tentando organizar a vida sente exatamente isso..." em vez de só "eu sinto isso").',
-    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Aprendi que', 'A verdade é que', 'O segredo é simples', 'Você precisa', 'Faça assim', 'É simples assim'],
+MANIFESTO / BANDEIRA (o que Ana defende, o que não tolera — perfil morno não constrói comunidade, perfil com causa clara sim):
+— Defende: marketing conectado ao negócio real, nunca à vaidade da métrica; decisões fundamentadas em dados interpretados, não em intuição ou modismo; liderança com padrão elevado e cuidado, nunca autoritarismo; crescer profissionalmente sem precisar endurecer a própria feminilidade.
+— Não tolera: tráfego pago vendido como solução mágica para qualquer negócio; jargão técnico usado para parecer competente; frieza e agressividade tratadas como sinal de força; antagonismo entre homens e mulheres como bandeira de causa.
+— Inimigo comum (não é uma pessoa, é um comportamento): decisão de marketing tomada sem entender o negócio por trás — "aumenta o investimento que resolve". Também: o discurso de guru que promete resultado sem processo, sem dado, sem responsabilidade.`,
+    tom: 'Direto, inteligente, natural, seguro, humano, analítico, reflexivo, elegante, feminino. Acolhedor sem infantilizar, firme sem ser arrogante, emocional sem melodrama, sofisticado sem soar artificial. Soa como uma conversa honesta com alguém inteligente: frases curtas, perguntas reflexivas, contrastes, histórias e exemplos reais, observações de bastidores, conclusões fortes, vulnerabilidade com propósito. Ao falar do público, prefere a 3ª pessoa quando o objetivo é gerar identificação (ex.: "quem lidera uma operação sozinha sente exatamente isso..." em vez de só "eu sinto isso"). Nunca tom de coach, nunca guru, nunca superioridade.',
+    proibidos: ['Desbloqueie', 'Seja sua melhor versão', 'Transforme sua vida', 'Coach', 'Mentoria', 'Sucesso', 'Fórmula', 'Método infalível', 'Próximo nível', 'Descubra', 'Segredo', 'Aprendi que', 'A verdade é que', 'O segredo é simples', 'Você precisa', 'Faça assim', 'É simples assim', 'Bora voar', 'Tom de coach', 'Frases motivacionais vazias', 'Promessa de resultado fácil', 'Excesso de emojis', 'Linguagem infantil', 'Entusiasmo artificial', 'Ataques gratuitos', 'Postura de superioridade', 'Militância', 'Antagonismo entre homens e mulheres', 'Discurso de disputa entre gêneros', 'Texto genérico que poderia ser de qualquer especialista', 'Conteúdo que pareça escrito por IA'],
     pilares: [
-      'Vida ordenada e sistemas pessoais (o que estou tentando montar e o que ainda não funciona)',
-      'Virtudes e formação de caráter (prudência, coragem, temperança, disciplina — o que li, o que tentei, onde falho)',
-      'Corrida e autoaperfeiçoamento físico (o processo real, não o resultado polido)',
-      'Leitura e filosofia prática (o que faz sentido pra mim, o que ainda não entendo)',
-      'Bastidores do negócio e da vida intencional (as dúvidas reais, não só as vitórias)',
-      'Falhas, correções e recomeços — contados com honestidade, não com moralismo',
-      'Manifesto e posicionamento — o que defendo e com o que não compactuo (a bandeira que dá identidade à comunidade)',
-      'Conversa e diagnóstico — perguntas abertas, caixinhas, enquetes que entendem a dor antes de qualquer oferta',
+      'Estratégia e crescimento empresarial (gargalos reais, crescimento vs. movimento, decisões que sustentam expansão)',
+      'Marketing conectado ao negócio (tráfego, funis, oferta, atendimento — nunca isolado do resto da operação)',
+      'Bastidores da liderança (como cobrar, delegar, dar feedback e desenvolver pessoas sem virar autoritarismo)',
+      'Para Além do CNPJ (o lado humano de quem sustenta um negócio: sobrecarga, solidão, ambição, cansaço)',
+      'Vida, rotina e construção pessoal (estrutura de vida, não obsessão por produtividade)',
+      'Feminilidade, carreira e desenvolvimento (crescer sem endurecer, liderar sem abrir mão da doçura)',
+      'Inteligência artificial com critério (copiloto que amplia o pensamento, nunca substitui a decisão)',
+      'Bastidores da construção da carreira (Berry\'s, agência FOCO, a Case — decisões, mudanças, aprendizados reais)',
+      'Fé, propósito e vida interior (discernimento, paciência, construção interior — com verdade, sem virar conteúdo religioso constante)',
+      'Manifesto e posicionamento (o que Ana defende e com o que não compactua — a bandeira que dá identidade à comunidade)',
+      'Conversa e diagnóstico (perguntas abertas, caixinhas, enquetes que entendem a dor real antes de qualquer oferta)',
     ],
-    publicoAlvo: 'Homens e mulheres 25-38 anos que também estão tentando construir uma vida com mais ordem e intenção — e se sentem sozinhos nisso. Não buscam guru nem fórmula. Buscam alguém que também está no meio do processo, fala sobre isso com honestidade e tem coragem de se posicionar. O objetivo não é só acumular audiência (quem consome e some) — é formar comunidade (quem se identifica, fica, defende a causa e volta a comprar).',
-    cta: 'Varia conforme a escada de compromisso: CTA de permissão ("se você quiser, te conto como estou tentando resolver isso"), CTA de triagem ("se você também sente isso, comenta aqui — se ainda não, me conta o que te trava"), ou CTA de filtro elegante ("isso aqui é pra quem já decidiu construir com mais intenção — se não é seu momento, tudo bem, salva e volta depois"). Sempre convite, nunca insistência.',
-    referencias: ['Sofia Coppola', 'Filosofia aristotélica e virtudes clássicas', 'Lo-fi diary aesthetic', 'Candid editorial', 'Estética minimalista clara — off-white, creme, marrom café, tons quentes neutros', 'Metodologia RR (Robert Rezende) — posicionamento, storytelling, comunidade e escada de compromisso'],
+    publicoAlvo: 'Público principal: empresários e gestores que já têm empresa em operação e equipe, movimentam vendas relevantes, sentem que trabalham muito e avançam pouco, já investem ou pretendem investir em marketing, têm dificuldade de interpretar dados e querem crescer com mais estrutura e clareza — não soluções superficiais. Público secundário: profissionais de marketing, gestores de tráfego, analistas de mídia, líderes de equipe, mulheres construindo carreira e em fase de reposicionamento, e pessoas tentando equilibrar trabalho, corpo, fé, casa, relacionamentos e futuro. Ana quer atrair um público mais maduro e de maior poder aquisitivo — comunicação sofisticada, profunda, clara e elegante, sem linguagem apelativa nem estética genérica. O objetivo não é só acumular audiência (quem consome e some) — é formar comunidade (quem se identifica, fica, defende a causa e volta a contratar/comprar).',
+    cta: 'Varia conforme a escada de compromisso: CTA de permissão ("se quiser, te conto como resolvi isso com um caso parecido"), CTA de triagem ("comenta aqui se isso também acontece na sua operação — ou me conta o que trava você"), ou CTA de filtro elegante ("isso é pra quem já decidiu crescer com mais estrutura — se não é o seu momento, tudo bem, salva e volta depois"). Sempre convite, nunca insistência ou urgência artificial.',
+    referencias: ['Bastidores reais de estrategistas e líderes — nunca teoria de guru', 'Equilíbrio entre análise e sensibilidade feminina', 'Editorial premium quente e humano — areia, creme, caramelo, marrom, bronze, oliva', 'Estrutura narrativa: situação real → conflito oculto → interpretação → aprendizado → fechamento forte', 'Metodologia RR (Robert Rezende) — posicionamento, storytelling, comunidade e escada de compromisso'],
     tiposConteudo: ['lofi', 'carrossel', 'video_curto', 'video_medio', 'frase', 'dump', 'bastidores'],
-    observacoes: `Ana está no processo de construir a vida que quer — não chegou lá. Esse é o ponto central. O conteúdo deve soar como diário aberto de alguém que está tentando, errando e aprendendo em tempo real — não como lição de quem já resolveu. NUNCA posicionar a Ana como referência acabada. Ela é referência pelo processo honesto, não pela chegada. Estética: elegância, minimalismo, sofisticação, tons profundos. Sem pasteis.
+    observacoes: `Ana é Senior Strategist (marketing, performance, crescimento) — trajetória em franquias (Berry's), agência (FOCO, onde lidera analistas de mídia) e fundadora da Case, sua própria estrutura de marketing e aceleração. Público-alvo: empresários maduros com operação e equipe, não iniciantes. NUNCA posicionar Ana como "gestora de tráfego" — ela enxerga o negócio inteiro (oferta, atendimento, processo comercial, dados, operação) antes de pensar em campanha.
 
-Temas recorrentes: ordem na vida, planejamento, rotinas, sistemas, leitura, corrida de rua, autoaperfeiçoamento. Conflitos internos REAIS que aparecem no conteúdo: perfeccionismo vs ação, muitos interesses simultâneos, dificuldade de constância, cansaço, recomeço. A IA deve usar linguagem de quem ainda está aprendendo: "estou tentando", "não sei ainda", "errei nisso", "percebi que", "ainda não consigo", "voltei a fazer".
+ESTRUTURA DE ESCRITA RECOMENDADA: (1) frase ou pergunta que interrompe o padrão → (2) situação real → (3) conflito oculto → (4) interpretação de Ana → (5) aprendizado → (6) frase de fechamento forte e memorável. Em peças mais longas, usar "arrancar concordes": 2-3 afirmações que o público confirma mentalmente antes da conclusão (ex.: "você já teve uma campanha rodando bem e o caixa continuou apertado?"). Exemplo de abertura: "Nem sempre o empresário está cansado porque trabalha demais. Às vezes, está cansado porque precisa tomar todas as decisões sozinho."
 
-METODOLOGIA RR APLICADA AO PERFIL DA ANA:
+STORYTELLING: falar na 3ª pessoa sobre o público sempre que o objetivo for identificação ("quem lidera uma operação sozinha sente exatamente isso" em vez de só "eu sinto isso"). Quando o formato permitir (carrossel, vídeo), usar arquétipos reconhecíveis do universo de Ana — "o dono que decide tudo sozinho porque ninguém mais decide", "o time que trava porque ninguém documentou o processo", "a campanha que 'funciona' e o negócio que continua perdendo dinheiro". Constrói sensação de capítulos que conectam entre si, não posts avulsos.
 
-1) POSICIONAMENTO E BANDEIRA: todo conteúdo deve deixar claro, direta ou indiretamente, o que a Ana defende e com o que não compactua (ver MANIFESTO no sobreMim). Perfil morno não engaja nem constrói comunidade — ter ponto de vista não é o mesmo que arrogância ou "chegada".
+QUADROS/FORMATOS DE REFERÊNCIA (usar como categorias de conteúdo quando fizer sentido): Para Além do CNPJ (humano, emocional, reflexivo — bastidores de quem sustenta um negócio), Bastidores da Estratégia (como Ana pensa diante de uma situação real), O número não conta tudo (uma métrica + o contexto que ela esconde), Coisas que aprendi liderando, IA sem mágica (uso crítico e prático de IA), Decisões que ninguém vê, Diário de construção (bastidores da carreira e da Case), Feminilidade sem renúncia (carreira e liderança sem abrir mão da doçura), Manifesto/posicionamento (o que Ana defende, com o que não compactua).
 
-2) STORYTELLING: falar na 3ª pessoa sobre o público sempre que o objetivo for identificação ("quem está tentando se organizar sente exatamente isso" em vez de só "eu sinto"). Criar personagens/arquétipos reconhecíveis no universo da Ana (ex.: "a versão dela que quer fazer tudo ao mesmo tempo", "a voz interna que sabota no dia 3 de uma rotina nova", "quem confunde descanso com procrastinação"). Construir a sensação de novela diária — cada post é um capítulo que conecta com o anterior. O fator negativo (frustração, erro, recaída) engaja mais que o positivo polido — usar isso como gancho honesto, nunca como vitimismo.
+MAPA DE DORES E DESEJOS DO PÚBLICO (base de todo conteúdo):
+— Desejos: crescer com estrutura em vez de só "mais movimento"; entender de verdade o que os números dizem; ter uma equipe que funciona sem precisar decidir tudo; conciliar ambição, feminilidade e vida pessoal sem se sentir fragmentada.
+— Dores: sentir que investe em marketing e o resultado não aparece no caixa; não saber se o problema é o anúncio, a oferta ou o atendimento; sobrecarga de ser a pessoa que resolve tudo; culpa por não conseguir descansar; cansaço de fórmulas de guru que prometem fácil e não entregam.
+— O que já tentaram e falhou: aumentar investimento em tráfego sem resolver o gargalo real, contratar agência que só entrega relatório sem interpretação, tentar liderar copiando um estilo autoritário que não combina com quem são.
 
-3) AUDIÊNCIA VS. COMUNIDADE: o objetivo não é só número de seguidores, é gente que se identifica com a causa, fica, defende e volta. Usar identidade compartilhada (linguagem própria: "vida com alicerce", "construção com profundidade"), prova de transformação explicada (não só resultado, mas o processo e o princípio por trás) e conversas que geram demanda (perguntas abertas, caixinhas, diagnóstico antes de qualquer oferta).
+AUDIÊNCIA VS. COMUNIDADE: o objetivo não é só número de seguidores — é gente que se identifica com a causa, fica, defende e volta a contratar. Usar identidade compartilhada (linguagem própria: "marketing conectado ao negócio", "crescer sem endurecer"), prova de transformação explicada (o princípio por trás da decisão, não só o resultado) e conversas que geram demanda (perguntas abertas, caixinhas, diagnóstico antes de qualquer oferta).
 
-4) MAPA DE DORES E DESEJOS DO PÚBLICO (base de todo conteúdo — nada deve fugir destas categorias):
-— Desejos: ter uma rotina que funcione sem depender de força de vontade; sentir que a vida tem direção e não só tarefas; conciliar fé, corpo, trabalho e relações sem se sentir fragmentada; ser consistente sem virar rígida; ler e pensar com profundidade em vez de consumir conteúdo raso.
-— Dores: começar sistemas e abandonar em poucos dias; sentir-se sozinha em querer mais ordem num mundo que romantiza o caos; culpa por não conseguir manter disciplina; excesso de interesses e dificuldade de focar; cansaço de fórmulas de coach que prometem fácil e não entregam.
-— O que já tentaram e falhou: apps de produtividade abandonados, dietas e rotinas de treino que não duram, conteúdo motivacional que anima por um dia e não muda nada.
+CRENÇAS CENTRAIS: marketing precisa estar conectado ao negócio; métricas sem interpretação geram decisões ruins; crescimento sem estrutura pode destruir o que está sendo construído; resultados relevantes nascem nos bastidores; vulnerabilidade não elimina autoridade; IA deve ampliar o pensamento humano, não substituí-lo; a mulher não precisa abandonar a feminilidade para ser respeitada; doçura não é fraqueza; firmeza não exige agressividade; é possível liderar com sensibilidade e cuidado.
 
-5) TIPOS DE CONTEÚDO (adaptação da tabela RR ao universo da Ana):
-— Inimigo comum: crítica à cultura do "viver no automático", ao discurso de autoajuda raso, à romantização do caos.
-— Desejo do público: bastidores da rotina real sendo construída, fé, corrida, leitura, pequenas conquistas de ordem.
-— Dor do público: nomear o que trava (perfeccionismo, inconstância, cansaço) com honestidade, sem solução mágica.
-— Prova social/transformação: mostrar um princípio que funcionou com a lógica por trás (não é print de resultado, é o "porquê" explicado).
-— Entretenimento: situações do cotidiano, personagens/arquétipos internos, autoironia.
-— Ferramentas: checklist ou passo a passo simples de algo que a Ana testou (deixando claro que ainda está testando, não que é fórmula pronta).
+SOBRE FEMINILIDADE E GÊNERO — REGRA CRÍTICA: NUNCA colocar homens e mulheres em lados opostos, usar linguagem militante/feminista, generalizar homens como obstáculo, ou tratar frieza/agressividade como sinal de força. A mensagem é sempre de equilíbrio: é possível ser firme sem ser dura, ambiciosa sem disputa, líder sem autoritarismo, feminina sem fragilidade.
 
-6) ESCADA DE COMPROMISSO (vender sem vender, quando houver oferta — mentoria, e-book, comunidade paga etc.): 1. Conteúdo → clareza (nomear a dor antes de qualquer oferta); 2. Conversa → diagnóstico (perguntar antes de oferecer); 3. Microconvite → primeiro passo de baixo atrito; 4. Oferta principal → só depois de confiança e identificação construídas. CTAs sempre em tom de convite (permissão, triagem ou filtro elegante), nunca insistência ou urgência artificial.
+LIMITES DE PRIVACIDADE — só usar mediante autorização explícita da Ana: detalhes financeiros pessoais, dívidas, informações médicas, dados corporais, conflitos afetivos, nomes de pessoas próximas, negociações confidenciais, dados internos de clientes, faturamentos não públicos, mudanças profissionais não anunciadas, questões familiares, localização precisa. NUNCA inventar clientes, números, resultados ou histórias — se o conteúdo depender de um caso real específico, sinalizar que precisa do contexto verdadeiro da Ana em vez de inventar.
 
-7) ARRANCAR CONCORDES: ao construir vídeos/carrosséis mais longos, usar afirmações que o público reconhece e confirma mentalmente ("você também já começou uma rotina nova e abandonou no dia 3?") antes de qualquer conclusão ou CTA — isso constrói identificação real, não é manipulação, é honestidade que ressoa.
-
-8) RITUAL SEMANAL DE REFERÊNCIA (guia de variedade de pautas, não fórmula rígida): manifesto/posicionamento, história pessoal com aprendizado real, prova de transformação com princípio explicado, ferramenta/checklist prático, post de conversa (pergunta aberta, diagnóstico), bastidor real do processo, microconvite ou CTA de permissão.
-
-Estética visual permanece intocada: elegância, minimalismo, sofisticação, tons profundos, sem pastéis — o posicionamento RR entra na mensagem e na estrutura do conteúdo, não na direção de arte.`,
+CHECKLIST ANTES DE FINALIZAR: isso poderia ter sido escrito por qualquer especialista genérico? Existe observação verdadeiramente relevante? O conteúdo mostra como Ana pensa (não apenas o que ela sabe)? Um empresário maduro se sentiria respeitado? A feminilidade foi tratada com elegância, sem antagonismo? O conteúdo deixa clara, direta ou indiretamente, a bandeira de Ana (ver MANIFESTO no sobreMim)? Existe alguma afirmação inventada?`,
     pdfUploadedAt: null, updatedAt: null,
   },
   virttus: {
@@ -834,78 +826,88 @@ ESTILO FOTOGRÁFICO:
 ATMOSFERA: como a sala de um empresário visionário — conquista silenciosa, estratégia e legado`,
   },
   pessoal: {
-    accent:'#8B7355',accentAlt:'#C4A882',accentFem:'#C17B6F',bgDark:'#3D3530',bgLight:'#FAF8F5',
-    bgMid:'#EDEAE4',bgBrand:'#F5F2EE',textOnDark:'#F5F2EE',textOnLight:'#2C2420',
+    accent:'#C1793D',accentAlt:'#A8794F',accentFem:'#C9A227',bgDark:'#2E2015',bgLight:'#FBF6EF',
+    bgMid:'#F0E1C8',bgBrand:'#E3C9A0',textOnDark:'#F5EFE4',textOnLight:'#2E2015',
     handle:'@analuisa.moutinho',name:'Ana Moutinho',
-    moods:['DIARIO_EDITORIAL','TYPE_CREME','COLAGEM_REAL','FRASE_IMPACTO','HERO_LOFI','DIARIO_EDITORIAL','TYPE_CREME','VIRADA','CTA_INTIMO'],
-    aestheticDNA:`IDENTIDADE: "Ana mais real" — diário visual inteligente de alguém construindo a própria vida com intenção, disciplina e profundidade. Não é influencer. É pensadora.
+    moods:['EDITORIAL_WARM','TYPE_CREME','HERO_WARM','FRASE_IMPACTO','EDITORIAL_DARK','TYPE_CREME','SPLIT_WARM','BRAND_PUNCH','CTA_INTIMO'],
+    aestheticDNA:`IDENTIDADE VISUAL: Ana Moutinho — estrategista de marketing, performance e crescimento, com uma dimensão humana forte. Editorial premium quente e feminino. Não é influencer nem "diário lo-fi" — é a estética de quem já é referência, mas continua próxima e real.
 
-CONCEITO VISUAL: editorial minimalista intimista. Como as páginas de um livro bonito encontradas com a estética de um feed de fotógrafo documental europeu. Sofisticação sem ostentação. Profundidade sem heaviness.
+CONCEITO VISUAL: sofisticação com temperatura humana. Como a página de uma revista de negócios de alto padrão (Forbes, Harvard Business Review) reencontrada com a delicadeza de um editorial de moda contemporâneo — nunca frio ou corporativo, nunca genérico de agência de marketing.
 
 PALETA CROMÁTICA OBRIGATÓRIA:
-— Fundo primário dominante: off-white creme #FAF8F5 (ocupa 65-75% da composição) — nunca branco puro, nunca cinza frio
-— Fundo secundário: bege claro aconchegante #EDEAE4
-— Acento principal: marrom café aquecido #8B7355 — para bordas finas, linhas divisórias, detalhes pontuais
-— Acento feminino pontual: rosa queimado terracota #C17B6F — apenas em detalhes muito sutis, como sublinhados ou pequenos elementos gráficos
-— Texto principal: marrom escuro quente #2C2420
-— Texto secundário: marrom médio #8B7355
-— NUNCA: preto puro, fundos escuros, azul, verde, cinza frio, branco clínico
+— Fundo primário dominante: creme #FBF6EF (ocupa 60-70% da composição) — nunca branco puro, nunca cinza frio
+— Fundo secundário: areia #F0E1C8 (blocos, divisórias, segundos planos)
+— Fundo de destaque: amendoado #E3C9A0 (cards, tarjas, elementos de contraste suave)
+— Fundo escuro (uso pontual, capas e slides de maior peso emocional — ex. "Para Além do CNPJ"): marrom profundo #2E2015
+— Acento principal: caramelo #C1793D — títulos, linhas, elementos de destaque
+— Acento secundário: bronze #A8794F — bordas finas, detalhes, molduras
+— Acento sutil de luxo discreto: dourado #C9A227 — usado com extrema moderação, nunca como fundo, nunca brilhante/metálico chapado
+— Acentos terciários muito pontuais: oliva #6B6F47 e musgo #4F5D40 — apenas em pequenos elementos gráficos ou texturas de fundo, jamais dominantes
+— Texto sobre fundo claro: marrom profundo #2E2015
+— Texto sobre fundo escuro: creme claro #F5EFE4
+— NUNCA: preto puro, azul, verde saturado, cinza frio, branco clínico, rosa/pastel excessivo, neon
 
 TIPOGRAFIA — REGRAS ABSOLUTAS:
-— Títulos: serifada editorial ou sans-serif geométrica leve, peso 300-400 para frases longas ou 700-800 para statements de impacto curtos
-— Frases de impacto: letra grande, ocupando boa parte da composição, quase sem margens — editorial, não de blog
-— Subtítulos e legendas: sans-serif clean em peso 400, espaçamento generoso
-— Nunca fontes decorativas, scripts cursivos exagerados ou tipografias de coach/LinkedIn
+— Títulos: serifada editorial elegante (peso 400 para frases longas, peso 700-800 para statements de impacto curtos) — transmite autoridade sem ser corporativa
+— Frases de impacto: letra grande, ocupando boa parte da composição, quase sem margens — editorial, nunca estética de blog
+— Subtítulos e legendas: sans-serif humanista clean, peso 400-500, espaçamento generoso
+— Nunca fontes decorativas, scripts cursivos exagerados, tipografia de coach/LinkedIn ou templates prontos
 
 ATMOSFERA E LUZ:
-— Luz natural difusa, como entrada de janela em dia nublado ou manhã tranquila
-— Granulação fotográfica sutil sobre qualquer elemento fotográfico (grain de filme analógico leve)
-— Profundidade com sombras muito suaves e translúcidas — nunca sombra dura
-— Textura de fundo: papel aquarela, linho fine art, ou papel de algodão — nunca digital liso
+— Luz natural quente e difusa — fim de tarde, janela grande, manhã tranquila
+— Granulação fotográfica sutil (grain de filme analógico leve) — nunca digital hiper-saturado
+— Profundidade com sombras suaves — nunca sombra dura, nunca luz de estúdio artificial ou flash
+— Textura de fundo: papel, linho fine art, madeira clara — nunca digital liso
+
+ELEMENTOS E OBJETOS PERMITIDOS (fotografia hero):
+— Madeira clara, tecidos naturais, café em xícara nude, livros abertos, cadernos, luz de jardim ou escritório com janelas grandes
+— Ambientes sofisticados mas habitáveis — nunca cenário de estúdio corporativo genérico
+— Elementos femininos sutis: flor solta, tecido leve, joia discreta — sempre com contenção, nunca decorativo/infantil
+— Detalhes de rotina e trabalho real: laptop aberto, dashboard em tela, anotações à mão — sinal de estratégia em ação, não still de banco de imagens
 
 ELEMENTOS GRÁFICOS (usar com extrema contenção):
-— Linhas finíssimas horizontais em marrom #8B7355 como separadores
+— Linhas finíssimas horizontais em bronze #A8794F como separadores
 — Formas geométricas simples — retângulos de borda fina como enquadramentos
-— Manchas de cor muito suaves e translúcidas como elementos de fundo
-— NUNCA: ícones decorativos, florinhas, estrelas, ornamentos, stickers, clip art
+— Manchas de cor muito suaves e translúcidas (areia, amendoado) como elementos de fundo
+— NUNCA: ícones decorativos em excesso, florinhas, estrelas, ornamentos, stickers, clip art, degradês genéricos, elementos tech/gráficos frios
 
 DIREÇÃO DE COMPOSIÇÃO:
 — Layout editorial com respiração ampla — muito espaço vazio intencional
 — Regra dos terços para posicionamento do texto principal
 — Assimetria elegante — não tudo centralizado (exceto frases de impacto)
-— Como a página de um livro do Penguin Classics ou editorial da Vogue Portugal
-— Sensação: você está lendo algo que vale a pena ler
+— Como a página de uma revista de negócios premium com camada editorial de moda
+— Sensação: você está lendo algo escrito por alguém que pensou antes de falar
 
 SENSAÇÃO E ATMOSFERA:
-— Real sem ser crua. Sofisticada sem ser fria. Íntima sem ser vulgar.
-— Como um ensaio fotográfico de alguém muito bem-resolvida sendo vista em seu habitat natural
-— Transmite: inteligência, intencionalidade, disciplina, profundidade, vida real construída com propósito
+— Estratégica sem ser fria. Feminina sem ser frágil. Real sem ser crua.
+— Como o ensaio fotográfico de uma mulher extremamente competente, vista também em seu lado humano
+— Transmite: inteligência, autoridade, sensibilidade, profundidade, feminilidade sem ostentação
 
-TOM VISUAL: editorial · intimista · arejado · granulado · creme · terracota suave · pensativo · direto
+TOM VISUAL: editorial · estratégico · quente · feminino · maduro · premium · natural · elegante sem ostentação
 
-PROIBIDO ABSOLUTAMENTE: fundos escuros, preto, neon, gradientes coloridos, elementos decorativos infantis, estética de coach, LinkedIn, motivacional, citações com fontes script floreadas, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
+PROIBIDO ABSOLUTAMENTE: fundos frios ou clínicos, preto puro dominante, neon, gradientes coloridos genéricos, excesso de ícones ou elementos tecnológicos, estética de template pronto, luxo artificial/ostentação, feed corporativo de agência de marketing comum, visual excessivamente rígido ou masculino, estética infantil ou excessivamente rosa, fotos de banco de imagens com sorriso forçado, emojis gráficos.`,
     copyDNA:`COPY PARA ANA MOUTINHO (Metodologia RR aplicada):
-IDENTIDADE CENTRAL: Construindo uma vida mais ordenada, virtuosa e significativa, enquanto constroi negocios que crescem de forma solida e sustentavel. Nao e uma chegada, e um posicionamento com bandeira clara.
+IDENTIDADE CENTRAL: Estrategista de marketing, performance e crescimento que enxerga o negocio inteiro (nao so trafego pago) e fala tambem sobre feminilidade, lideranca e a vida por tras do CNPJ. Nao e uma chegada, e um posicionamento com bandeira clara.
 
-0. POSICIONAMENTO ANTES DO HOOK: todo texto deve deixar transparecer, mesmo que sutilmente, o que a Ana defende e o inimigo comum que ela combate (a cultura do "piloto automatico", a romantizacao do caos, a autoajuda rasa que promete transformacao sem processo). Perfil morno nao gera comunidade.
+0. POSICIONAMENTO ANTES DO HOOK: todo texto deve deixar transparecer, mesmo que sutilmente, o que Ana defende e o inimigo comum que ela combate (decisao de marketing tomada sem entender o negocio; discurso de guru que promete resultado sem processo). Perfil morno nao gera comunidade.
 
-1. HOOK: afirmacao que nomeia algo que a pessoa sente mas nao sabe nomear. Toca em dor ou desejo real ligado a: ordem, virtude, autoaperfeicoamento, corrida, leitura, carater, coerencia. Quando fizer sentido, usar o fator negativo (frustracao, recaida, erro) como gancho — o negativo engaja mais que o positivo polido, desde que contado com honestidade, nunca vitimismo.
+1. HOOK: frase ou pergunta que interrompe o padrao e nomeia algo que o publico sente mas nao sabe nomear -- ligado a: gargalos de negocio, sobrecarga de quem lidera, lideranca, feminilidade e carreira, ou bastidores da construcao. Quando fizer sentido, usar o fator negativo (frustracao, erro, decisao que deu errado) como gancho -- desde que contado com honestidade, nunca vitimismo.
 
-2. TOM: reflexivo + direto + provocativo. Mistura como fazer com por que fazer com vale a pena fazer. Falar na 3a pessoa sobre o publico quando o objetivo for identificacao ("quem esta tentando se organizar sente exatamente isso" em vez de so "eu sinto isso") — isso faz a pessoa se ver no conteudo em vez de so ouvir a historia da Ana.
+2. TOM: direto + analitico + humano + feminino. Falar na 3a pessoa sobre o publico quando o objetivo for identificacao ("quem lidera uma operacao sozinha sente exatamente isso" em vez de so "eu sinto isso"). Nunca guru, nunca coach, nunca frio.
 
-3. PERSONAGENS/ARQUETIPOS: quando o formato permitir (carrossel, video), usar arquetipos reconheciveis do universo da Ana — "a versao dela que quer fazer tudo ao mesmo tempo", "a voz interna que sabota no dia 3", "quem confunde descanso com procrastinacao". Cria sensacao de novela diaria: cada conteudo e um capitulo que conecta com o anterior.
+3. PERSONAGENS/ARQUETIPOS: quando o formato permitir (carrossel, video), usar arquetipos reconheciveis do universo de Ana -- "o dono que decide tudo sozinho", "o time que trava porque ninguem documentou o processo", "a campanha que funciona e o negocio que continua perdendo dinheiro". Cria sensacao de capitulos que conectam entre si.
 
-4. ESTRUTURA: gancho -> historia real ou observacao -> conclusao com tese clara -> CTA. Em pecas mais longas, usar "arrancar concordes": 2-3 afirmacoes que o publico confirma mentalmente antes da conclusao (ex.: "voce ja comecou uma rotina nova e abandonou no dia 3?").
+4. ESTRUTURA: situacao real -> conflito oculto -> interpretacao de Ana -> aprendizado -> frase de fechamento forte e memoravel. Em pecas mais longas, usar "arrancar concordes": 2-3 afirmacoes que o publico confirma mentalmente antes da conclusao.
 
-5. TIPOS DE CONTEUDO (mapa de dores e desejos como base — nada deve fugir destas categorias): inimigo comum (critica a cultura do automatico/autoajuda rasa), desejo do publico (bastidores da rotina sendo construida), dor do publico (nomear o que trava, sem solucao magica), prova de transformacao (principio explicado, nao so resultado), entretenimento (situacoes do cotidiano, arquetipos, autoironia), ferramenta (checklist ou passo a passo simples, sempre com ressalva de que ainda esta testando).
+5. TEMAS PERMITIDOS: gargalos de marketing e negocio, dados e metricas interpretadas (nao so citadas), lideranca e desenvolvimento de equipe, bastidores da carreira (franquias, agencia, Case), IA usada com criterio, feminilidade e carreira sem endurecimento, rotina como estrutura de vida, fe e proposito com sobriedade, manifesto/posicionamento.
 
-6. CTA — ESCADA DE COMPROMISSO: nunca insistencia. Usar CTA de permissao ("se quiser, conto como estou tentando resolver isso"), CTA de triagem ("comenta X se voce sente isso, Y se ainda nao") ou CTA de filtro elegante ("isso e pra quem ja decidiu construir com mais intencao — se nao e seu momento, tudo bem, salva e volta depois").
+6. CTA -- ESCADA DE COMPROMISSO: nunca insistencia. Usar CTA de permissao ("se quiser, conto como resolvi isso com um caso parecido"), CTA de triagem ("comenta X se isso acontece na sua operacao, Y se ainda nao") ou CTA de filtro elegante ("isso e pra quem ja decidiu crescer com mais estrutura -- se nao e seu momento, tudo bem, salva e volta depois").
 
-7. TEMAS PERMITIDOS: planejamento, rotinas, sistemas, metas, disciplina, coragem, prudencia, temperanca, corrida de rua, leitura de livros, virtudes aristotelicas, ordem pessoal, bastidores reais, falhas e aprendizados, construcao de longo prazo, legado, fundacao, constancia, manifesto/posicionamento.
+7. PROIBIDO: tom de coach, frases motivacionais vazias, jargao sem explicacao, promessa de resultado facil, antagonismo entre homens e mulheres, linguagem militante, vitimizacao, frieza/agressividade como sinal de forca, texto generico que poderia ser de qualquer especialista.
 
-8. PROIBIDO: desbloqueie, seja sua melhor versao, sucesso, formula, metodo infalivel, qualquer tom de guru ou coach.
+8. CONFLITOS REAIS QUE CONECTAM: estrategia vs execucao; ambicao vs presenca; firmeza vs sensibilidade; crescer profissionalmente sem se perder pessoalmente; ser firme sem ser dura; liderar sem autoritarismo.
 
-9. CONFLITOS REAIS QUE CONECTAM: perfeccionismo vs acao, excesso de interesses, dificuldade de constancia, querer excelencia sem paralisar.`,
+9. NUNCA inventar clientes, numeros, resultados ou casos -- se o conteudo depender de um caso real, sinalizar que precisa do contexto verdadeiro em vez de inventar.`,
   },
   virttus: {
     accent:'#00D4AA',accentAlt:'#7B2FFF',bgDark:'#050B18',bgLight:'#F0F4FF',bgBrand:'#0A1628',
