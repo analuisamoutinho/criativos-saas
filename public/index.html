@@ -1664,7 +1664,7 @@ function enviarCriarParaCarrossel() {
     funcao: s.funcao || 'DESENVOLVIMENTO',
     heading: s.textos?.[0]?.texto || s.heading || '',
     body: s.textos?.[1]?.texto || s.body || '',
-    imagePrompt: ''
+    imagePrompt: s.imagePrompt || ''
   }));
   // Prepara o estado do carrossel
   currentCarouselImages = [];

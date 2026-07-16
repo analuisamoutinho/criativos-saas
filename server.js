@@ -54,61 +54,139 @@ const VALID_QUALITIES = ['low', 'medium', 'high', 'auto'];
 const DEFAULT_QUALITY = 'high';
 function resolveQuality(q) { return VALID_QUALITIES.includes(q) ? q : DEFAULT_QUALITY; }
 
+// ── Marcas corporativas famosas: identidade visual para estudos de caso ───
+// Quando o carrossel é um estudo de caso sobre uma marca real (McDonald's,
+// Nike, Apple...), a imagem precisa carregar a identidade visual DESSA marca
+// — cores oficiais, produtos icônicos, atmosfera — e não visual genérico.
+const FEATURED_BRAND_VISUALS = [
+  { match: /mcdonald|méqui|big mac|mccafé|mc café/i, name: "McDonald's",
+    visual: `Cores oficiais: amarelo dourado #FFC72C (arcos dourados) e vermelho #DA291C. Objetos icônicos para fotografia hero: batatas fritas na embalagem vermelha clássica, Big Mac na caixa, copo de McCafé em papel kraft/laranja com o "M", bandeja com papel forrado, letreiro dos arcos dourados em 3D. Atmosfera: acolhedora, quente, luz de restaurante ao entardecer, texturas de comida apetitosas em close macro.` },
+  { match: /\bnike\b|just do it|air jordan|air max/i, name: 'Nike',
+    visual: `Cores: preto, branco e cinza com o swoosh como elemento gráfico. Objetos icônicos: tênis Nike em ângulo heroico com luz dramática, silhueta de atleta correndo ao amanhecer, swoosh minimalista. Atmosfera: superação, movimento, energia atlética, fotografia esportiva editorial com contraste alto e grão de filme.` },
+  { match: /\bapple\b|iphone|steve jobs|macbook|airpods/i, name: 'Apple',
+    visual: `Cores: branco, cinza espacial, prata, preto profundo — minimalismo absoluto. Objetos icônicos: iPhone flutuando em ângulo de estúdio, MacBook de perfil, AirPods, a maçã como escultura metálica. Atmosfera: estúdio limpo, luz suave e precisa, superfícies impecáveis, design como protagonista, estética de keynote.` },
+  { match: /coca[\s-]?cola|coke/i, name: 'Coca-Cola',
+    visual: `Cores oficiais: vermelho Coca-Cola #F40009 e branco, com a garrafa contour como ícone. Objetos icônicos: garrafa de vidro gelada com gotas de condensação, tampa metálica, copo com gelo e efervescência, letreiro script clássico. Atmosfera: felicidade, celebração, luz quente de verão, fotografia de bebida premium com respingos e brilho.` },
+  { match: /starbucks/i, name: 'Starbucks',
+    visual: `Cores: verde Starbucks #00704A, branco e tons de café. Objetos icônicos: copo branco com logo da sereia, grãos de café espalhados, latte art, avental verde. Atmosfera: cafeteria acolhedora, madeira e luz âmbar, vapor subindo da xícara, fotografia lifestyle premium.` },
+  { match: /red ?bull/i, name: 'Red Bull',
+    visual: `Cores: azul e prata da lata, vermelho e amarelo do logo dos touros. Objetos icônicos: lata em close com gotas, cenas de esporte radical (asas, salto, velocidade). Atmosfera: adrenalina, energia, céu aberto, fotografia de ação com movimento congelado.` },
+  { match: /netflix/i, name: 'Netflix',
+    visual: `Cores: vermelho Netflix #E50914 sobre preto profundo. Objetos icônicos: o "N" em fita vermelha, tela em ambiente escuro de cinema, pipoca, luz de projetor. Atmosfera: cinematográfica, dramática, luz vermelha de neon suave sobre escuro.` },
+  { match: /spotify/i, name: 'Spotify',
+    visual: `Cores: verde Spotify #1DB954 sobre preto. Objetos icônicos: ondas sonoras, fones de ouvido premium, vinil, interface de player estilizada. Atmosfera: musical, moderna, dark mode com acentos verdes vibrantes.` },
+  { match: /nubank/i, name: 'Nubank',
+    visual: `Cores: roxo Nubank #820AD1 em gradientes suaves. Objetos icônicos: cartão roxo flutuando, smartphone com app, formas fluidas roxas. Atmosfera: fintech moderna, leve, gradientes roxos sofisticados, luz de estúdio clean.` },
+  { match: /havaianas/i, name: 'Havaianas',
+    visual: `Cores: paleta tropical vibrante — amarelo, azul, verde, laranja. Objetos icônicos: chinelos em composição gráfica, areia, verão brasileiro. Atmosfera: praia, sol, alegria brasileira, fotografia colorida de verão.` },
+  { match: /magalu|magazine luiza/i, name: 'Magalu',
+    visual: `Cores: azul Magalu #0086FF e branco. Objetos icônicos: caixas de entrega, smartphone com app, a Lu como referência digital. Atmosfera: varejo digital acessível, luz clara e otimista.` },
+  { match: /\bamazon\b|jeff bezos/i, name: 'Amazon',
+    visual: `Cores: laranja Amazon #FF9900, preto e branco. Objetos icônicos: caixa de papelão com a seta-sorriso, esteiras logísticas, entrega na porta. Atmosfera: escala, eficiência, logística global, fotografia editorial de operação.` },
+  { match: /\blego\b/i, name: 'LEGO',
+    visual: `Cores primárias vibrantes: vermelho, amarelo, azul, branco. Objetos icônicos: peças LEGO em macro, construções criativas, minifiguras. Atmosfera: criatividade, precisão, fotografia macro colorida com profundidade de campo.` },
+  { match: /disney|pixar/i, name: 'Disney',
+    visual: `Cores: azul noturno mágico, dourado, toques de rosa. Objetos icônicos: castelo em silhueta, orelhas do Mickey, poeira mágica dourada. Atmosfera: mágica, encantadora, luz de conto de fadas.` },
+  { match: /ferrari/i, name: 'Ferrari',
+    visual: `Cores: vermelho Ferrari (Rosso Corsa), amarelo do escudo, preto. Objetos icônicos: carro em curva, o cavallino rampante, detalhes de carbono e couro. Atmosfera: luxo automotivo, velocidade, fotografia automotiva dramática.` },
+  { match: /adidas/i, name: 'Adidas',
+    visual: `Cores: preto e branco com as três listras como grafismo. Objetos icônicos: tênis em ângulo de produto, as três listras em composição gráfica, atletas urbanos. Atmosfera: streetwear esportivo, urbano, contraste alto.` },
+  { match: /burger ?king|\bbk\b/i, name: 'Burger King',
+    visual: `Cores: marrom flame, laranja queimado, vermelho e bege — identidade retrô atual. Objetos icônicos: Whopper em close com fogo de grelha, coroa de papel, chamas. Atmosfera: grelha de fogo real, quente, apetitosa, retrô-moderna.` },
+  { match: /ifood/i, name: 'iFood',
+    visual: `Cores: vermelho iFood #EA1D2C e branco. Objetos icônicos: mochila térmica de entrega, moto na cidade, embalagens de delivery, smartphone com pedido. Atmosfera: cidade em movimento, conveniência, luz urbana.` },
+  { match: /mercado ?livre/i, name: 'Mercado Livre',
+    visual: `Cores: amarelo #FFE600 e azul #3483FA. Objetos icônicos: caixas com o logo do aperto de mãos, entregas, app. Atmosfera: comércio digital latino, otimista, luz clara.` },
+  { match: /coca[\s-]?cola zero/i, name: 'Coca-Cola Zero',
+    visual: `Cores: preto e vermelho Coca-Cola. Objetos icônicos: lata preta gelada com condensação. Atmosfera: premium, contraste dramático.` },
+];
+
+function detectFeaturedBrand(...texts) {
+  const hay = texts.filter(Boolean).join(' ');
+  if (!hay) return null;
+  return FEATURED_BRAND_VISUALS.find(b => b.match.test(hay)) || null;
+}
+
 // ── Prompt builder for carousel slide images ──────────────────────────────
-// Layout-first approach: prompts describe GRAPHIC DESIGN structures, not art.
-// This matches the quality standard of professional brand identity carousel mockups.
-function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint }) {
+// Gera SLIDES COMPLETOS e finalizados (tipografia renderizada na imagem),
+// no padrão dos carrosséis premium de identidade de marca: layout editorial,
+// hierarquia clara, fotografia hero da marca retratada e a identidade visual
+// do perfil como base do design.
+function buildCarouselPrompt({ quality, brand = {}, aestheticOverride, slideRole, heading, body, slideNumber, totalSlides, sceneHint, topic }) {
   const isFirst = slideNumber === 1 || slideRole === 'CAPA';
   const isLast  = slideNumber === totalSlides || slideRole === 'CTA' || slideRole === 'ASSINATURA';
   const aestheticDNA = aestheticOverride || brand.aestheticDNA || 'premium editorial minimalist design';
   const brandName    = brand.name    || 'MARCA';
   const brandHandle  = brand.handle  || '';
+  const featured     = detectFeaturedBrand(topic, heading, body, sceneHint);
+
+  // ── Textos exatos a renderizar no slide ───────────────────────────────────
+  const textsToRender = [
+    heading ? `TÍTULO PRINCIPAL (grande, dominante): "${heading}"` : '',
+    body    ? `TEXTO DE APOIO (menor, sob o título ou em bloco lateral): "${body}"` : '',
+    brandHandle ? `ASSINATURA DISCRETA no topo do slide: "${brandHandle}"` : '',
+  ].filter(Boolean).join('\n— ');
 
   // ── Layout structure per slide role ──────────────────────────────────────
   let layoutStructure;
   if (isFirst) {
-    layoutStructure = `VISUAL DA CAPA (FUNDO/BACKGROUND APENAS — SEM TEXTO):
-— Composição fotográfica ou ilustrativa que evoca o tema: "${sceneHint || heading || ''}"
-— Fundo rico com textura, profundidade e luz dramática nas cores da paleta da marca
-— Elemento gráfico ou forma geométrica da marca como detalhe sutil no canto ou fundo
-— Atmosfera premium, editorial, cinematográfica — como capa de revista de negócios
-— IMPORTANTE: ZERO texto, zero tipografia, zero letras na imagem`;
+    layoutStructure = `ESTE É O SLIDE DE CAPA — precisa parar o scroll:
+— Título renderizado em tipografia MASSIVA, condensada, peso 800-900, ocupando 40-55% da largura — como capa de revista de negócios premium
+— FOTOGRAFIA HERO ao lado ou atrás do título: ${featured ? `objeto icônico da ${featured.name} fotografado em qualidade de estúdio publicitário` : `cena que materializa o tema "${sceneHint || heading || topic || ''}" com objeto concreto e reconhecível`}
+— Pequeno indicador de swipe no rodapé (seta fina para a direita)
+— Composição assimétrica intencional: texto em um lado, imagem hero no outro — nunca texto centralizado sobre foto confusa`;
   } else if (isLast) {
-    layoutStructure = `VISUAL DE ENCERRAMENTO (FUNDO/BACKGROUND APENAS — SEM TEXTO):
-— Composição clean e elegante nas cores da marca, sensação de fechamento e ação
-— Fundo com gradiente suave ou textura sutil — pode ter uma forma geométrica ou símbolo da marca
-— Tom convidativo, caloroso, profissional
-— IMPORTANTE: ZERO texto, zero tipografia, zero letras na imagem`;
+    layoutStructure = `ESTE É O SLIDE FINAL (CTA/ASSINATURA):
+— Composição mais clean dos ${totalSlides} slides — fechamento elegante
+— Título renderizado com destaque, texto de apoio menor abaixo
+— Símbolo/monograma da marca ${brandName} como elemento de assinatura
+— Tom convidativo e profissional, sensação de conclusão`;
   } else {
-    layoutStructure = `VISUAL DE CONTEÚDO — slide ${slideNumber} de ${totalSlides} (FUNDO/BACKGROUND APENAS — SEM TEXTO):
-— Imagem temática que ilustra visualmente o conceito: "${sceneHint || heading || ''}"
-— Fundo consistente com os outros slides em paleta de cores e mood
-— Pode ser fotografia editorial, textura, forma abstrata ou composição geométrica
-— Elemento sutil da identidade visual da marca (cor de acento, forma, detalhe)
-— IMPORTANTE: ZERO texto, zero tipografia, zero letras na imagem`;
+    layoutStructure = `ESTE É UM SLIDE DE CONTEÚDO — slide ${slideNumber} de ${totalSlides}:
+— Título renderizado no topo em tipografia forte (peso 800), texto de apoio em bloco legível abaixo
+— Se o texto de apoio contém itens/conceitos distintos, organize como LISTA com pequenos ÍCONES de linha fina (outline icons) ao lado de cada item — padrão infográfico editorial premium
+— FOTOGRAFIA ou ELEMENTO VISUAL de apoio: ${featured ? `produto/detalhe icônico da ${featured.name} em fotografia premium, ocupando um terço a metade da composição` : `visual concreto do conceito "${sceneHint || heading || ''}"`}
+— Numeração discreta do slide (0${slideNumber}) como detalhe editorial no topo
+— Mesmo grid, mesma paleta e mesma tipografia dos outros slides da série`;
   }
+
+  // ── Fusão de identidade: perfil + marca retratada ─────────────────────────
+  const featuredSection = featured ? `
+════ MARCA RETRATADA NESTE ESTUDO DE CASO: ${featured.name} ════
+Este slide fala sobre a ${featured.name}. A fotografia hero e os acentos visuais DEVEM usar a identidade real dela:
+${featured.visual}
+
+REGRA DE FUSÃO DAS DUAS IDENTIDADES:
+— A BASE do design (fundo, papel, tipografia, molduras, grid) segue a identidade do perfil ${brandName} descrita acima
+— A FOTOGRAFIA HERO e os objetos em cena usam as cores e produtos reais da ${featured.name} — vibrantes, apetitosos, reconhecíveis à primeira vista
+— O resultado deve parecer uma página de revista premium sobre a ${featured.name}, diagramada no design system do perfil
+— NUNCA fotografia genérica de banco de imagens: sempre o produto/símbolo icônico da ${featured.name} em produção de estúdio` : '';
 
   // ── Execution requirements ────────────────────────────────────────────────
   const execution = [
-    `ESTE É UM VISUAL DE FUNDO (BACKGROUND) para um slide de carrossel Instagram. NÃO É uma peça gráfica com texto. O texto será adicionado por cima via CSS/HTML — NÃO inclua texto, título, legenda, hashtag, handle ou qualquer tipografia na imagem.`,
-    `Qualidade visual: fotografia editorial premium ou ilustração de marca publicável. Atmosfera coerente com a identidade da marca.`,
-    `Cores: estritamente da paleta da marca. Zero improvisação cromática.`,
-    `Textura e profundidade: iluminação cinematográfica, sombras difusas, profundidade de campo — nunca fundo completamente liso.`,
-    `Consistência de série: este background deve pertencer visivelmente ao mesmo universo visual dos outros slides.`,
-    `Formato: 1024×1536px. Composição centralizada e equilibrada, funciona bem cortado para 4:5. Sem watermarks, logotipos externos ou elementos de UI.`,
-    `REGRA ABSOLUTA: ZERO texto visível na imagem. Nenhuma letra, número, palavra, símbolo tipográfico. Só visual puro.`,
+    `TEXTO RENDERIZADO NA IMAGEM: renderize os textos fornecidos EXATAMENTE como escritos, letra por letra, em português correto. NÃO invente, traduza, abrevie ou adicione palavras. Nenhum texto além dos fornecidos.`,
+    `Tipografia: hierarquia absolutamente clara (título dominante > apoio > detalhes). Kerning e alinhamento impecáveis, como peça finalizada por designer sênior.`,
+    `Fotografia: qualidade de campanha publicitária — iluminação de estúdio, texturas ricas, profundidade de campo, materiais reais. NUNCA render 3D genérico, clip-art ou stock photo com cara de banco de imagens.`,
+    `Cores: base estritamente na paleta do perfil${featured ? `; acentos e fotografia nas cores reais da ${featured.name}` : ''}. Zero improvisação cromática.`,
+    `Consistência de série: este slide deve pertencer visivelmente ao mesmo sistema visual dos outros ${totalSlides} slides (mesmo grid, mesma tipografia, mesma paleta).`,
+    `ZONA SEGURA: a imagem será cortada para 4:5 — mantenha TODO o texto e elementos importantes dentro da área central; deixe os 10% superiores e os 10% inferiores da imagem livres de texto.`,
+    `Formato: 1024×1536px, composição equilibrada. Sem watermarks, sem UI do Instagram, sem handles inventados.`,
   ].map(l => `— ${l}`).join('\n');
 
   return [
-    `Crie um VISUAL DE FUNDO (background image) para o slide ${slideNumber} de ${totalSlides} de um carrossel Instagram.`,
-    `É uma imagem de fundo pura — sem texto, sem tipografia, sem legendas. O texto será sobreposto por CSS.`,
+    `Crie um SLIDE COMPLETO E FINALIZADO de carrossel Instagram (slide ${slideNumber} de ${totalSlides}) — uma peça de design gráfico editorial premium com o texto renderizado na própria imagem.`,
+    `Padrão de referência: carrosséis de estudo de caso de agências de branding de alto nível — layout de revista, fotografia de campanha, infográficos elegantes.`,
     '',
-    `════ SISTEMA DE DESIGN E IDENTIDADE VISUAL DA MARCA ════`,
+    `════ SISTEMA DE DESIGN E IDENTIDADE VISUAL DO PERFIL (${brandName}) ════`,
     aestheticDNA,
+    featuredSection,
+    '',
+    `════ TEXTOS EXATOS A RENDERIZAR NESTE SLIDE ════`,
+    `— ${textsToRender}`,
     '',
     `════ ESTRUTURA E LAYOUT DESTE SLIDE ════`,
     layoutStructure,
-    sceneHint ? `\nCONTEXTO TEMÁTICO ADICIONAL: ${sceneHint}` : '',
+    sceneHint ? `\nDIREÇÃO DE CENA ADICIONAL: ${sceneHint}` : '',
     '',
     `════ REQUISITOS DE EXECUÇÃO ════`,
     execution,
@@ -1411,7 +1489,9 @@ Converte estes blocos em slides de carrossel. Para cada bloco, gera um heading c
 BLOCOS:
 ${blocks}
 
-JSON: {"title":"título do carrossel","slideCount":N,"slides":[{"slideNumber":1,"funcao":"CAPA","heading":"título curto e impactante","body":"2-3 frases que desenvolvem o conceito com substância real. Inclui dado, explicação ou consequência concreta.","imagePrompt":"visual scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
+REGRA DO imagePrompt: descrição rica em inglês (15-30 palavras) da cena fotográfica hero do slide: objeto concreto, materiais, iluminação, atmosfera. Se o tema for sobre uma marca real (McDonald's, Nike, Apple...), descreva o produto ICÔNICO dessa marca com suas cores oficiais (ex: "McDonald's red fry box with golden fries, warm studio light"). Nunca cena genérica ou abstrata.
+
+JSON: {"title":"título do carrossel","slideCount":N,"slides":[{"slideNumber":1,"funcao":"CAPA","heading":"título curto e impactante","body":"2-3 frases que desenvolvem o conceito com substância real. Inclui dado, explicação ou consequência concreta.","imagePrompt":"detailed hero scene in english, 15-30 words"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas"}`;
     } else {
       const slideCount = isRR ? '7-8' : '10';
       prompt = `Perfil: ${account.name} (${account.handle})
@@ -1421,7 +1501,9 @@ ${isRR ? 'ESTRUTURA RR: Slide 1 (gancho que nomeia dor/desejo real) → slides d
 
 REGRA CRÍTICA: cada slide DEVE ter body com 2-3 frases de conteúdo real — dado concreto, explicação do conceito, exemplo prático ou consequência. NUNCA body vazio ou com menos de 2 frases.
 
-JSON: {"title":"título do carrossel","slideCount":${isRR?8:10},"slides":[{"slideNumber":1,"funcao":"CAPA","heading":"gancho de 14-18 palavras","body":"2-3 frases que desenvolvem o gancho com substância. Dado concreto, padrão de mercado real ou consequência.","imagePrompt":"visual scene in english"},{"slideNumber":2,"funcao":"DESENVOLVIMENTO","heading":"título do conceito","body":"2-3 frases explicando o conceito com dado ou exemplo concreto. O leitor deve aprender algo real neste slide.","imagePrompt":"visual scene in english"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}`;
+REGRA DO imagePrompt: descrição rica em inglês (15-30 palavras) da cena fotográfica hero do slide: objeto concreto, materiais, iluminação, atmosfera premium. Se o tema for um estudo de caso sobre uma marca real (McDonald's, Nike, Apple, Coca-Cola...), descreva o produto ICÔNICO dessa marca com suas cores oficiais (ex: "McDonald's golden fries in the iconic red box, McCafé cup, warm advertising studio light"). Varie o objeto entre slides para não repetir a mesma cena. Nunca cena genérica, abstrata ou de banco de imagens.
+
+JSON: {"title":"título do carrossel","slideCount":${isRR?8:10},"slides":[{"slideNumber":1,"funcao":"CAPA","heading":"gancho de 14-18 palavras","body":"2-3 frases que desenvolvem o gancho com substância. Dado concreto, padrão de mercado real ou consequência.","imagePrompt":"detailed hero scene in english, 15-30 words"},{"slideNumber":2,"funcao":"DESENVOLVIMENTO","heading":"título do conceito","body":"2-3 frases explicando o conceito com dado ou exemplo concreto. O leitor deve aprender algo real neste slide.","imagePrompt":"detailed hero scene in english, 15-30 words"}],"caption":"legenda completa com emojis e CTA","hashtags":"máximo 4 hashtags específicas ao nicho"}`;
     }
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1455,7 +1537,7 @@ function normalizeSlidesFromGPT(parsed, fallbackTema) {
     else if (Array.isArray(s.texts) && s.texts.length > 0) { textos = s.texts.map(t => ({ tipo: t.type||t.tipo||'texto', texto: typeof t==='string'?t:(t.text||t.texto||'') })); }
     else { const heading = s.heading||s.titulo||s.title||s.hook||s.gancho||s.texto||''; const body = s.body||s.corpo||s.content||s.conteudo||s.subtitulo||''; if (heading) textos.push({ posicao:1, tipo:'hook', texto:heading }); if (body) textos.push({ posicao:2, tipo:'paragrafo', texto:body }); }
     if (textos.length === 0) textos.push({ posicao:1, tipo:'texto', texto:'Slide '+num });
-    return { slideNumber: Number(num), funcao: s.funcao||s.label||s.role||(idx===0?'CAPA':idx===rawSlides.length-1?'CTA':'DESENVOLVIMENTO'), heading: textos[0]?.texto||'', body: textos[1]?.texto||'', textos };
+    return { slideNumber: Number(num), funcao: s.funcao||s.label||s.role||(idx===0?'CAPA':idx===rawSlides.length-1?'CTA':'DESENVOLVIMENTO'), heading: textos[0]?.texto||'', body: textos[1]?.texto||'', imagePrompt: s.imagePrompt||s.image_prompt||'', textos };
   });
 }
 
@@ -1493,7 +1575,7 @@ app.post('/api/content-machine/generate', async (req, res) => {
     const ctaFixo = account.handle === '@analuisa.moutinho' ? 'salva pra reler quando esquecer disso.' : 'Gostou? Comente CASE que nossa equipe te chama.';
     const tipoInfo2 = isRR ? tipoInfo : tipoInfo;
     const instrucaoEstrutura = isRR ? 'INSTRUÇÃO: ' + tipoInfo.instrucao + '\nESTRUTURA RR: Slide 1 (gancho dor/desejo) → profundidade → conclusão → CTA íntimo.' : 'INSTRUÇÃO: ' + tipoInfo.instrucao + '\nESTRUTURA BD: Slide 1 (hook 14-18 palavras) → frameworks/dados → CTA assinatura.';
-    const userPrompt = 'Tipo: ' + tipoInfo.label + '\nPerfil: ' + account.name + ' (' + account.handle + ')\nTema: "' + tema + '"\n\n' + instrucaoEstrutura + '\n\nJSON:\n{"tipo":"' + tipo + '","tipo_label":"' + tipoInfo.label + '","tema":"' + tema + '","profile":"' + profile + '","metodologia":"' + (isRR?'rr':'brandsdecoded') + '","isRoteiro":false,"slides":[{"slide":1,"funcao":"CAPA","textos":[{"posicao":1,"tipo":"hook","texto":"..."},{"posicao":2,"tipo":"sub-hook","texto":"..."}]},{"slide":2,"funcao":"DESENVOLVIMENTO","textos":[{"posicao":3,"tipo":"titulo","texto":"..."},{"posicao":4,"tipo":"paragrafo","texto":"..."}]},{"slide":8,"funcao":"CTA","textos":[{"posicao":15,"tipo":"cta","texto":"' + ctaFixo + '"}]}]}';
+    const userPrompt = 'Tipo: ' + tipoInfo.label + '\nPerfil: ' + account.name + ' (' + account.handle + ')\nTema: "' + tema + '"\n\n' + instrucaoEstrutura + '\n\nREGRA DO imagePrompt: cada slide DEVE ter "imagePrompt" — descrição rica em inglês (15-30 palavras) da cena fotográfica hero: objeto concreto, materiais, iluminação, atmosfera premium. Se o tema for sobre uma marca real (McDonald\'s, Nike, Apple...), descreva o produto ICÔNICO dessa marca com as cores oficiais. Varie o objeto entre slides. Nunca cena genérica.\n\nJSON:\n{"tipo":"' + tipo + '","tipo_label":"' + tipoInfo.label + '","tema":"' + tema + '","profile":"' + profile + '","metodologia":"' + (isRR?'rr':'brandsdecoded') + '","isRoteiro":false,"slides":[{"slide":1,"funcao":"CAPA","imagePrompt":"detailed hero scene in english","textos":[{"posicao":1,"tipo":"hook","texto":"..."},{"posicao":2,"tipo":"sub-hook","texto":"..."}]},{"slide":2,"funcao":"DESENVOLVIMENTO","imagePrompt":"detailed hero scene in english","textos":[{"posicao":3,"tipo":"titulo","texto":"..."},{"posicao":4,"tipo":"paragrafo","texto":"..."}]},{"slide":8,"funcao":"CTA","imagePrompt":"detailed hero scene in english","textos":[{"posicao":15,"tipo":"cta","texto":"' + ctaFixo + '"}]}]}';
     const response = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { Authorization: 'Bearer ' + process.env.OPENAI_API_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'gpt-4o', temperature: 1.0, max_tokens: 4500, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }] }) });
     const data = await response.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
@@ -1660,6 +1742,7 @@ app.post('/api/image/carousel-slide', async (req, res) => {
       slideNumber: slideNumber || 1,
       totalSlides: totalSlides || 1,
       sceneHint,
+      topic,
     });
     const moodList = brand.moods || ['HERO_DARK'];
     const moodIndex = Math.min((slideNumber || 1) - 1, moodList.length - 1);
